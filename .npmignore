@@ -1,0 +1,10 @@
+node_modules
+.eslintrc
+.babelrc
+.gitignore
+.npmignore
+.prettierrc
+tsconfig.json
+tslint.json
+src
+rsbuild.*

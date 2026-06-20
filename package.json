@@ -1,0 +1,53 @@
+{
+  "name": "react-world-map-extended",
+  "version": "0.0.0",
+  "description": "React HTML5 video providing functionality for marking and selecting frames, jumping back and forth between frames based on the fps.",
+  "author": "Amitt K Sharma",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amittkSharma/react-world-map-extended.git"
+  },
+  "keywords": [
+    "react"
+  ],
+  "bugs": {
+    "url": "https://github.com/amittkSharma/react-world-map-extended/issues"
+  },
+  "homepage": "https://github.com/amittkSharma/react-world-map-extended#readme",
+  "peerDependencies": {
+    "react": ">=16.13.1",
+    "react-dom": ">=16.13.1"
+  },
+  "devDependencies": {
+    "@rsbuild/core": "^2.0.14",
+    "@rsbuild/plugin-react": "^2.0.1",
+    "@rsbuild/plugin-umd": "^1.0.7",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "commit-and-tag-version": "12.7.3",
+    "node": "26.3.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "react-test-renderer": "19.2.7",
+    "tslint": "6.1.3",
+    "tslint-react": "5.0.0",
+    "typescript": "6.0.3"
+  },
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build --config rsbuild.prod.config.ts",
+    "build-example": "rsbuild build",
+    "build-prod": "rsbuild build --config rsbuild.prod.config.ts",
+    "lint": "tslint -p .",
+    "build-package": "npm run lint && npm run build-example && npm run build-prod",
+    "release": "commit-and-tag-version"
+  },
+  "dependencies": {
+    "react-svg-worldmap": "2.0.2",
+    "joi": "18.2.1"
+  }
+}

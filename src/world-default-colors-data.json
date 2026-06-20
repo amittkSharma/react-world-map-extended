@@ -1,0 +1,690 @@
+[
+  {
+    "country": "dz",
+    "value": "{\"name\":\"Algeria\",\"alpha3\":\"DZA\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "ao",
+    "value": "{\"name\":\"Angola\",\"alpha3\":\"AGO\",\"color\":\"#E76F51\"}"
+  },
+  {
+    "country": "bj",
+    "value": "{\"name\":\"Benin\",\"alpha3\":\"BEN\",\"color\":\"#FFBA08\"}"
+  },
+  {
+    "country": "bw",
+    "value": "{\"name\":\"Botswana\",\"alpha3\":\"BWA\",\"color\":\"#FAA307\"}"
+  },
+  {
+    "country": "bf",
+    "value": "{\"name\":\"Burkina Faso\",\"alpha3\":\"BFA\",\"color\":\"#E9C46A\"}"
+  },
+  {
+    "country": "bi",
+    "value": "{\"name\":\"Burundi\",\"alpha3\":\"BDI\",\"color\":\"#F4D06F\"}"
+  },
+  {
+    "country": "cm",
+    "value": "{\"name\":\"Cameroon\",\"alpha3\":\"CMR\",\"color\":\"#FCA311\"}"
+  },
+  {
+    "country": "cf",
+    "value": "{\"name\":\"Central African Rep.\",\"alpha3\":\"CAF\",\"color\":\"#FFB703\"}"
+  },
+  {
+    "country": "td",
+    "value": "{\"name\":\"Chad\",\"alpha3\":\"TCD\",\"color\":\"#FB8500\"}"
+  },
+  {
+    "country": "cg",
+    "value": "{\"name\":\"Congo\",\"alpha3\":\"COG\",\"color\":\"#F3722C\"}"
+  },
+  {
+    "country": "ci",
+    "value": "{\"name\":\"Côte d'Ivoire\",\"alpha3\":\"CIV\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "cd",
+    "value": "{\"name\":\"Dem. Rep. Congo\",\"alpha3\":\"COD\",\"color\":\"#E76F51\"}"
+  },
+  {
+    "country": "dj",
+    "value": "{\"name\":\"Djibouti\",\"alpha3\":\"DJI\",\"color\":\"#FFBA08\"}"
+  },
+  {
+    "country": "eg",
+    "value": "{\"name\":\"Egypt\",\"alpha3\":\"EGY\",\"color\":\"#FAA307\"}"
+  },
+  {
+    "country": "gq",
+    "value": "{\"name\":\"Eq. Guinea\",\"alpha3\":\"GNQ\",\"color\":\"#E9C46A\"}"
+  },
+  {
+    "country": "er",
+    "value": "{\"name\":\"Eritrea\",\"alpha3\":\"ERI\",\"color\":\"#F4D06F\"}"
+  },
+  {
+    "country": "sz",
+    "value": "{\"name\":\"eSwatini\",\"alpha3\":\"SWZ\",\"color\":\"#FCA311\"}"
+  },
+  {
+    "country": "et",
+    "value": "{\"name\":\"Ethiopia\",\"alpha3\":\"ETH\",\"color\":\"#FFB703\"}"
+  },
+  {
+    "country": "ga",
+    "value": "{\"name\":\"Gabon\",\"alpha3\":\"GAB\",\"color\":\"#FB8500\"}"
+  },
+  {
+    "country": "gm",
+    "value": "{\"name\":\"Gambia\",\"alpha3\":\"GMB\",\"color\":\"#F3722C\"}"
+  },
+  {
+    "country": "gh",
+    "value": "{\"name\":\"Ghana\",\"alpha3\":\"GHA\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "gn",
+    "value": "{\"name\":\"Guinea\",\"alpha3\":\"GIN\",\"color\":\"#E76F51\"}"
+  },
+  {
+    "country": "gw",
+    "value": "{\"name\":\"Guinea-Bissau\",\"alpha3\":\"GNB\",\"color\":\"#FFBA08\"}"
+  },
+  {
+    "country": "ke",
+    "value": "{\"name\":\"Kenya\",\"alpha3\":\"KEN\",\"color\":\"#FAA307\"}"
+  },
+  {
+    "country": "ls",
+    "value": "{\"name\":\"Lesotho\",\"alpha3\":\"LSO\",\"color\":\"#E9C46A\"}"
+  },
+  {
+    "country": "lr",
+    "value": "{\"name\":\"Liberia\",\"alpha3\":\"LBR\",\"color\":\"#F4D06F\"}"
+  },
+  {
+    "country": "ly",
+    "value": "{\"name\":\"Libya\",\"alpha3\":\"LBY\",\"color\":\"#FCA311\"}"
+  },
+  {
+    "country": "mg",
+    "value": "{\"name\":\"Madagascar\",\"alpha3\":\"MDG\",\"color\":\"#FFB703\"}"
+  },
+  {
+    "country": "mw",
+    "value": "{\"name\":\"Malawi\",\"alpha3\":\"MWI\",\"color\":\"#FB8500\"}"
+  },
+  {
+    "country": "ml",
+    "value": "{\"name\":\"Mali\",\"alpha3\":\"MLI\",\"color\":\"#F3722C\"}"
+  },
+  {
+    "country": "mr",
+    "value": "{\"name\":\"Mauritania\",\"alpha3\":\"MRT\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "ma",
+    "value": "{\"name\":\"Morocco\",\"alpha3\":\"MAR\",\"color\":\"#E76F51\"}"
+  },
+  {
+    "country": "mz",
+    "value": "{\"name\":\"Mozambique\",\"alpha3\":\"MOZ\",\"color\":\"#FFBA08\"}"
+  },
+  {
+    "country": "na",
+    "value": "{\"name\":\"Namibia\",\"alpha3\":\"NAM\",\"color\":\"#FAA307\"}"
+  },
+  {
+    "country": "ne",
+    "value": "{\"name\":\"Niger\",\"alpha3\":\"NER\",\"color\":\"#E9C46A\"}"
+  },
+  {
+    "country": "ng",
+    "value": "{\"name\":\"Nigeria\",\"alpha3\":\"NGA\",\"color\":\"#F4D06F\"}"
+  },
+  {
+    "country": "rw",
+    "value": "{\"name\":\"Rwanda\",\"alpha3\":\"RWA\",\"color\":\"#FCA311\"}"
+  },
+  {
+    "country": "ss",
+    "value": "{\"name\":\"S. Sudan\",\"alpha3\":\"SDS\",\"color\":\"#FFB703\"}"
+  },
+  {
+    "country": "sn",
+    "value": "{\"name\":\"Senegal\",\"alpha3\":\"SEN\",\"color\":\"#FB8500\"}"
+  },
+  {
+    "country": "sl",
+    "value": "{\"name\":\"Sierra Leone\",\"alpha3\":\"SLE\",\"color\":\"#F3722C\"}"
+  },
+  {
+    "country": "so",
+    "value": "{\"name\":\"Somalia\",\"alpha3\":\"SOM\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "za",
+    "value": "{\"name\":\"South Africa\",\"alpha3\":\"ZAF\",\"color\":\"#FFBA08\"}"
+  },
+  {
+    "country": "sd",
+    "value": "{\"name\":\"Sudan\",\"alpha3\":\"SDN\",\"color\":\"#FAA307\"}"
+  },
+  {
+    "country": "tz",
+    "value": "{\"name\":\"Tanzania\",\"alpha3\":\"TZA\",\"color\":\"#E9C46A\"}"
+  },
+  {
+    "country": "tg",
+    "value": "{\"name\":\"Togo\",\"alpha3\":\"TGO\",\"color\":\"#F4D06F\"}"
+  },
+  {
+    "country": "tn",
+    "value": "{\"name\":\"Tunisia\",\"alpha3\":\"TUN\",\"color\":\"#FCA311\"}"
+  },
+  {
+    "country": "ug",
+    "value": "{\"name\":\"Uganda\",\"alpha3\":\"UGA\",\"color\":\"#FFB703\"}"
+  },
+  {
+    "country": "eh",
+    "value": "{\"name\":\"W. Sahara\",\"alpha3\":\"SAH\",\"color\":\"#FB8500\"}"
+  },
+  {
+    "country": "zm",
+    "value": "{\"name\":\"Zambia\",\"alpha3\":\"ZMB\",\"color\":\"#F3722C\"}"
+  },
+  {
+    "country": "zw",
+    "value": "{\"name\":\"Zimbabwe\",\"alpha3\":\"ZWE\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "aq",
+    "value": "{\"name\":\"Antarctica\",\"alpha3\":\"ATA\",\"color\":\"#B0BEC5\"}"
+  },
+  {
+    "country": "af",
+    "value": "{\"name\":\"Afghanistan\",\"alpha3\":\"AFG\",\"color\":\"#2A9D8F\"}"
+  },
+  {
+    "country": "am",
+    "value": "{\"name\":\"Armenia\",\"alpha3\":\"ARM\",\"color\":\"#38A3A5\"}"
+  },
+  {
+    "country": "az",
+    "value": "{\"name\":\"Azerbaijan\",\"alpha3\":\"AZE\",\"color\":\"#22577A\"}"
+  },
+  {
+    "country": "bd",
+    "value": "{\"name\":\"Bangladesh\",\"alpha3\":\"BGD\",\"color\":\"#57CC99\"}"
+  },
+  {
+    "country": "bt",
+    "value": "{\"name\":\"Bhutan\",\"alpha3\":\"BTN\",\"color\":\"#80ED99\"}"
+  },
+  {
+    "country": "bn",
+    "value": "{\"name\":\"Brunei\",\"alpha3\":\"BRN\",\"color\":\"#118AB2\"}"
+  },
+  {
+    "country": "kh",
+    "value": "{\"name\":\"Cambodia\",\"alpha3\":\"KHM\",\"color\":\"#06D6A0\"}"
+  },
+  {
+    "country": "cn",
+    "value": "{\"name\":\"China\",\"alpha3\":\"CHN\",\"color\":\"#40916C\"}"
+  },
+  {
+    "country": "cy",
+    "value": "{\"name\":\"Cyprus\",\"alpha3\":\"CYP\",\"color\":\"#52B788\"}"
+  },
+  {
+    "country": "ge",
+    "value": "{\"name\":\"Georgia\",\"alpha3\":\"GEO\",\"color\":\"#74C69D\"}"
+  },
+  {
+    "country": "in",
+    "value": "{\"name\":\"India\",\"alpha3\":\"IND\",\"color\":\"#2A9D8F\"}"
+  },
+  {
+    "country": "id",
+    "value": "{\"name\":\"Indonesia\",\"alpha3\":\"IDN\",\"color\":\"#38A3A5\"}"
+  },
+  {
+    "country": "ir",
+    "value": "{\"name\":\"Iran\",\"alpha3\":\"IRN\",\"color\":\"#22577A\"}"
+  },
+  {
+    "country": "iq",
+    "value": "{\"name\":\"Iraq\",\"alpha3\":\"IRQ\",\"color\":\"#57CC99\"}"
+  },
+  {
+    "country": "il",
+    "value": "{\"name\":\"Israel\",\"alpha3\":\"ISR\",\"color\":\"#80ED99\"}"
+  },
+  {
+    "country": "jp",
+    "value": "{\"name\":\"Japan\",\"alpha3\":\"JPN\",\"color\":\"#118AB2\"}"
+  },
+  {
+    "country": "jo",
+    "value": "{\"name\":\"Jordan\",\"alpha3\":\"JOR\",\"color\":\"#06D6A0\"}"
+  },
+  {
+    "country": "kz",
+    "value": "{\"name\":\"Kazakhstan\",\"alpha3\":\"KAZ\",\"color\":\"#40916C\"}"
+  },
+  {
+    "country": "kw",
+    "value": "{\"name\":\"Kuwait\",\"alpha3\":\"KWT\",\"color\":\"#52B788\"}"
+  },
+  {
+    "country": "kg",
+    "value": "{\"name\":\"Kyrgyzstan\",\"alpha3\":\"KGZ\",\"color\":\"#74C69D\"}"
+  },
+  {
+    "country": "la",
+    "value": "{\"name\":\"Laos\",\"alpha3\":\"LAO\",\"color\":\"#2A9D8F\"}"
+  },
+  {
+    "country": "lb",
+    "value": "{\"name\":\"Lebanon\",\"alpha3\":\"LBN\",\"color\":\"#38A3A5\"}"
+  },
+  {
+    "country": "my",
+    "value": "{\"name\":\"Malaysia\",\"alpha3\":\"MYS\",\"color\":\"#22577A\"}"
+  },
+  {
+    "country": "mn",
+    "value": "{\"name\":\"Mongolia\",\"alpha3\":\"MNG\",\"color\":\"#57CC99\"}"
+  },
+  {
+    "country": "mm",
+    "value": "{\"name\":\"Myanmar\",\"alpha3\":\"MMR\",\"color\":\"#80ED99\"}"
+  },
+  {
+    "country": "np",
+    "value": "{\"name\":\"Nepal\",\"alpha3\":\"NPL\",\"color\":\"#06D6A0\"}"
+  },
+  {
+    "country": "kp",
+    "value": "{\"name\":\"North Korea\",\"alpha3\":\"PRK\",\"color\":\"#40916C\"}"
+  },
+  {
+    "country": "om",
+    "value": "{\"name\":\"Oman\",\"alpha3\":\"OMN\",\"color\":\"#52B788\"}"
+  },
+  {
+    "country": "pk",
+    "value": "{\"name\":\"Pakistan\",\"alpha3\":\"PAK\",\"color\":\"#74C69D\"}"
+  },
+  {
+    "country": "ps",
+    "value": "{\"name\":\"Palestine\",\"alpha3\":\"PSX\",\"color\":\"#2A9D8F\"}"
+  },
+  {
+    "country": "ph",
+    "value": "{\"name\":\"Philippines\",\"alpha3\":\"PHL\",\"color\":\"#38A3A5\"}"
+  },
+  {
+    "country": "qa",
+    "value": "{\"name\":\"Qatar\",\"alpha3\":\"QAT\",\"color\":\"#22577A\"}"
+  },
+  {
+    "country": "sa",
+    "value": "{\"name\":\"Saudi Arabia\",\"alpha3\":\"SAU\",\"color\":\"#57CC99\"}"
+  },
+  {
+    "country": "kr",
+    "value": "{\"name\":\"South Korea\",\"alpha3\":\"KOR\",\"color\":\"#80ED99\"}"
+  },
+  {
+    "country": "lk",
+    "value": "{\"name\":\"Sri Lanka\",\"alpha3\":\"LKA\",\"color\":\"#118AB2\"}"
+  },
+  {
+    "country": "sy",
+    "value": "{\"name\":\"Syria\",\"alpha3\":\"SYR\",\"color\":\"#06D6A0\"}"
+  },
+  {
+    "country": "cn-tw",
+    "value": "{\"name\":\"Taiwan\",\"alpha3\":\"TWN\",\"color\":\"#40916C\"}"
+  },
+  {
+    "country": "tj",
+    "value": "{\"name\":\"Tajikistan\",\"alpha3\":\"TJK\",\"color\":\"#52B788\"}"
+  },
+  {
+    "country": "th",
+    "value": "{\"name\":\"Thailand\",\"alpha3\":\"THA\",\"color\":\"#74C69D\"}"
+  },
+  {
+    "country": "tl",
+    "value": "{\"name\":\"Timor-Leste\",\"alpha3\":\"TLS\",\"color\":\"#2A9D8F\"}"
+  },
+  {
+    "country": "tr",
+    "value": "{\"name\":\"Turkey\",\"alpha3\":\"TUR\",\"color\":\"#38A3A5\"}"
+  },
+  {
+    "country": "tm",
+    "value": "{\"name\":\"Turkmenistan\",\"alpha3\":\"TKM\",\"color\":\"#22577A\"}"
+  },
+  {
+    "country": "ae",
+    "value": "{\"name\":\"United Arab Emirates\",\"alpha3\":\"ARE\",\"color\":\"#57CC99\"}"
+  },
+  {
+    "country": "uz",
+    "value": "{\"name\":\"Uzbekistan\",\"alpha3\":\"UZB\",\"color\":\"#80ED99\"}"
+  },
+  {
+    "country": "vn",
+    "value": "{\"name\":\"Vietnam\",\"alpha3\":\"VNM\",\"color\":\"#118AB2\"}"
+  },
+  {
+    "country": "ye",
+    "value": "{\"name\":\"Yemen\",\"alpha3\":\"YEM\",\"color\":\"#06D6A0\"}"
+  },
+  {
+    "country": "al",
+    "value": "{\"name\":\"Albania\",\"alpha3\":\"ALB\",\"color\":\"#4895EF\"}"
+  },
+  {
+    "country": "at",
+    "value": "{\"name\":\"Austria\",\"alpha3\":\"AUT\",\"color\":\"#4361EE\"}"
+  },
+  {
+    "country": "by",
+    "value": "{\"name\":\"Belarus\",\"alpha3\":\"BLR\",\"color\":\"#3F37C9\"}"
+  },
+  {
+    "country": "be",
+    "value": "{\"name\":\"Belgium\",\"alpha3\":\"BEL\",\"color\":\"#7209B7\"}"
+  },
+  {
+    "country": "ba",
+    "value": "{\"name\":\"Bosnia and Herz.\",\"alpha3\":\"BIH\",\"color\":\"#B5179E\"}"
+  },
+  {
+    "country": "bg",
+    "value": "{\"name\":\"Bulgaria\",\"alpha3\":\"BGR\",\"color\":\"#9D4EDD\"}"
+  },
+  {
+    "country": "hr",
+    "value": "{\"name\":\"Croatia\",\"alpha3\":\"HRV\",\"color\":\"#560BAD\"}"
+  },
+  {
+    "country": "cz",
+    "value": "{\"name\":\"Czechia\",\"alpha3\":\"CZE\",\"color\":\"#5C6BC0\"}"
+  },
+  {
+    "country": "dk",
+    "value": "{\"name\":\"Denmark\",\"alpha3\":\"DNK\",\"color\":\"#6979C4\"}"
+  },
+  {
+    "country": "ee",
+    "value": "{\"name\":\"Estonia\",\"alpha3\":\"EST\",\"color\":\"#8590E4\"}"
+  },
+  {
+    "country": "fi",
+    "value": "{\"name\":\"Finland\",\"alpha3\":\"FIN\",\"color\":\"#4895EF\"}"
+  },
+  {
+    "country": "de",
+    "value": "{\"name\":\"Germany\",\"alpha3\":\"DEU\",\"color\":\"#3F37C9\"}"
+  },
+  {
+    "country": "gr",
+    "value": "{\"name\":\"Greece\",\"alpha3\":\"GRC\",\"color\":\"#7209B7\"}"
+  },
+  {
+    "country": "hu",
+    "value": "{\"name\":\"Hungary\",\"alpha3\":\"HUN\",\"color\":\"#B5179E\"}"
+  },
+  {
+    "country": "is",
+    "value": "{\"name\":\"Iceland\",\"alpha3\":\"ISL\",\"color\":\"#9D4EDD\"}"
+  },
+  {
+    "country": "ie",
+    "value": "{\"name\":\"Ireland\",\"alpha3\":\"IRL\",\"color\":\"#560BAD\"}"
+  },
+  {
+    "country": "it",
+    "value": "{\"name\":\"Italy\",\"alpha3\":\"ITA\",\"color\":\"#5C6BC0\"}"
+  },
+  {
+    "country": "lv",
+    "value": "{\"name\":\"Latvia\",\"alpha3\":\"LVA\",\"color\":\"#8590E4\"}"
+  },
+  {
+    "country": "lt",
+    "value": "{\"name\":\"Lithuania\",\"alpha3\":\"LTU\",\"color\":\"#4895EF\"}"
+  },
+  {
+    "country": "lu",
+    "value": "{\"name\":\"Luxembourg\",\"alpha3\":\"LUX\",\"color\":\"#4361EE\"}"
+  },
+  {
+    "country": "md",
+    "value": "{\"name\":\"Moldova\",\"alpha3\":\"MDA\",\"color\":\"#3F37C9\"}"
+  },
+  {
+    "country": "me",
+    "value": "{\"name\":\"Montenegro\",\"alpha3\":\"MNE\",\"color\":\"#7209B7\"}"
+  },
+  {
+    "country": "nl",
+    "value": "{\"name\":\"Netherlands\",\"alpha3\":\"NLD\",\"color\":\"#B5179E\"}"
+  },
+  {
+    "country": "mk",
+    "value": "{\"name\":\"North Macedonia\",\"alpha3\":\"MKD\",\"color\":\"#9D4EDD\"}"
+  },
+  {
+    "country": "pl",
+    "value": "{\"name\":\"Poland\",\"alpha3\":\"POL\",\"color\":\"#5C6BC0\"}"
+  },
+  {
+    "country": "pt",
+    "value": "{\"name\":\"Portugal\",\"alpha3\":\"PRT\",\"color\":\"#6979C4\"}"
+  },
+  {
+    "country": "ro",
+    "value": "{\"name\":\"Romania\",\"alpha3\":\"ROU\",\"color\":\"#8590E4\"}"
+  },
+  {
+    "country": "ru",
+    "value": "{\"name\":\"Russia\",\"alpha3\":\"RUS\",\"color\":\"#4895EF\"}"
+  },
+  {
+    "country": "rs",
+    "value": "{\"name\":\"Serbia\",\"alpha3\":\"SRB\",\"color\":\"#4361EE\"}"
+  },
+  {
+    "country": "sk",
+    "value": "{\"name\":\"Slovakia\",\"alpha3\":\"SVK\",\"color\":\"#3F37C9\"}"
+  },
+  {
+    "country": "si",
+    "value": "{\"name\":\"Slovenia\",\"alpha3\":\"SVN\",\"color\":\"#7209B7\"}"
+  },
+  {
+    "country": "es",
+    "value": "{\"name\":\"Spain\",\"alpha3\":\"ESP\",\"color\":\"#B5179E\"}"
+  },
+  {
+    "country": "se",
+    "value": "{\"name\":\"Sweden\",\"alpha3\":\"SWE\",\"color\":\"#9D4EDD\"}"
+  },
+  {
+    "country": "ch",
+    "value": "{\"name\":\"Switzerland\",\"alpha3\":\"CHE\",\"color\":\"#560BAD\"}"
+  },
+  {
+    "country": "ua",
+    "value": "{\"name\":\"Ukraine\",\"alpha3\":\"UKR\",\"color\":\"#5C6BC0\"}"
+  },
+  {
+    "country": "gb",
+    "value": "{\"name\":\"United Kingdom\",\"alpha3\":\"GBR\",\"color\":\"#6979C4\"}"
+  },
+  {
+    "country": "bs",
+    "value": "{\"name\":\"Bahamas\",\"alpha3\":\"BHS\",\"color\":\"#EF476F\"}"
+  },
+  {
+    "country": "bz",
+    "value": "{\"name\":\"Belize\",\"alpha3\":\"BLZ\",\"color\":\"#06D6A0\"}"
+  },
+  {
+    "country": "ca",
+    "value": "{\"name\":\"Canada\",\"alpha3\":\"CAN\",\"color\":\"#118AB2\"}"
+  },
+  {
+    "country": "cr",
+    "value": "{\"name\":\"Costa Rica\",\"alpha3\":\"CRI\",\"color\":\"#FFD166\"}"
+  },
+  {
+    "country": "cu",
+    "value": "{\"name\":\"Cuba\",\"alpha3\":\"CUB\",\"color\":\"#E07A5F\"}"
+  },
+  {
+    "country": "do",
+    "value": "{\"name\":\"Dominican Rep.\",\"alpha3\":\"DOM\",\"color\":\"#073B4C\"}"
+  },
+  {
+    "country": "sv",
+    "value": "{\"name\":\"El Salvador\",\"alpha3\":\"SLV\",\"color\":\"#3D405B\"}"
+  },
+  {
+    "country": "gl",
+    "value": "{\"name\":\"Greenland\",\"alpha3\":\"GRL\",\"color\":\"#81B29A\"}"
+  },
+  {
+    "country": "gt",
+    "value": "{\"name\":\"Guatemala\",\"alpha3\":\"GTM\",\"color\":\"#F2CC8F\"}"
+  },
+  {
+    "country": "ht",
+    "value": "{\"name\":\"Haiti\",\"alpha3\":\"HTI\",\"color\":\"#C77DFF\"}"
+  },
+  {
+    "country": "hn",
+    "value": "{\"name\":\"Honduras\",\"alpha3\":\"HND\",\"color\":\"#EF476F\"}"
+  },
+  {
+    "country": "jm",
+    "value": "{\"name\":\"Jamaica\",\"alpha3\":\"JAM\",\"color\":\"#06D6A0\"}"
+  },
+  {
+    "country": "mx",
+    "value": "{\"name\":\"Mexico\",\"alpha3\":\"MEX\",\"color\":\"#118AB2\"}"
+  },
+  {
+    "country": "ni",
+    "value": "{\"name\":\"Nicaragua\",\"alpha3\":\"NIC\",\"color\":\"#FFD166\"}"
+  },
+  {
+    "country": "pa",
+    "value": "{\"name\":\"Panama\",\"alpha3\":\"PAN\",\"color\":\"#E07A5F\"}"
+  },
+  {
+    "country": "pr",
+    "value": "{\"name\":\"Puerto Rico\",\"alpha3\":\"PRI\",\"color\":\"#073B4C\"}"
+  },
+  {
+    "country": "tt",
+    "value": "{\"name\":\"Trinidad and Tobago\",\"alpha3\":\"TTO\",\"color\":\"#3D405B\"}"
+  },
+  {
+    "country": "us",
+    "value": "{\"name\":\"United States of America\",\"alpha3\":\"USA\",\"color\":\"#81B29A\"}"
+  },
+  {
+    "country": "au",
+    "value": "{\"name\":\"Australia\",\"alpha3\":\"AUS\",\"color\":\"#48CAE4\"}"
+  },
+  {
+    "country": "fj",
+    "value": "{\"name\":\"Fiji\",\"alpha3\":\"FJI\",\"color\":\"#00B4D8\"}"
+  },
+  {
+    "country": "nc",
+    "value": "{\"name\":\"New Caledonia\",\"alpha3\":\"NCL\",\"color\":\"#0096C7\"}"
+  },
+  {
+    "country": "nz",
+    "value": "{\"name\":\"New Zealand\",\"alpha3\":\"NZL\",\"color\":\"#0077B6\"}"
+  },
+  {
+    "country": "pg",
+    "value": "{\"name\":\"Papua New Guinea\",\"alpha3\":\"PNG\",\"color\":\"#023E8A\"}"
+  },
+  {
+    "country": "sb",
+    "value": "{\"name\":\"Solomon Is.\",\"alpha3\":\"SLB\",\"color\":\"#ADE8F4\"}"
+  },
+  {
+    "country": "vu",
+    "value": "{\"name\":\"Vanuatu\",\"alpha3\":\"VUT\",\"color\":\"#90E0EF\"}"
+  },
+  {
+    "country": "tf",
+    "value": "{\"name\":\"Fr. S. Antarctic Lands\",\"alpha3\":\"ATF\",\"color\":\"#4a90d9\"}"
+  },
+  {
+    "country": "ar",
+    "value": "{\"name\":\"Argentina\",\"alpha3\":\"ARG\",\"color\":\"#E63946\"}"
+  },
+  {
+    "country": "bo",
+    "value": "{\"name\":\"Bolivia\",\"alpha3\":\"BOL\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "br",
+    "value": "{\"name\":\"Brazil\",\"alpha3\":\"BRA\",\"color\":\"#A8DADC\"}"
+  },
+  {
+    "country": "cl",
+    "value": "{\"name\":\"Chile\",\"alpha3\":\"CHL\",\"color\":\"#457B9D\"}"
+  },
+  {
+    "country": "co",
+    "value": "{\"name\":\"Colombia\",\"alpha3\":\"COL\",\"color\":\"#1D3557\"}"
+  },
+  {
+    "country": "ec",
+    "value": "{\"name\":\"Ecuador\",\"alpha3\":\"ECU\",\"color\":\"#FF6B6B\"}"
+  },
+  {
+    "country": "fk",
+    "value": "{\"name\":\"Falkland Is.\",\"alpha3\":\"FLK\",\"color\":\"#E07A5F\"}"
+  },
+  {
+    "country": "gy",
+    "value": "{\"name\":\"Guyana\",\"alpha3\":\"GUY\",\"color\":\"#3D405B\"}"
+  },
+  {
+    "country": "py",
+    "value": "{\"name\":\"Paraguay\",\"alpha3\":\"PRY\",\"color\":\"#81B29A\"}"
+  },
+  {
+    "country": "pe",
+    "value": "{\"name\":\"Peru\",\"alpha3\":\"PER\",\"color\":\"#F2CC8F\"}"
+  },
+  {
+    "country": "sr",
+    "value": "{\"name\":\"Suriname\",\"alpha3\":\"SUR\",\"color\":\"#E63946\"}"
+  },
+  {
+    "country": "uy",
+    "value": "{\"name\":\"Uruguay\",\"alpha3\":\"URY\",\"color\":\"#F4A261\"}"
+  },
+  {
+    "country": "ve",
+    "value": "{\"name\":\"Venezuela\",\"alpha3\":\"VEN\",\"color\":\"#A8DADC\"}"
+  }
+]

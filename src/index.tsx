@@ -21,33 +21,40 @@ export interface ExtendedWorldMapProps {
   title?: string
   size?: SizeOption | 'responsive' | number
   onClick?: (countryContext: CountryContext<string>) => void
-  infoLink?: (countryContext: CountryContext<string>) => string
+  tooltipText?: (countryContext: CountryContext<string>) => string
+  infoLink: boolean
+  mapFrame: boolean
+  interaction?: boolean
 }
 
-export const ExtendedWorldMap = ({ title, size, onClick, infoLink }: ExtendedWorldMapProps) => {
+export const ExtendedWorldMap = ({
+  title,
+  size,
+  onClick,
+  tooltipText,
+  infoLink = false,
+  mapFrame = false,
+  interaction = true,
+}: ExtendedWorldMapProps) => {
   return (
     <WorldMap
       color="#ffffff"
       size={size || 'xxl'}
       title={title || 'World Map'}
       data={defaultData}
-      richInteraction={true}
-      frame={true}
+      richInteraction={interaction}
+      frame={mapFrame}
       valuePrefix="people"
       onClickFunction={(countryContext: CountryContext<string>) => {
         onClick && onClick(countryContext)
       }}
       tooltipTextFunction={(countryContext: CountryContext<string>) => {
-        return `${countryContext.countryName}`
+        return tooltipText ? tooltipText(countryContext) : `${countryContext.countryName}`
       }}
-      // hrefFunction={(countryContext: CountryContext<string>) => {
-      //   return infoLink
-      //     ? infoLink(countryContext)
-      //     : `https://en.wikipedia.org/wiki/${countryContext.countryName}`
-      // }}
+      hrefFunction={(countryContext: CountryContext<string>) => {
+        return infoLink ? `https://en.wikipedia.org/wiki/${countryContext.countryName}` : undefined
+      }}
       styleFunction={getStyle}
-      // regionClassName="no-hover"
-      // textLabelFunction={undefined}
     />
   )
 }

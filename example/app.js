@@ -12,7 +12,8 @@ export const WorldMap = () => {
         <ExtendedWorldMap
           onClick={(countryContext) => console.log('Clicked country context:', countryContext)}
           infoLink={false}
-          size="responsive"
+          size="xxl"
+          mapFrame={true}
         />
       </div>
     </>

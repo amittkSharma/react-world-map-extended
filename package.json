@@ -47,7 +47,8 @@
     "release": "commit-and-tag-version"
   },
   "dependencies": {
-    "react-svg-worldmap": "2.0.2",
-    "joi": "18.2.1"
+    "i18n-iso-countries-extended-info": "^1.8.0",
+    "joi": "18.2.1",
+    "react-svg-worldmap": "2.0.2"
   }
 }

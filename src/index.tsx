@@ -3,9 +3,10 @@ import React from 'react'
 import WorldMap from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
+import { DefaultMapDataOptions } from './defaultMapDataOptions'
 import { DefaultMapOptions } from './defaultMapOptions'
 import { defaultMapData } from './rawData/defaultMapData'
-import { defaultData } from './rawData/getDefaultMapData'
+import { defaultData, getCountryDetail } from './rawData/getDefaultMapData'
 
 const getBwStyle = () => {
   return {
@@ -48,7 +49,7 @@ const getColorStyle = (countryContext: CountryContext<string>) => {
 export interface ExtendedWorldMapProps {
   title?: string
   size?: SizeOption | 'responsive' | number
-  onClick?: (countryContext: CountryContext<string>) => void
+  onClick?: (value: string) => void
   tooltipText?: (countryContext: CountryContext<string>) => string
   infoLink: boolean
   mapFrame: boolean
@@ -65,24 +66,41 @@ export const ExtendedWorldMap = ({
   interaction = true,
 }: ExtendedWorldMapProps) => {
   const [mapColorOption, setMapColorOption] = React.useState<string>('BlackAndWhite')
+  const [mapDataOption, setMapDataOption] = React.useState<string>('CountryName')
 
   const onMapColorOptionChange = (value: string) => {
     setMapColorOption(value)
   }
 
+  const onMapDataOptionChange = (value: string) => {
+    setMapDataOption(value)
+  }
+
   return (
-    <span>
-      <DefaultMapOptions selectedValue={mapColorOption} onChange={onMapColorOptionChange} />
+    <>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'row',
+          justifyContent: 'flex-start',
+          marginLeft: '2.5em',
+        }}
+      >
+        <DefaultMapOptions selectedValue={mapColorOption} onChange={onMapColorOptionChange} />
+        <DefaultMapDataOptions selectedValue={mapDataOption} onChange={onMapDataOptionChange} />
+      </div>
       <WorldMap
         color="#ffffff"
         size={size || 'xxl'}
         title={title || 'World Map'}
-        data={defaultData}
+        data={mapDataOption === 'CountryName' ? defaultData : undefined}
         richInteraction={interaction}
         frame={mapFrame}
         valuePrefix="people"
         onClickFunction={(countryContext: CountryContext<string>) => {
-          onClick && onClick(countryContext)
+          const { countryName } = countryContext
+          const { capital } = getCountryDetail(countryName)
+          onClick && onClick(capital)
         }}
         tooltipTextFunction={(countryContext: CountryContext<string>) => {
           return tooltipText ? tooltipText(countryContext) : `${countryContext.countryName}`
@@ -96,6 +114,6 @@ export const ExtendedWorldMap = ({
           mapColorOption === 'BlackAndWhite' ? getBwStyle() : getColorStyle(countryContext)
         }
       />
-    </span>
+    </>
   )
 }

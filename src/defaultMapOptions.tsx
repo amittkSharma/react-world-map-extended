@@ -7,43 +7,36 @@ interface DefaultMapOptionsProps {
 
 export const DefaultMapOptions = ({ selectedValue, onChange }: DefaultMapOptionsProps) => {
   return (
-    <div
-      style={{
-        margin: '0 2em 0 2.5em',
-        width: 'fit-content',
-      }}
-    >
-      <fieldset style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
-        <legend>Select Map Option</legend>
+    <fieldset style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
+      <legend>Select Map Option</legend>
 
-        <div>
-          <input
-            type="radio"
-            id="BlackAndWhite"
-            name="mapOptions"
-            value="BlackAndWhite"
-            checked={selectedValue === 'BlackAndWhite'}
-            onChange={(e) => {
-              onChange(e.target.value)
-            }}
-          />
-          <label htmlFor="BlackAndWhite">Black & White</label>
-        </div>
+      <div>
+        <input
+          type="radio"
+          id="BlackAndWhite"
+          name="mapOptions"
+          value="BlackAndWhite"
+          checked={selectedValue === 'BlackAndWhite'}
+          onChange={(e) => {
+            onChange(e.target.value)
+          }}
+        />
+        <label htmlFor="BlackAndWhite">Black & White</label>
+      </div>
 
-        <div>
-          <input
-            type="radio"
-            id="Color"
-            name="mapOptions"
-            value="Color"
-            onChange={(e) => {
-              onChange(e.target.value)
-            }}
-            checked={selectedValue === 'Color'}
-          />
-          <label htmlFor="Color">Color</label>
-        </div>
-      </fieldset>
-    </div>
+      <div>
+        <input
+          type="radio"
+          id="Color"
+          name="mapOptions"
+          value="Color"
+          onChange={(e) => {
+            onChange(e.target.value)
+          }}
+          checked={selectedValue === 'Color'}
+        />
+        <label htmlFor="Color">Color</label>
+      </div>
+    </fieldset>
   )
 }

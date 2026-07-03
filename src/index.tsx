@@ -3,10 +3,10 @@ import React from 'react'
 import WorldMap from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
-import { DefaultMapDataOptions } from './defaultMapDataOptions'
-import { DefaultMapOptions } from './defaultMapOptions'
+import { mapColorOptions, mapDataOptions, MapDataOptions } from './constants'
 import { defaultMapData } from './rawData/defaultMapData'
 import { defaultData, getCountryDetail } from './rawData/getDefaultMapData'
+import { UserOptions } from './userOptions'
 
 const getBwStyle = () => {
   return {
@@ -66,14 +66,16 @@ export const ExtendedWorldMap = ({
   interaction = true,
 }: ExtendedWorldMapProps) => {
   const [mapColorOption, setMapColorOption] = React.useState<string>('BlackAndWhite')
-  const [mapDataOption, setMapDataOption] = React.useState<string>('CountryName')
+  const [mapDataOption, setMapDataOption] = React.useState<MapDataOptions>(
+    MapDataOptions.COUNTRY_NAME,
+  )
 
   const onMapColorOptionChange = (value: string) => {
     setMapColorOption(value)
   }
 
   const onMapDataOptionChange = (value: string) => {
-    setMapDataOption(value)
+    setMapDataOption(value as MapDataOptions)
   }
 
   return (
@@ -86,21 +88,29 @@ export const ExtendedWorldMap = ({
           marginLeft: '2.5em',
         }}
       >
-        <DefaultMapOptions selectedValue={mapColorOption} onChange={onMapColorOptionChange} />
-        <DefaultMapDataOptions selectedValue={mapDataOption} onChange={onMapDataOptionChange} />
+        <UserOptions
+          sources={mapColorOptions}
+          selectedValue={mapColorOption}
+          onChange={onMapColorOptionChange}
+        />
+        <UserOptions
+          sources={mapDataOptions}
+          selectedValue={mapDataOption}
+          onChange={onMapDataOptionChange}
+        />
       </div>
       <WorldMap
         color="#ffffff"
         size={size || 'xxl'}
         title={title || 'World Map'}
-        data={mapDataOption === 'CountryName' ? defaultData : undefined}
+        data={defaultData}
         richInteraction={interaction}
         frame={mapFrame}
         valuePrefix="people"
         onClickFunction={(countryContext: CountryContext<string>) => {
           const { countryName } = countryContext
-          const { capital } = getCountryDetail(countryName)
-          onClick && onClick(capital)
+          const info = getCountryDetail(countryName, mapDataOption) || {}
+          onClick && onClick(JSON.stringify(info, null, 2))
         }}
         tooltipTextFunction={(countryContext: CountryContext<string>) => {
           return tooltipText ? tooltipText(countryContext) : `${countryContext.countryName}`

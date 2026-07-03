@@ -1,22 +1,19 @@
 import React from 'react'
+import { LabelValue } from './types'
 
 interface DefaultMapDataOptionsProps {
+  sources: Array<LabelValue>
   selectedValue: string
   onChange: (value: string) => void
 }
 
-const Options = [
-  { label: 'Country Name', value: 'CountryName' },
-  { label: 'Country Name (with Capitals)', value: 'CountryNameWithCapitals' },
-]
-
-export const DefaultMapDataOptions = ({ selectedValue, onChange }: DefaultMapDataOptionsProps) => {
+export const UserOptions = ({ sources, selectedValue, onChange }: DefaultMapDataOptionsProps) => {
   return (
     <fieldset style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
       <legend>Select Map Data Option</legend>
 
-      {Options.map((option) => {
-        const { label, value } = option
+      {sources.map((source) => {
+        const { label, value } = source
         return (
           <div key={value}>
             <input
@@ -29,7 +26,7 @@ export const DefaultMapDataOptions = ({ selectedValue, onChange }: DefaultMapDat
                 onChange(e.target.value)
               }}
             />
-            <label htmlFor={Options[0].value}>{label}</label>
+            <label htmlFor={sources[0].value}>{label}</label>
           </div>
         )
       })}

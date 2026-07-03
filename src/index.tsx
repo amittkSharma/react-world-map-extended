@@ -21,10 +21,6 @@ const getBwStyle = () => {
 }
 
 const getColorStyle = (countryContext: CountryContext<string>) => {
-  if (countryContext.countryCode === 'NO') {
-    console.log(`context: ${JSON.stringify(countryContext, null, 2)}`)
-  }
-
   const result = defaultMapData.find(
     (v) => v.country.toLocaleUpperCase() === countryContext.countryCode,
   )

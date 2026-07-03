@@ -1,7 +1,7 @@
 {
   "name": "react-world-map-extended",
   "version": "0.0.0",
-  "description": "React HTML5 video providing functionality for marking and selecting frames, jumping back and forth between frames based on the fps.",
+  "description": "React World Map Extended is a React component that provides an interactive world map with extended features. It allows users to visualize data on a world map, customize the appearance, and interact with countries.",
   "author": "Amitt K Sharma",
   "license": "MIT",
   "main": "dist/index.js",
@@ -23,13 +23,13 @@
     "react-dom": ">=16.13.1"
   },
   "devDependencies": {
-    "@rsbuild/core": "^2.0.14",
-    "@rsbuild/plugin-react": "^2.0.1",
-    "@rsbuild/plugin-umd": "^1.0.7",
+    "@rsbuild/core": "2.1.4",
+    "@rsbuild/plugin-react": "2.1.0",
+    "@rsbuild/plugin-umd": "1.0.7",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "commit-and-tag-version": "12.7.3",
-    "node": "26.3.0",
+    "node": "26.4.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-test-renderer": "19.2.7",
@@ -47,8 +47,7 @@
     "release": "commit-and-tag-version"
   },
   "dependencies": {
-    "i18n-iso-countries-extended-info": "^1.8.0",
-    "joi": "18.2.1",
+    "i18n-iso-countries-extended-info": "1.8.0",
     "react-svg-worldmap": "2.0.2"
   }
 }

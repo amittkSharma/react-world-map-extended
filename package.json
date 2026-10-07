@@ -6,6 +6,9 @@
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "repository": {
     "type": "git",
@@ -23,28 +26,26 @@
     "react-dom": ">=16.13.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.15",
     "@rsbuild/core": "2.1.4",
     "@rsbuild/plugin-react": "2.1.0",
     "@rsbuild/plugin-umd": "1.0.7",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "commit-and-tag-version": "12.7.3",
-    "node": "26.4.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "react-test-renderer": "19.2.7",
-    "tslint": "6.1.3",
-    "tslint-react": "5.0.0",
     "typescript": "6.0.3"
   },
   "scripts": {
     "dev": "rsbuild dev",
-    "build": "rsbuild build --config rsbuild.prod.config.ts",
+    "build": "rsbuild build --config rsbuild.prod.config.ts && npm run build-types",
     "build-example": "rsbuild build",
-    "build-prod": "rsbuild build --config rsbuild.prod.config.ts",
-    "lint": "tslint -p .",
+    "build-prod": "npm run build",
+    "lint": "biome lint .",
     "build-package": "npm run lint && npm run build-example && npm run build-prod",
-    "release": "commit-and-tag-version"
+    "release": "commit-and-tag-version",
+    "build-types": "tsc -p . --emitDeclarationOnly --outDir dist"
   },
   "dependencies": {
     "i18n-iso-countries-extended-info": "1.8.0",

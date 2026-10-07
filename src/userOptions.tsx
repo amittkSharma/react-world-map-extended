@@ -1,5 +1,4 @@
-import React from 'react'
-import { LabelValue } from './types'
+import type { LabelValue } from './types'
 
 interface DefaultMapDataOptionsProps {
   sources: Array<LabelValue>

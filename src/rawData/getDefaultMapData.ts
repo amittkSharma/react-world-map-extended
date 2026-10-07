@@ -1,8 +1,8 @@
 import { registerLocale } from 'i18n-iso-countries'
 import { getCountryDetailInformationByName } from 'i18n-iso-countries-extended-info'
 import enLocale from 'i18n-iso-countries/langs/en.json'
-import { Data } from 'react-svg-worldmap'
-import { MapDataOptions } from 'src/constants'
+import type { Data } from 'react-svg-worldmap'
+import { MapDataOptions } from '../constants'
 import { defaultMapData } from './defaultMapData'
 
 registerLocale(enLocale)

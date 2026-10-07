@@ -1,4 +1,4 @@
-import { LabelValue } from './types'
+import type { LabelValue } from './types'
 
 export enum MapDataOptions {
   COUNTRY_NAME = 'CountryName',

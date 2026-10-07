@@ -106,7 +106,7 @@ export const ExtendedWorldMap = ({
         onClickFunction={(countryContext: CountryContext<string>) => {
           const { countryName } = countryContext
           const info = getCountryDetail(countryName, mapDataOption) || {}
-          onClick && onClick(JSON.stringify(info, null, 2))
+          onClick?.(JSON.stringify(info, null, 2))
         }}
         tooltipTextFunction={(countryContext: CountryContext<string>) => {
           return tooltipText ? tooltipText(countryContext) : `${countryContext.countryName}`

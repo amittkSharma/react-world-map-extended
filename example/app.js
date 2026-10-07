@@ -1,4 +1,3 @@
-import {} from 'react'
 import { ExtendedWorldMap } from '../src'
 import './style.css'
 

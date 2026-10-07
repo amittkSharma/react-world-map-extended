@@ -1,7 +1,0 @@
-{
-  "extends": "tslint-checker/tslint-react",
-  "rules": {
-    "no-submodule-imports": false,
-    "no-console": [true, "log", "error"]
-  }
-}

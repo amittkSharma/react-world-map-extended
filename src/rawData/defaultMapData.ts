@@ -72,7 +72,6 @@ export const defaultMapData: Data<string> = [
   { country: 'eh', value: JSON.stringify({ name: 'W. Sahara', alpha3: 'SAH', color: '#FB8500' }) },
   { country: 'zm', value: JSON.stringify({ name: 'Zambia', alpha3: 'ZMB', color: '#F3722C' }) },
   { country: 'zw', value: JSON.stringify({ name: 'Zimbabwe', alpha3: 'ZWE', color: '#F4A261' }) },
-  { country: 'aq', value: JSON.stringify({ name: 'Antarctica', alpha3: 'ATA', color: '#B0BEC5' }) },
   {
     country: 'af',
     value: JSON.stringify({ name: 'Afghanistan', alpha3: 'AFG', color: '#2A9D8F' }),
@@ -124,7 +123,7 @@ export const defaultMapData: Data<string> = [
   },
   { country: 'lk', value: JSON.stringify({ name: 'Sri Lanka', alpha3: 'LKA', color: '#118AB2' }) },
   { country: 'sy', value: JSON.stringify({ name: 'Syria', alpha3: 'SYR', color: '#06D6A0' }) },
-  { country: 'cn-tw', value: JSON.stringify({ name: 'Taiwan', alpha3: 'TWN', color: '#40916C' }) },
+  { country: 'tw', value: JSON.stringify({ name: 'Taiwan', alpha3: 'TWN', color: '#40916C' }) },
   { country: 'tj', value: JSON.stringify({ name: 'Tajikistan', alpha3: 'TJK', color: '#52B788' }) },
   { country: 'th', value: JSON.stringify({ name: 'Thailand', alpha3: 'THA', color: '#74C69D' }) },
   {
@@ -246,10 +245,6 @@ export const defaultMapData: Data<string> = [
     value: JSON.stringify({ name: 'Solomon Is.', alpha3: 'SLB', color: '#ADE8F4' }),
   },
   { country: 'vu', value: JSON.stringify({ name: 'Vanuatu', alpha3: 'VUT', color: '#90E0EF' }) },
-  {
-    country: 'tf',
-    value: JSON.stringify({ name: 'Fr. S. Antarctic Lands', alpha3: 'ATF', color: '#4a90d9' }),
-  },
   { country: 'ar', value: JSON.stringify({ name: 'Argentina', alpha3: 'ARG', color: '#E63946' }) },
   { country: 'bo', value: JSON.stringify({ name: 'Bolivia', alpha3: 'BOL', color: '#F4A261' }) },
   { country: 'br', value: JSON.stringify({ name: 'Brazil', alpha3: 'BRA', color: '#A8DADC' }) },

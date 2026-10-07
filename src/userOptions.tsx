@@ -1,34 +1,37 @@
 import type { LabelValue } from './types'
 
-interface DefaultMapDataOptionsProps {
-  sources: Array<LabelValue>
-  selectedValue: string
-  onChange: (value: string) => void
+interface UserOptionsProps<T extends string> {
+  legend: string
+  /** Radio group name; must be unique per group on the page (see useId in the caller). */
+  name: string
+  sources: Array<LabelValue<T>>
+  selectedValue: T
+  onChange: (value: T) => void
 }
 
-export const UserOptions = ({ sources, selectedValue, onChange }: DefaultMapDataOptionsProps) => {
+export const UserOptions = <T extends string>({
+  legend,
+  name,
+  sources,
+  selectedValue,
+  onChange,
+}: UserOptionsProps<T>) => {
   return (
     <fieldset style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
-      <legend>Select Map Data Option</legend>
+      <legend>{legend}</legend>
 
-      {sources.map((source) => {
-        const { label, value } = source
-        return (
-          <div key={value}>
-            <input
-              type="radio"
-              id={value}
-              name={label}
-              value={value}
-              checked={selectedValue === value}
-              onChange={(e) => {
-                onChange(e.target.value)
-              }}
-            />
-            <label htmlFor={sources[0].value}>{label}</label>
-          </div>
-        )
-      })}
+      {sources.map(({ label, value }) => (
+        <label key={value}>
+          <input
+            type="radio"
+            name={name}
+            value={value}
+            checked={selectedValue === value}
+            onChange={() => onChange(value)}
+          />
+          {label}
+        </label>
+      ))}
     </fieldset>
   )
 }

@@ -6,7 +6,7 @@ export enum MapDataOptions {
   COUNTRY_LANGUAGE_INFO = 'CountryLanguageInfo',
   COUNTRY_CURRENCY_INFO = 'CountryCurrencyInfo',
   COUNTRY_COMPLETE_INFO = 'CountryCompleteInfo',
-  COUNTRY_REGION_INFO = 'CountryRegionInfo', // IGNORE
+  COUNTRY_REGION_INFO = 'CountryRegionInfo',
 }
 
 export enum MapColorOptions {
@@ -14,7 +14,7 @@ export enum MapColorOptions {
   COLORFUL = 'Colorful',
 }
 
-export const mapDataOptions: Array<LabelValue> = [
+export const mapDataOptions: Array<LabelValue<MapDataOptions>> = [
   { label: 'Only Name', value: MapDataOptions.COUNTRY_NAME },
   { label: 'Capital', value: MapDataOptions.COUNTRY_CAPITAL },
   { label: 'Region Information', value: MapDataOptions.COUNTRY_REGION_INFO },
@@ -23,7 +23,7 @@ export const mapDataOptions: Array<LabelValue> = [
   { label: 'Complete Information', value: MapDataOptions.COUNTRY_COMPLETE_INFO },
 ]
 
-export const mapColorOptions: Array<LabelValue> = [
+export const mapColorOptions: Array<LabelValue<MapColorOptions>> = [
   { label: 'Black and White', value: MapColorOptions.BLACK_AND_WHITE },
   { label: 'Colorful', value: MapColorOptions.COLORFUL },
 ]

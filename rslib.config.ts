@@ -1,24 +1,13 @@
 import { pluginReact } from '@rsbuild/plugin-react'
 import { defineConfig } from '@rslib/core'
 
-// Externals are listed explicitly (autoExternal off) so the small en.json locale is inlined:
-// a bare `import ... from 'pkg/x.json'` would break native Node ESM consumers.
-const output = {
-  target: 'web' as const,
-  autoExternal: false,
-  externals: [
-    /^react(\/.*)?$/,
-    'react-svg-worldmap',
-    'i18n-iso-countries',
-    'i18n-iso-countries-extended-info',
-  ],
-}
-
+// dependencies and peerDependencies are externalised automatically
 export default defineConfig({
   source: { entry: { index: './src/index.tsx' } },
   lib: [
-    { format: 'esm', dts: { autoExtension: true }, output },
-    { format: 'cjs', dts: { autoExtension: true }, output },
+    { format: 'esm', dts: { autoExtension: true } },
+    { format: 'cjs', dts: { autoExtension: true } },
   ],
+  output: { target: 'web' },
   plugins: [pluginReact()],
 })

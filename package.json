@@ -44,8 +44,8 @@
   },
   "homepage": "https://github.com/amittkSharma/react-world-map-extended#readme",
   "peerDependencies": {
-    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
-    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "peerDependenciesMeta": {
     "react-dom": {
@@ -57,24 +57,29 @@
     "@rsbuild/core": "2.1.4",
     "@rsbuild/plugin-react": "2.1.0",
     "@rslib/core": "1.0.3",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "commit-and-tag-version": "12.7.3",
+    "jsdom": "29.1.1",
     "react": "19.2.7",
     "react-dom": "19.2.7",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "vitest": "5.0.3"
   },
   "scripts": {
     "dev": "rsbuild dev",
     "build": "rslib build",
     "build-example": "rsbuild build",
     "lint": "biome lint .",
-    "build-package": "npm run lint && npm run typecheck && npm run build",
+    "build-package": "npm run lint && npm run typecheck && npm test && npm run build",
     "release": "commit-and-tag-version",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc -p tests --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
-    "i18n-iso-countries": "7.14.0",
     "i18n-iso-countries-extended-info": "1.8.0",
     "react-svg-worldmap": "2.0.2"
   }

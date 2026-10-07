@@ -1,54 +1,32 @@
-import React from 'react'
-
+import { useId, useState } from 'react'
 import WorldMap from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
-import { mapColorOptions, mapDataOptions, MapDataOptions } from './constants'
-import { defaultMapData } from './rawData/defaultMapData'
-import { defaultData, getCountryDetail } from './rawData/getDefaultMapData'
+import { MapColorOptions, MapDataOptions, mapColorOptions, mapDataOptions } from './constants'
+import { countryColors, defaultMapData } from './rawData/defaultMapData'
+import { getCountryDetail } from './rawData/getDefaultMapData'
 import { UserOptions } from './userOptions'
 
-const getBwStyle = () => {
-  return {
-    fill: '#ffffff',
-    fillOpacity: 2,
-    stroke: '#000000',
-    strokeWidth: 1.2,
-    strokeOpacity: 0.7,
-    cursor: 'pointer',
-    outline: 'none',
-  }
+const baseStyle = {
+  fill: '#ffffff',
+  fillOpacity: 1,
+  stroke: '#000000',
+  strokeWidth: 1.2,
+  strokeOpacity: 0.7,
+  cursor: 'pointer',
+  outline: 'none',
 }
 
-const getColorStyle = (countryContext: CountryContext<string>) => {
-  const result = defaultMapData.find(
-    (v) => v.country.toLocaleUpperCase() === countryContext.countryCode,
-  )
-
-  let color = '#ffffff'
-
-  if (result) {
-    color = JSON.parse(result.value).color
-  }
-
-  return {
-    fill: color,
-    fillOpacity: 2,
-    stroke: '#000000',
-    strokeWidth: 1.2,
-    strokeOpacity: 0.7,
-    cursor: 'pointer',
-    outline: 'none',
-  }
-}
+const getCountryColor = (countryCode: string) =>
+  countryColors[countryCode.toUpperCase() as keyof typeof countryColors] ?? baseStyle.fill
 
 export interface ExtendedWorldMapProps {
   title?: string
   size?: SizeOption | 'responsive' | number
   onClick?: (value: string) => void
   tooltipText?: (countryContext: CountryContext<string>) => string
-  infoLink: boolean
-  mapFrame: boolean
+  infoLink?: boolean
+  mapFrame?: boolean
   interaction?: boolean
 }
 
@@ -61,18 +39,11 @@ export const ExtendedWorldMap = ({
   mapFrame = false,
   interaction = true,
 }: ExtendedWorldMapProps) => {
-  const [mapColorOption, setMapColorOption] = React.useState<string>('BlackAndWhite')
-  const [mapDataOption, setMapDataOption] = React.useState<MapDataOptions>(
-    MapDataOptions.COUNTRY_NAME,
+  const groupId = useId()
+  const [mapColorOption, setMapColorOption] = useState<MapColorOptions>(
+    MapColorOptions.BLACK_AND_WHITE,
   )
-
-  const onMapColorOptionChange = (value: string) => {
-    setMapColorOption(value)
-  }
-
-  const onMapDataOptionChange = (value: string) => {
-    setMapDataOption(value as MapDataOptions)
-  }
+  const [mapDataOption, setMapDataOption] = useState<MapDataOptions>(MapDataOptions.COUNTRY_NAME)
 
   return (
     <>
@@ -85,39 +56,43 @@ export const ExtendedWorldMap = ({
         }}
       >
         <UserOptions
+          legend="Map colours"
+          name={`${groupId}-color`}
           sources={mapColorOptions}
           selectedValue={mapColorOption}
-          onChange={onMapColorOptionChange}
+          onChange={setMapColorOption}
         />
         <UserOptions
+          legend="Information on click"
+          name={`${groupId}-data`}
           sources={mapDataOptions}
           selectedValue={mapDataOption}
-          onChange={onMapDataOptionChange}
+          onChange={setMapDataOption}
         />
       </div>
       <WorldMap
         color="#ffffff"
         size={size || 'xxl'}
         title={title || 'World Map'}
-        data={defaultData}
+        data={defaultMapData}
         richInteraction={interaction}
         frame={mapFrame}
-        valuePrefix="people"
-        onClickFunction={(countryContext: CountryContext<string>) => {
-          const { countryName } = countryContext
-          const info = getCountryDetail(countryName, mapDataOption) || {}
+        onClickFunction={({ countryCode }) => {
+          const info = getCountryDetail(countryCode, mapDataOption) ?? {}
           onClick?.(JSON.stringify(info, null, 2))
         }}
-        tooltipTextFunction={(countryContext: CountryContext<string>) => {
-          return tooltipText ? tooltipText(countryContext) : `${countryContext.countryName}`
-        }}
-        hrefFunction={(countryContext: CountryContext<string>) => {
-          return infoLink
-            ? `https://en.wikipedia.org/wiki/${countryContext.countryName}`
+        tooltipTextFunction={(countryContext) =>
+          tooltipText ? tooltipText(countryContext) : countryContext.countryName
+        }
+        hrefFunction={({ countryName }) =>
+          infoLink
+            ? `https://en.wikipedia.org/wiki/${encodeURIComponent(countryName.replace(/ /g, '_'))}`
             : undefined
-        }}
-        styleFunction={(countryContext: CountryContext<string>) =>
-          mapColorOption === 'BlackAndWhite' ? getBwStyle() : getColorStyle(countryContext)
+        }
+        styleFunction={({ countryCode }) =>
+          mapColorOption === MapColorOptions.COLORFUL
+            ? { ...baseStyle, fill: getCountryColor(countryCode) }
+            : baseStyle
         }
       />
     </>

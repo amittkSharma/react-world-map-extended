@@ -1,76 +1,49 @@
-import countries from 'i18n-iso-countries'
-import { getCountryDetailInformationByName } from 'i18n-iso-countries-extended-info'
-import enLocale from 'i18n-iso-countries/langs/en.json'
-import type { Data } from 'react-svg-worldmap'
+import { getCountryDetailInformationByAlpha2Code } from 'i18n-iso-countries-extended-info'
+import type { CountryDetailInformation } from 'i18n-iso-countries-extended-info'
 import { MapDataOptions } from '../constants'
-import { defaultMapData } from './defaultMapData'
 
-// default import: named imports from this CJS package fail under native Node ESM
-countries.registerLocale(enLocale)
+export type CountryDetail = Partial<CountryDetailInformation>
 
-interface CountryDetail {
-  name?: string
-  capital?: string
-  region?: string
-  isdCodes?: Array<number>
-  currency?: string
-  symbol?: string
-  currencyName?: string
-  language?: {
-    code?: string
-    official?: string
-    others?: Array<string>
-  }
-  continent?: string
+const NAME: Array<keyof CountryDetail> = ['name']
+const CURRENCY: Array<keyof CountryDetail> = ['currency', 'symbol', 'currencyName']
+
+const fieldsByOption: Record<MapDataOptions, Array<keyof CountryDetail>> = {
+  [MapDataOptions.COUNTRY_NAME]: NAME,
+  [MapDataOptions.COUNTRY_CAPITAL]: [...NAME, 'capital'],
+  [MapDataOptions.COUNTRY_REGION_INFO]: [...NAME, 'region', 'continent'],
+  [MapDataOptions.COUNTRY_LANGUAGE_INFO]: [...NAME, 'language'],
+  [MapDataOptions.COUNTRY_CURRENCY_INFO]: [...NAME, ...CURRENCY],
+  [MapDataOptions.COUNTRY_COMPLETE_INFO]: [
+    ...NAME,
+    'capital',
+    'region',
+    'continent',
+    'isdCodes',
+    ...CURRENCY,
+    'language',
+  ],
 }
 
-export const defaultData: Data<string> = defaultMapData
-
+/**
+ * Details for an ISO 3166-1 alpha-2 country code (any case), limited to the fields of `option`.
+ * Returns undefined for codes the data source does not know.
+ */
 export const getCountryDetail = (
-  countryName: string,
-  dataOptions: MapDataOptions,
-): CountryDetail => {
+  countryCode: string,
+  option: MapDataOptions,
+): CountryDetail | undefined => {
+  let detail: CountryDetailInformation | undefined
   try {
-    const countryDetail = getCountryDetailInformationByName(countryName)
-
-    switch (dataOptions) {
-      case MapDataOptions.COUNTRY_NAME:
-        return { name: countryDetail?.name }
-      case MapDataOptions.COUNTRY_CAPITAL:
-        return { name: countryDetail?.name, capital: countryDetail?.capital }
-      case MapDataOptions.COUNTRY_REGION_INFO: {
-        return {
-          name: countryDetail?.name,
-          region: countryDetail?.region,
-          continent: countryDetail?.continent,
-        }
-      }
-      case MapDataOptions.COUNTRY_CURRENCY_INFO:
-        return {
-          name: countryDetail?.name,
-          currency: countryDetail?.currency,
-          symbol: countryDetail?.symbol,
-          currencyName: countryDetail?.currencyName,
-        }
-      case MapDataOptions.COUNTRY_LANGUAGE_INFO:
-        return {
-          name: countryDetail?.name,
-          language: {
-            ...countryDetail?.language,
-          },
-        }
-      case MapDataOptions.COUNTRY_COMPLETE_INFO:
-        return {
-          name: countryDetail?.name,
-          capital: countryDetail?.capital,
-          region: countryDetail?.region,
-          isdCodes: countryDetail?.isdCodes,
-        }
-      default:
-        return { name: countryDetail?.name }
-    }
-  } catch (e) {
-    console.error(`error occurred:${JSON.stringify((e as Error).message)}`)
+    detail = getCountryDetailInformationByAlpha2Code(countryCode.toUpperCase())
+  } catch {
     return undefined
   }
+  if (!detail) return undefined
+
+  const result: CountryDetail = {}
+  for (const field of fieldsByOption[option]) {
+    // biome-ignore lint/suspicious/noExplicitAny: assigning one key of a union-typed record
+    ;(result as any)[field] = detail[field]
+  }
+  return result
 }

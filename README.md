@@ -57,7 +57,7 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `palette` | `'default' \| 'continent' \| 'region' \| 'monochrome'` | `'default'` | Built-in colours for Colorful mode. |
 | `colors` | `Record<ISO2, string> \| (ctx) => string \| undefined` | – | Colours for Colorful mode; wins over `palette`. Keys are upper-case ISO alpha-2 codes. |
 | `highlightSelected` | `boolean` | `true` | Outline the selected country. Turning it off also turns off `dimOthers`. |
-| `deselectOn` | `'outside' \| 'background' \| 'never'` | `'outside'` | When a click clears the selection, restoring the original map: `'outside'` = a click on the map where there is no country, on the empty space around it, or anywhere outside the component; `'background'` = only the map or the space around it inside the component; `'never'`. Clicks on a country, the controls or the details card never clear it, and nothing clears while the `overlay` card is open. With a controlled `selectedCountry`, `onSelectionChange(null)` is called and the parent decides. |
+| `deselectOn` | `'outside' \| 'background' \| 'never'` | `'outside'` | When a click clears the selection, restoring the original map: `'outside'` = a click on the map where there is no country, on the empty space around it, or anywhere outside the component; `'background'` = only the map or the space around it inside the component; `'never'`. Clicks on a country, the controls or the details card never clear it, and nothing clears while the `overlay` card is open. **Keyboard:** `Escape` with focus on the map or in the details card also clears the selection (not with `'never'`; in the `overlay` card it closes the card instead). With a controlled `selectedCountry`, `onSelectionChange(null)` is called and the parent decides. |
 | `dimOthers` | `boolean \| number` | `true` | While a country is selected, fade all the others so it stands out. `true` = opacity `0.35`, a number (0–1) sets it, `false` turns it off. Fill and border fade; faded countries stay hoverable and clickable. |
 | `showDetails` | `boolean` | `false` | Show the details card (see below). |
 | `detailsOptions` | `DetailsOptions` | – | Position, show/hide, headings and fonts of the card (see below). |
@@ -173,9 +173,12 @@ For anything else use `styleOverrides`. Hover colours are controlled by `react-s
 ## Development
 
 ```sh
-npm run dev            # example app on http://localhost:3000
+npm run dev            # example app (the URL is printed, path /example)
 npm run build-package  # lint, typecheck, test, build
 ```
+
+The example app (`example/`, TypeScript) accepts query-string hooks for repeatable screenshots, documented at the top of
+`example/scenario.ts`, e.g. `/example?position=right&select=Germany&then=escape`.
 
 ## License
 

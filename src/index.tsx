@@ -1,5 +1,6 @@
 import {
   type CSSProperties,
+  type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
   useEffect,
@@ -242,6 +243,21 @@ export const ExtendedWorldMap = ({
   const clearSelection = () => {
     if (selectedCode !== null) setSelectedCode(null)
   }
+
+  // Keyboard equivalent: Escape with focus on the map or the card (the overlay dialog handles its
+  // own Escape and stops it here, so there it only closes the card)
+  const onLayoutKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Escape' || event.defaultPrevented) return
+    if (deselectOn === 'never' || selected === null) return
+    const fromCard = (event.target as Element).closest('[data-rwme-keep]') !== null
+    clearSelection()
+    if (fromCard) {
+      // the card's content changes; keep keyboard users in the map, on the country they cleared
+      Array.from(mapRef.current?.querySelectorAll('path') ?? [])
+        .find((path) => path.getAttribute('aria-label') === selected.name)
+        ?.focus({ preventScroll: true })
+    }
+  }
   const clearRef = useRef(clearSelection)
   clearRef.current = clearSelection
   useEffect(() => {
@@ -382,9 +398,11 @@ export const ExtendedWorldMap = ({
           />
         </div>
       )}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: delegates Escape from the focusable countries and card controls inside; the wrapper itself is not interactive */}
       <div
         ref={layoutRef}
         className="rwme-layout"
+        onKeyDown={onLayoutKeyDown}
         style={{
           display: 'flex',
           flexDirection: sideways ? 'row' : 'column',

@@ -3,7 +3,6 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-
 }
 
 .main-header {
@@ -17,4 +16,11 @@
   font: 20px sans-serif;
   line-height: 40px;
   width: 100%;
+}
+
+.header-control {
+  color: white;
+  white-space: nowrap;
+  line-height: 40px;
+  margin-right: 1em;
 }

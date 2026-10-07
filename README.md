@@ -46,7 +46,7 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `title` | `string` | `'World Map'` | Map title. |
 | `size` | `'sm' \| 'md' \| 'lg' \| 'xl' \| 'xxl' \| 'responsive' \| number` | `'xxl'` | Map size (same as `react-svg-worldmap`). |
 | `onCountryClick` | `(info: CountryDetail \| undefined, context: CountryClickContext) => void` | – | Called on click. `info` is `undefined` for Northern Cyprus and Somaliland (no ISO code). `context` is the `react-svg-worldmap` context plus the click `event`. |
-| `onClick` | `(value: string) => void` | – | **Deprecated**, use `onCountryClick`. Receives the details as a JSON string. |
+| `selectedCountry` / `defaultSelectedCountry` / `onSelectionChange` | `string \| null` / `string \| null` / `(countryCode: string \| null) => void` | `null` | The highlighted country and the one in the details card, as an ISO alpha-2 code (any case). Controlled with `selectedCountry` (`null` = none), otherwise it starts at `defaultSelectedCountry` and follows clicks. `onSelectionChange` gets the upper-case code when a click selects a different country. Unknown codes select nothing. |
 | `tooltipText` | `(ctx: CountryContext<string>) => string` | country name | Custom tooltip text. |
 | `getInfoLink` | `(countryCode: string, countryName: string) => string \| undefined` | English Wikipedia page of the country | Where the `infoLink` detail points. Return `undefined` for no link. |
 | `mapFrame` | `boolean` | `false` | Draw a frame around the map. |
@@ -56,7 +56,9 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `infoMode` / `defaultInfoMode` / `onInfoModeChange` | `'CountryName' \| 'CountryCapital' \| 'CountryRegionInfo' \| 'CountryLanguageInfo' \| 'CountryCurrencyInfo' \| 'CountryCompleteInfo'` | `'CountryName'` | Fields reported on click; same controlled/uncontrolled rules. |
 | `palette` | `'default' \| 'continent' \| 'region' \| 'monochrome'` | `'default'` | Built-in colours for Colorful mode. |
 | `colors` | `Record<ISO2, string> \| (ctx) => string \| undefined` | – | Colours for Colorful mode; wins over `palette`. Keys are upper-case ISO alpha-2 codes. |
-| `highlightSelected` | `boolean` | `true` | Outline the clicked country. |
+| `highlightSelected` | `boolean` | `true` | Outline the selected country. Turning it off also turns off `dimOthers`. |
+| `deselectOn` | `'outside' \| 'background' \| 'never'` | `'outside'` | When a click clears the selection, restoring the original map: `'outside'` = a click on the map where there is no country, on the empty space around it, or anywhere outside the component; `'background'` = only the map or the space around it inside the component; `'never'`. Clicks on a country, the controls or the details card never clear it, and nothing clears while the `overlay` card is open. With a controlled `selectedCountry`, `onSelectionChange(null)` is called and the parent decides. |
+| `dimOthers` | `boolean \| number` | `true` | While a country is selected, fade all the others so it stands out. `true` = opacity `0.35`, a number (0–1) sets it, `false` turns it off. Fill and border fade; faded countries stay hoverable and clickable. |
 | `showDetails` | `boolean` | `false` | Show the details card (see below). |
 | `detailsOptions` | `DetailsOptions` | – | Position, show/hide, headings and fonts of the card (see below). |
 | `styleOverrides` | `CSSProperties \| (ctx, { selected }) => CSSProperties` | – | Merged over each country's style, last. |
@@ -113,6 +115,19 @@ The card is also exported as `CountryDetails` (props: `selection`, `headingLevel
 `--rwme-panel-bg`, `--rwme-panel-text`, `--rwme-panel-muted`, `--rwme-panel-border`, `--rwme-panel-accent`,
 `--rwme-panel-warning` and `--rwme-panel-warning-bg`.
 
+### Selecting a country from your own code
+
+```tsx
+const [country, setCountry] = useState<string | null>('FR')
+
+<select value={country ?? ''} onChange={(e) => setCountry(e.target.value || null)}>…</select>
+<ExtendedWorldMap showDetails selectedCountry={country} onSelectionChange={setCountry} />
+```
+
+A selection set this way highlights the country and fills the details card (and opens the overlay, in `overlay`
+position) without any click. **Hide** only hides the card; it does not clear the selection. To clear it, set
+`selectedCountry` to `null`. `onCountryClick` still fires on every click, even on the selected country.
+
 ### Your own controls
 
 Hide the built-in radios and drive the map from your own state:
@@ -135,7 +150,8 @@ Pass `className`/`style` for the wrapper, or theme the countries with CSS custom
 |---|---|---|
 | `--rwme-fill` | `#ffffff` | country fill in Black and White mode |
 | `--rwme-stroke`, `--rwme-stroke-width` | `#000000`, `1.2` | country border |
-| `--rwme-selected-stroke`, `--rwme-selected-stroke-width` | `#d62828`, `2.5` | border of the clicked country |
+| `--rwme-selected-stroke`, `--rwme-selected-stroke-width` | `#d62828`, `2.5` | border of the selected country |
+| `--rwme-dimmed-opacity` | `0.35` (or the `dimOthers` number) | opacity of the other countries while one is selected |
 
 ```tsx
 <ExtendedWorldMap style={{ '--rwme-stroke': '#336' } as React.CSSProperties} />
@@ -145,11 +161,13 @@ For anything else use `styleOverrides`. Hover colours are controlled by `react-s
 
 ## Known limitations
 
+- With the default `deselectOn="outside"`, a click on any element of your page outside the map (a dropdown, a button) clears the selection; if those elements should keep it, use `deselectOn="background"`.
+- `react-svg-worldmap` restyles a hovered country's border (width 2, a bit more opaque) over whatever this package sets, so hovering the selected country thins its outline slightly (2 instead of 2.5).
 - When `showDetails` is on, the component sets `margin: 0` on the `<figure>` that `react-svg-worldmap` renders (the browser's default 40px side margin is not accounted for by the library and pushed the map into a neighbouring card), and measures the map's `<svg>` to align the card.
 - Northern Cyprus and Somaliland have no ISO code in the map data: they stay white in colour mode and `onCountryClick` receives `undefined`.
 - Antarctica and the French Southern Territories are not drawn (not supported by `react-svg-worldmap`).
 - SVG has no z-index, so the selected country's `<path>` is moved to the end of the map's `<g>` (drawn on top) while it is selected, and put back afterwards. Keyboard focus is restored after each move. Tab order changes while a country is selected: it then comes last. If `react-svg-worldmap` re-creates its country elements (not observed), the highlight can be partly covered until the next click.
-- Only one country can be selected, and the selection is not controllable from outside yet.
+- Only one country can be selected at a time.
 - Consumer-supplied data (choropleth) is not supported yet.
 
 ## Development

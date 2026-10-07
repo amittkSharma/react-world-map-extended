@@ -62,12 +62,6 @@ describe('onCountryClick', () => {
     expect(onCountryClick.mock.calls[0][0]).toBeUndefined()
   })
 
-  it('still calls the deprecated onClick with a JSON string', () => {
-    const onClick = vi.fn()
-    const { container } = render(<ExtendedWorldMap onClick={onClick} />)
-    fireEvent.click(country(container, 'France'))
-    expect(JSON.parse(onClick.mock.calls[0][0])).toEqual({ name: 'France', infoLink: 'https://en.wikipedia.org/wiki/France' })
-  })
 })
 
 describe('colours', () => {

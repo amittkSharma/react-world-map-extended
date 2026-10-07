@@ -41,21 +41,28 @@ describe('ExtendedWorldMap', () => {
   })
 
   it('reports details for the clicked country, as chosen in the selector', () => {
-    const onClick = vi.fn()
-    const { container } = render(<ExtendedWorldMap onClick={onClick} />)
+    const onCountryClick = vi.fn()
+    const { container } = render(<ExtendedWorldMap onCountryClick={onCountryClick} />)
     fireEvent.click(country(container, 'France'))
-    expect(JSON.parse(onClick.mock.calls[0][0])).toEqual({ name: 'France', infoLink: 'https://en.wikipedia.org/wiki/France' })
+    expect(onCountryClick.mock.calls[0][0]).toEqual({
+      name: 'France',
+      infoLink: 'https://en.wikipedia.org/wiki/France',
+    })
 
     fireEvent.click(screen.getByLabelText('Capital'))
     fireEvent.click(country(container, 'France'))
-    expect(JSON.parse(onClick.mock.calls[1][0])).toEqual({ name: 'France', capital: 'Paris', infoLink: 'https://en.wikipedia.org/wiki/France' })
+    expect(onCountryClick.mock.calls[1][0]).toEqual({
+      name: 'France',
+      capital: 'Paris',
+      infoLink: 'https://en.wikipedia.org/wiki/France',
+    })
   })
 
   it('finds details for countries whose map name differs from the data source', () => {
-    const onClick = vi.fn()
-    const { container } = render(<ExtendedWorldMap onClick={onClick} />)
+    const onCountryClick = vi.fn()
+    const { container } = render(<ExtendedWorldMap onCountryClick={onCountryClick} />)
     fireEvent.click(country(container, 'Democratic Republic of the Congo'))
-    expect(JSON.parse(onClick.mock.calls[0][0]).name).toBe('Democratic Republic of the Congo')
+    expect(onCountryClick.mock.calls[0][0].name).toBe('Democratic Republic of the Congo')
   })
 
 })

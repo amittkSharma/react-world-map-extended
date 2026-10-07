@@ -9,10 +9,12 @@ export const WorldMap = () => {
       </header>
       <div className="container">
         <ExtendedWorldMap
-          onClick={(countryContext) => console.log('Clicked country context:', countryContext)}
-          infoLink={false}
+          onCountryClick={(info, context) => console.log('Clicked', context.countryName, info)}
           size="xxl"
           mapFrame={true}
+          showDetails
+          palette="continent"
+          defaultColorMode="Colorful"
         />
       </div>
     </>

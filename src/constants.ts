@@ -27,3 +27,7 @@ export const mapColorOptions: Array<LabelValue<MapColorOptions>> = [
   { label: 'Black and White', value: MapColorOptions.BLACK_AND_WHITE },
   { label: 'Colorful', value: MapColorOptions.COLORFUL },
 ]
+
+/** Public string forms of the enums: consumers may pass `'Colorful'` as well as `MapColorOptions.COLORFUL`. */
+export type MapColorMode = `${MapColorOptions}`
+export type MapInfoMode = `${MapDataOptions}`

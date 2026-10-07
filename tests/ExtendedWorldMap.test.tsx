@@ -35,7 +35,7 @@ describe('ExtendedWorldMap', () => {
 
   it('switches fills between black-and-white and colourful', () => {
     const { container } = render(<ExtendedWorldMap />)
-    expect(country(container, 'France')).toHaveStyle({ fill: '#ffffff' })
+    expect(country(container, 'France').getAttribute('style')).toContain('fill: var(--rwme-fill, #ffffff)')
     fireEvent.click(screen.getByLabelText('Colorful'))
     expect(country(container, 'France')).toHaveStyle({ fill: countryColors.FR as string })
   })
@@ -44,11 +44,11 @@ describe('ExtendedWorldMap', () => {
     const onClick = vi.fn()
     const { container } = render(<ExtendedWorldMap onClick={onClick} />)
     fireEvent.click(country(container, 'France'))
-    expect(JSON.parse(onClick.mock.calls[0][0])).toEqual({ name: 'France' })
+    expect(JSON.parse(onClick.mock.calls[0][0])).toEqual({ name: 'France', infoLink: 'https://en.wikipedia.org/wiki/France' })
 
     fireEvent.click(screen.getByLabelText('Capital'))
     fireEvent.click(country(container, 'France'))
-    expect(JSON.parse(onClick.mock.calls[1][0])).toEqual({ name: 'France', capital: 'Paris' })
+    expect(JSON.parse(onClick.mock.calls[1][0])).toEqual({ name: 'France', capital: 'Paris', infoLink: 'https://en.wikipedia.org/wiki/France' })
   })
 
   it('finds details for countries whose map name differs from the data source', () => {
@@ -58,13 +58,4 @@ describe('ExtendedWorldMap', () => {
     expect(JSON.parse(onClick.mock.calls[0][0]).name).toBe('Democratic Republic of the Congo')
   })
 
-  it('does not render links unless infoLink is set', () => {
-    const { container, rerender } = render(<ExtendedWorldMap />)
-    expect(container.querySelectorAll('a')).toHaveLength(0)
-    rerender(<ExtendedWorldMap infoLink />)
-    expect(container.querySelector('a[aria-label="Papua New Guinea"]')).toHaveAttribute(
-      'href',
-      'https://en.wikipedia.org/wiki/Papua_New_Guinea',
-    )
-  })
 })

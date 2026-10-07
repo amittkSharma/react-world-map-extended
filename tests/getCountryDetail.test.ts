@@ -1,8 +1,8 @@
 import { regions } from 'react-svg-worldmap'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { MapDataOptions } from '../src/constants'
 import { countryColors } from '../src/rawData/defaultMapData'
-import { getCountryDetail } from '../src/rawData/getDefaultMapData'
+import { getCountryDetail, getWikipediaUrl } from '../src/rawData/getDefaultMapData'
 
 // The map also draws Northern Cyprus and Somaliland under non-ISO codes (CYP, SOM); they are
 // intentionally left out here (no details, no colour).
@@ -21,7 +21,7 @@ describe('getCountryDetail', () => {
     ],
   ])('%s returns exactly its fields', (option, fields) => {
     const detail = getCountryDetail('FR', option)
-    expect(Object.keys(detail ?? {}).sort()).toEqual([...fields].sort())
+    expect(Object.keys(detail ?? {}).sort()).toEqual([...fields, 'infoLink'].sort())
     expect(detail?.name).toBe('France')
   })
 
@@ -29,6 +29,7 @@ describe('getCountryDetail', () => {
     expect(getCountryDetail('FR', MapDataOptions.COUNTRY_CAPITAL)).toEqual({
       name: 'France',
       capital: 'Paris',
+      infoLink: 'https://en.wikipedia.org/wiki/France',
     })
     expect(getCountryDetail('FR', MapDataOptions.COUNTRY_CURRENCY_INFO)).toMatchObject({
       currency: 'EUR',
@@ -36,7 +37,29 @@ describe('getCountryDetail', () => {
   })
 
   it('accepts lower-case codes', () => {
-    expect(getCountryDetail('fr', MapDataOptions.COUNTRY_NAME)).toEqual({ name: 'France' })
+    expect(getCountryDetail('fr', MapDataOptions.COUNTRY_NAME)).toEqual({ name: 'France', infoLink: 'https://en.wikipedia.org/wiki/France' })
+  })
+
+  describe('infoLink', () => {
+    it('is the English Wikipedia page by default, with spaces underscored and the name encoded', () => {
+      expect(getCountryDetail('PG', MapDataOptions.COUNTRY_NAME)?.infoLink).toBe(
+        'https://en.wikipedia.org/wiki/Papua_New_Guinea',
+      )
+      expect(getWikipediaUrl('CI', "Côte d'Ivoire")).toBe(
+        "https://en.wikipedia.org/wiki/C%C3%B4te_d'Ivoire",
+      )
+    })
+
+    it('can come from a custom resolver, and be left out', () => {
+      const resolver = vi.fn((code: string, name: string) => `https://example.org/${code}/${name}`)
+      expect(getCountryDetail('FR', MapDataOptions.COUNTRY_NAME, resolver)?.infoLink).toBe(
+        'https://example.org/FR/France',
+      )
+      expect(resolver).toHaveBeenCalledWith('FR', 'France')
+      expect(getCountryDetail('FR', MapDataOptions.COUNTRY_NAME, () => undefined)).toEqual({
+        name: 'France',
+      })
+    })
   })
 
   it('returns undefined (does not throw) for unknown codes', () => {

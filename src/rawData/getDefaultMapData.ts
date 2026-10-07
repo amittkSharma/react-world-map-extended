@@ -1,13 +1,21 @@
 import { getCountryDetailInformationByAlpha2Code } from 'i18n-iso-countries-extended-info'
 import type { CountryDetailInformation } from 'i18n-iso-countries-extended-info'
-import { MapDataOptions } from '../constants'
+import { MapDataOptions, type MapInfoMode } from '../constants'
 
-export type CountryDetail = Partial<CountryDetailInformation>
+/** Details of one country; `infoLink` is a URL with more information about it (Wikipedia by default). */
+export type CountryDetail = Partial<CountryDetailInformation> & { infoLink?: string }
 
-const NAME: Array<keyof CountryDetail> = ['name']
-const CURRENCY: Array<keyof CountryDetail> = ['currency', 'symbol', 'currencyName']
+/** Resolves the `infoLink` of a country; return `undefined` for no link. */
+export type InfoLinkResolver = (countryCode: string, countryName: string) => string | undefined
 
-const fieldsByOption: Record<MapDataOptions, Array<keyof CountryDetail>> = {
+export const getWikipediaUrl: InfoLinkResolver = (_countryCode, countryName) =>
+  `https://en.wikipedia.org/wiki/${encodeURIComponent(countryName.replace(/ /g, '_'))}`
+
+// `infoLink` is not a data field: it is added to every result by getCountryDetail
+const NAME: Array<keyof CountryDetailInformation> = ['name']
+const CURRENCY: Array<keyof CountryDetailInformation> = ['currency', 'symbol', 'currencyName']
+
+const fieldsByOption: Record<MapInfoMode, Array<keyof CountryDetailInformation>> = {
   [MapDataOptions.COUNTRY_NAME]: NAME,
   [MapDataOptions.COUNTRY_CAPITAL]: [...NAME, 'capital'],
   [MapDataOptions.COUNTRY_REGION_INFO]: [...NAME, 'region', 'continent'],
@@ -25,12 +33,13 @@ const fieldsByOption: Record<MapDataOptions, Array<keyof CountryDetail>> = {
 }
 
 /**
- * Details for an ISO 3166-1 alpha-2 country code (any case), limited to the fields of `option`.
- * Returns undefined for codes the data source does not know.
+ * Details for an ISO 3166-1 alpha-2 country code (any case): the fields of `option` plus `infoLink`
+ * (from `getInfoLink`, Wikipedia by default). Returns undefined for codes the data source does not know.
  */
 export const getCountryDetail = (
   countryCode: string,
-  option: MapDataOptions,
+  option: MapInfoMode,
+  getInfoLink: InfoLinkResolver = getWikipediaUrl,
 ): CountryDetail | undefined => {
   let detail: CountryDetailInformation | undefined
   try {
@@ -45,5 +54,7 @@ export const getCountryDetail = (
     // biome-ignore lint/suspicious/noExplicitAny: assigning one key of a union-typed record
     ;(result as any)[field] = detail[field]
   }
+  const infoLink = detail.name ? getInfoLink(countryCode.toUpperCase(), detail.name) : undefined
+  if (infoLink) result.infoLink = infoLink
   return result
 }

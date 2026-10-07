@@ -5,6 +5,7 @@ export default defineConfig({
   source: {
     entry: { example: "./example/index.tsx" },
   },
+  output: { distPath: { root: "dist-example" } },
   html: {
     template: "./example/index.html",
   },

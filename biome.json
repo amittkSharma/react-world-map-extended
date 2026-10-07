@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "includes": ["src/**", "example/**", "!src/defaultData/world-default.geo.json", "!src/world-default-colors-data.json"]
+    "includes": ["src/**", "example/**"]
   },
   "formatter": { "enabled": false },
   "assist": { "enabled": false },

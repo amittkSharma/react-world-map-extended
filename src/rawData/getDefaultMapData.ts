@@ -1,11 +1,12 @@
-import { registerLocale } from 'i18n-iso-countries'
+import countries from 'i18n-iso-countries'
 import { getCountryDetailInformationByName } from 'i18n-iso-countries-extended-info'
 import enLocale from 'i18n-iso-countries/langs/en.json'
 import type { Data } from 'react-svg-worldmap'
 import { MapDataOptions } from '../constants'
 import { defaultMapData } from './defaultMapData'
 
-registerLocale(enLocale)
+// default import: named imports from this CJS package fail under native Node ESM
+countries.registerLocale(enLocale)
 
 interface CountryDetail {
   name?: string

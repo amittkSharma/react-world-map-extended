@@ -4,32 +4,59 @@
   "description": "React World Map Extended is a React component that provides an interactive world map with extended features. It allows users to visualize data on a world map, customize the appearance, and interact with countries.",
   "author": "Amitt K Sharma",
   "license": "MIT",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "sideEffects": false,
   "files": [
     "dist"
   ],
-  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/amittkSharma/react-world-map-extended.git"
   },
   "keywords": [
-    "react"
+    "react",
+    "world-map",
+    "map",
+    "svg",
+    "countries",
+    "country-info",
+    "choropleth",
+    "interactive-map",
+    "typescript"
   ],
   "bugs": {
     "url": "https://github.com/amittkSharma/react-world-map-extended/issues"
   },
   "homepage": "https://github.com/amittkSharma/react-world-map-extended#readme",
   "peerDependencies": {
-    "react": ">=16.13.1",
-    "react-dom": ">=16.13.1"
+    "react": "^17.0.0 || ^18.0.0 || ^19.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-dom": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
     "@rsbuild/core": "2.1.4",
     "@rsbuild/plugin-react": "2.1.0",
-    "@rsbuild/plugin-umd": "1.0.7",
+    "@rslib/core": "1.0.3",
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "commit-and-tag-version": "12.7.3",
@@ -39,15 +66,15 @@
   },
   "scripts": {
     "dev": "rsbuild dev",
-    "build": "rsbuild build --config rsbuild.prod.config.ts && npm run build-types",
+    "build": "rslib build",
     "build-example": "rsbuild build",
-    "build-prod": "npm run build",
     "lint": "biome lint .",
-    "build-package": "npm run lint && npm run build-example && npm run build-prod",
+    "build-package": "npm run lint && npm run typecheck && npm run build",
     "release": "commit-and-tag-version",
-    "build-types": "tsc -p . --emitDeclarationOnly --outDir dist"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "i18n-iso-countries": "7.14.0",
     "i18n-iso-countries-extended-info": "1.8.0",
     "react-svg-worldmap": "2.0.2"
   }

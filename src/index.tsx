@@ -1,8 +1,8 @@
-import { type CSSProperties, type MouseEvent, useId, useRef, useState } from 'react'
+import { type CSSProperties, type MouseEvent, type ReactNode, useId, useRef, useState } from 'react'
 import WorldMap from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
-import { CountryDetails } from './CountryDetails'
+import { CountryDetails, ShowDetailsButton } from './CountryDetails'
 import {
   MapColorOptions,
   type MapColorMode,
@@ -18,7 +18,10 @@ import {
   type InfoLinkResolver,
   getCountryDetail,
 } from './rawData/getDefaultMapData'
+import type { DetailsOptions } from './detailsOptions'
 import { useControllableState } from './useControllableState'
+import { LAYOUT_GAP, useMapBox } from './useMapBox'
+import { useInert, useModalDialog } from './useModalDialog'
 import { useRaiseOnTop } from './useRaiseOnTop'
 import { UserOptions } from './userOptions'
 
@@ -27,6 +30,9 @@ export type { MapColorMode, MapInfoMode } from './constants'
 export type { CountryColors, MapPalette } from './palettes'
 export { getCountryDetail, getWikipediaUrl } from './rawData/getDefaultMapData'
 export type { CountryDetail, InfoLinkResolver } from './rawData/getDefaultMapData'
+export { CountryDetails } from './CountryDetails'
+export type { CountryDetailsProps, HeadingLevel } from './CountryDetails'
+export type { DetailsOptions, DetailsPosition } from './detailsOptions'
 
 const WHITE = '#ffffff'
 
@@ -47,6 +53,27 @@ const selectedStyle: CSSProperties = {
   strokeWidth: 'var(--rwme-selected-stroke-width, 2.5)',
   strokeOpacity: 1,
 }
+
+// The overlay card IS the dimmed layer: it covers the map exactly, translucent so the map shows through
+const overlayCardStyle: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  overflow: 'auto',
+  padding: '1.5rem',
+  border: 'none',
+  borderLeft: 'none',
+  borderRadius: 0,
+  background: 'var(--rwme-overlay-bg, rgba(255, 255, 255, 0.82))',
+  backdropFilter: 'blur(3px)',
+}
+
+// Widths react-svg-worldmap gives its size presets (the map is never wider than this). Mirrored here
+// only to keep a side card next to the map; if the library changes them the map still fits.
+const presetWidths: Record<SizeOption, number> = { sm: 240, md: 336, lg: 480, xl: 640, xxl: 1200 }
+
+/** Widest the map can be, or undefined when it depends on the window (`'responsive'`). */
+const getMapMaxWidth = (size: SizeOption | 'responsive' | number) =>
+  typeof size === 'number' ? size : size === 'responsive' ? undefined : presetWidths[size]
 
 export type CountryClickContext = CountryContext<string> & { event: MouseEvent<SVGElement, Event> }
 
@@ -82,8 +109,10 @@ export interface ExtendedWorldMapProps {
   colors?: CountryColors | ((context: CountryContext<string>) => string | undefined)
   /** Highlight the clicked country. Default `true`. */
   highlightSelected?: boolean
-  /** Show a panel with the clicked country's details below the map. Default `false`. */
+  /** Show a card with the clicked country's details. Default `false`; see `detailsOptions`. */
   showDetails?: boolean
+  /** Position, visibility toggle, headings and fonts of the details card. */
+  detailsOptions?: DetailsOptions
   /** Merged over the computed country style (applied last). */
   styleOverrides?:
     | CSSProperties
@@ -112,6 +141,7 @@ export const ExtendedWorldMap = ({
   colors,
   highlightSelected = true,
   showDetails = false,
+  detailsOptions,
   styleOverrides,
   className,
   style,
@@ -131,6 +161,32 @@ export const ExtendedWorldMap = ({
   const rootRef = useRef<HTMLDivElement>(null)
   useRaiseOnTop(rootRef, highlightSelected ? selected?.name : undefined)
 
+  const {
+    position = 'bottom',
+    open,
+    defaultOpen = true,
+    onOpenChange,
+    headingLevel,
+    fontFamily,
+    fontStyle,
+    className: detailsClassName,
+    style: detailsStyle,
+  } = detailsOptions ?? {}
+  const [detailsOpen, setDetailsOpen] = useControllableState<boolean>(
+    open,
+    defaultOpen,
+    onOpenChange,
+  )
+  const layoutRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const isOverlay = position === 'overlay'
+  // The overlay covers the map: while it is open nothing behind it may be operated
+  const overlayActive = showDetails && isOverlay && detailsOpen && selected !== null
+  const closeDetails = () => setDetailsOpen(false)
+  useInert(mapRef, overlayActive)
+  useModalDialog(dialogRef, overlayActive, closeDetails)
+
   const paletteColors = getPaletteColors(palette)
 
   const getFill = (context: CountryContext<string>) => {
@@ -140,8 +196,7 @@ export const ExtendedWorldMap = ({
   }
 
   const getStyle = (context: CountryContext<string>): CSSProperties => {
-    const isSelected =
-      highlightSelected && selected?.code === context.countryCode.toUpperCase()
+    const isSelected = highlightSelected && selected?.code === context.countryCode.toUpperCase()
     const computed: CSSProperties = {
       ...baseStyle,
       ...(colorOption === MapColorOptions.COLORFUL && { fill: getFill(context) }),
@@ -154,6 +209,61 @@ export const ExtendedWorldMap = ({
     return { ...computed, ...overrides }
   }
 
+  const box = useMapBox(layoutRef, mapRef, showDetails)
+  const sideways = position === 'left' || position === 'right'
+  const detailsFirst = position === 'top' || position === 'left'
+  const selection = selected && {
+    name: selected.name,
+    detail: getCountryDetail(selected.code, infoOption, getInfoLink),
+  }
+  const card = (
+    <CountryDetails
+      selection={selection}
+      headingLevel={headingLevel}
+      fontFamily={fontFamily}
+      fontStyle={fontStyle}
+      className={detailsClassName}
+      style={{
+        ...(isOverlay
+          ? overlayCardStyle
+          : sideways
+            ? { height: '100%', overflow: 'auto' }
+            : undefined),
+        ...detailsStyle,
+      }}
+      onClose={closeDetails}
+    />
+  )
+
+  // The slot positions the card against the map's real <svg> box: same width above/below it,
+  // same height (and top edge) beside it
+  const slotStyle: CSSProperties = sideways
+    ? {
+        flex: '0 0 var(--rwme-panel-width, 20rem)',
+        width: 'var(--rwme-panel-width, 20rem)',
+        marginTop: box?.top,
+        height: box?.height,
+      }
+    : { width: box?.width ?? '100%', marginLeft: box?.left }
+
+  let detailsSlot: ReactNode = null
+  if (showDetails && !overlayActive) {
+    if (!detailsOpen) {
+      detailsSlot = selection && (
+        <div style={slotStyle}>
+          <ShowDetailsButton
+            name={selection.name}
+            onClick={() => setDetailsOpen(true)}
+            fontFamily={fontFamily}
+            fontStyle={fontStyle}
+          />
+        </div>
+      )
+    } else if (!isOverlay) {
+      detailsSlot = <div style={slotStyle}>{card}</div>
+    }
+  }
+
   return (
     <div ref={rootRef} className={className} style={style}>
       {showControls && (
@@ -162,7 +272,6 @@ export const ExtendedWorldMap = ({
             display: 'flex',
             flexDirection: 'row',
             justifyContent: 'flex-start',
-            marginLeft: '2.5em',
           }}
         >
           <UserOptions
@@ -181,34 +290,76 @@ export const ExtendedWorldMap = ({
           />
         </div>
       )}
-      <WorldMap
-        color={WHITE}
-        size={size || 'xxl'}
-        title={title || 'World Map'}
-        data={defaultMapData}
-        richInteraction={interaction}
-        frame={mapFrame}
-        onClickFunction={(context) => {
-          setSelected({ code: context.countryCode.toUpperCase(), name: context.countryName })
-          const info = getCountryDetail(context.countryCode, infoOption, getInfoLink)
-          onCountryClick?.(info, context)
-          onClick?.(JSON.stringify(info ?? {}, null, 2))
+      <div
+        ref={layoutRef}
+        className="rwme-layout"
+        style={{
+          display: 'flex',
+          flexDirection: sideways ? 'row' : 'column',
+          alignItems: 'flex-start',
+          gap: LAYOUT_GAP,
+          marginTop: showControls ? LAYOUT_GAP / 2 : undefined,
         }}
-        tooltipTextFunction={(context) =>
-          tooltipText ? tooltipText(context) : context.countryName
-        }
-        styleFunction={getStyle}
-      />
-      {showDetails && (
-        <CountryDetails
-          selection={
-            selected && {
-              name: selected.name,
-              detail: getCountryDetail(selected.code, infoOption, getInfoLink),
-            }
-          }
-        />
-      )}
+      >
+        {detailsFirst && detailsSlot}
+        <div
+          style={{
+            position: 'relative',
+            // beside the map: take the remaining width, but no more than the map can use, so a card
+            // on its right sits flush against it
+            ...(sideways
+              ? { flex: '1 1 0', minWidth: 0, maxWidth: getMapMaxWidth(size || 'xxl') }
+              : { width: '100%' }),
+          }}
+        >
+          <div ref={mapRef}>
+            <WorldMap
+              color={WHITE}
+              size={size || 'xxl'}
+              title={title || 'World Map'}
+              data={defaultMapData}
+              richInteraction={interaction}
+              frame={mapFrame}
+              onClickFunction={(context) => {
+                if (overlayActive) return
+                if (showDetails && !detailsOpen) setDetailsOpen(true)
+                setSelected({ code: context.countryCode.toUpperCase(), name: context.countryName })
+                const info = getCountryDetail(context.countryCode, infoOption, getInfoLink)
+                onCountryClick?.(info, context)
+                onClick?.(JSON.stringify(info ?? {}, null, 2))
+              }}
+              tooltipTextFunction={(context) =>
+                tooltipText ? tooltipText(context) : context.countryName
+              }
+              styleFunction={getStyle}
+            />
+          </div>
+          {overlayActive && selection && (
+            <div
+              className="rwme-overlay"
+              style={{
+                position: 'absolute',
+                zIndex: 10,
+                ...(box
+                  ? { left: box.left, top: box.top, width: box.width, height: box.height }
+                  : { inset: 0 }),
+              }}
+            >
+              <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Details: ${selection.name}`}
+                tabIndex={-1}
+                style={{ width: '100%', height: '100%', outline: 'none' }}
+              >
+                {card}
+              </div>
+            </div>
+          )}
+        </div>
+        {!detailsFirst && detailsSlot}
+      </div>
     </div>
   )
 }

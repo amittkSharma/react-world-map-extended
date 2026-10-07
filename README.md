@@ -51,7 +51,7 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `getInfoLink` | `(countryCode: string, countryName: string) => string \| undefined` | English Wikipedia page of the country | Where the `infoLink` detail points. Return `undefined` for no link. |
 | `mapFrame` | `boolean` | `false` | Draw a frame around the map. |
 | `interaction` | `boolean` | `true` | Enable hover/click interaction (`richInteraction`). |
-| `showControls` | `boolean` | `true` | Show the radio groups. |
+| `showControls` | `boolean` | `true` | Show the built-in radio groups (the same `<WorldMapControls>` you can use yourself, see below). |
 | `colorMode` / `defaultColorMode` / `onColorModeChange` | `'BlackAndWhite' \| 'Colorful'` | `'BlackAndWhite'` | Colour mode; controlled with `colorMode`, otherwise starts at `defaultColorMode`. |
 | `infoMode` / `defaultInfoMode` / `onInfoModeChange` | `'CountryName' \| 'CountryCapital' \| 'CountryRegionInfo' \| 'CountryLanguageInfo' \| 'CountryCurrencyInfo' \| 'CountryCompleteInfo'` | `'CountryName'` | Fields reported on click; same controlled/uncontrolled rules. |
 | `palette` | `'default' \| 'continent' \| 'region' \| 'monochrome'` | `'default'` | Built-in colours for Colorful mode. |
@@ -65,7 +65,7 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `className`, `style` | | – | Applied to the root `div`. |
 
 The enums `MapColorOptions` and `MapDataOptions`, the helper `getCountryDetail(isoCode, infoMode)` and the types
-`CountryDetails` (component), `DetailsOptions`, `DetailsPosition`, `HeadingLevel`, `CountryDetail`, `CountryColors`, `MapPalette`, `MapColorMode`, `MapInfoMode` and `CountryClickContext` are exported too.
+`WorldMapControls` and `useWorldMapModes` (plus their types `WorldMapControlsProps`, `UseWorldMapModesOptions`, `WorldMapModes`), `CountryDetails` (component), `DetailsOptions`, `DetailsPosition`, `HeadingLevel`, `CountryDetail`, `CountryColors`, `MapPalette`, `MapColorMode`, `MapInfoMode` and `CountryClickContext` are exported too.
 
 ### Details card
 
@@ -130,15 +130,26 @@ position) without any click. **Hide** only hides the card; it does not clear the
 
 ### Your own controls
 
-Hide the built-in radios and drive the map from your own state:
+The two radio groups are also available as a standalone component, `<WorldMapControls>`, so you can place them
+anywhere in your page. Keep the modes in your own state with `useWorldMapModes()`; its result has exactly the props
+both components take, so one spread wires them together:
+
+```tsx
+import { ExtendedWorldMap, WorldMapControls, useWorldMapModes } from 'react-world-map-extended'
+
+const modes = useWorldMapModes({ defaultColorMode: 'Colorful' }) // { colorMode, infoMode, onColorModeChange, onInfoModeChange }
+
+<aside><WorldMapControls {...modes} className="sidebar-controls" /></aside>
+<ExtendedWorldMap showControls={false} {...modes} />
+```
+
+`<WorldMapControls>` is always controlled (`colorMode`, `onColorModeChange`, `infoMode`, `onInfoModeChange`) and also takes
+`className` and `style`. Clicking it never clears the map's selection, even though it sits outside the map. Prefer
+your own markup? Skip it and drive the map with `colorMode` / `infoMode` and their `on…Change` callbacks directly:
 
 ```tsx
 const [colorMode, setColorMode] = useState<MapColorMode>('Colorful')
-
-<>
-  <button onClick={() => setColorMode('BlackAndWhite')}>Plain</button>
-  <ExtendedWorldMap showControls={false} colorMode={colorMode} onColorModeChange={setColorMode} />
-</>
+<ExtendedWorldMap showControls={false} colorMode={colorMode} onColorModeChange={setColorMode} />
 ```
 
 ### Styling
@@ -178,7 +189,8 @@ npm run build-package  # lint, typecheck, test, build
 ```
 
 The example app (`example/`, TypeScript) accepts query-string hooks for repeatable screenshots, documented at the top of
-`example/scenario.ts`, e.g. `/example?position=right&select=Germany&then=escape`.
+`example/scenario.ts`, e.g. `/example?position=right&select=Germany&then=escape`. Its "Radio controls" dropdown shows the
+built-in radios versus a separate `<WorldMapControls>` placed around the map.
 
 ## License
 

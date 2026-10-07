@@ -4,7 +4,6 @@ import {
   type MouseEvent,
   type ReactNode,
   useEffect,
-  useId,
   useRef,
 } from 'react'
 import WorldMap, { regions } from 'react-svg-worldmap'
@@ -16,8 +15,6 @@ import {
   type MapColorMode,
   MapDataOptions,
   type MapInfoMode,
-  mapColorOptions,
-  mapDataOptions,
 } from './constants'
 import { type CountryColors, type MapPalette, getPaletteColors } from './palettes'
 import { defaultMapData } from './rawData/defaultMapData'
@@ -30,8 +27,8 @@ import type { DetailsOptions } from './detailsOptions'
 import { useControllableState } from './useControllableState'
 import { LAYOUT_GAP, useMapBox } from './useMapBox'
 import { useInert, useModalDialog } from './useModalDialog'
+import { WorldMapControls } from './WorldMapControls'
 import { useRaiseOnTop } from './useRaiseOnTop'
-import { UserOptions } from './userOptions'
 
 export { MapColorOptions, MapDataOptions } from './constants'
 export type { MapColorMode, MapInfoMode } from './constants'
@@ -41,6 +38,10 @@ export type { CountryDetail, InfoLinkResolver } from './rawData/getDefaultMapDat
 export { CountryDetails } from './CountryDetails'
 export type { CountryDetailsProps, HeadingLevel } from './CountryDetails'
 export type { DetailsOptions, DetailsPosition } from './detailsOptions'
+export { WorldMapControls } from './WorldMapControls'
+export type { WorldMapControlsProps } from './WorldMapControls'
+export { useWorldMapModes } from './useWorldMapModes'
+export type { UseWorldMapModesOptions, WorldMapModes } from './useWorldMapModes'
 
 const WHITE = '#ffffff'
 
@@ -192,7 +193,6 @@ export const ExtendedWorldMap = ({
   className,
   style,
 }: ExtendedWorldMapProps) => {
-  const groupId = useId()
   const [colorOption, setColorOption] = useControllableState<MapColorMode>(
     colorMode,
     defaultColorMode,
@@ -270,8 +270,8 @@ export const ExtendedWorldMap = ({
       if (!root || !target?.isConnected) return
       const inside = root.contains(target)
       if (inside && target.closest('path')) return // a country: its own click handler decides
-      const keep = target.closest('[data-rwme-keep]')
-      if (keep && root.contains(keep)) return // controls and details card
+      // controls and details card, including a <WorldMapControls> placed elsewhere on the page
+      if (target.closest('[data-rwme-keep]')) return
       if (!inside && deselectOn === 'background') return
       clearRef.current()
     }
@@ -374,29 +374,12 @@ export const ExtendedWorldMap = ({
   return (
     <div ref={rootRef} className={className} style={style}>
       {showControls && (
-        <div
-          data-rwme-keep
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'flex-start',
-          }}
-        >
-          <UserOptions
-            legend="Map colours"
-            name={`${groupId}-color`}
-            sources={mapColorOptions}
-            selectedValue={colorOption}
-            onChange={setColorOption}
-          />
-          <UserOptions
-            legend="Information on click"
-            name={`${groupId}-data`}
-            sources={mapDataOptions}
-            selectedValue={infoOption}
-            onChange={setInfoOption}
-          />
-        </div>
+        <WorldMapControls
+          colorMode={colorOption}
+          onColorModeChange={setColorOption}
+          infoMode={infoOption}
+          onInfoModeChange={setInfoOption}
+        />
       )}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: delegates Escape from the focusable countries and card controls inside; the wrapper itself is not interactive */}
       <div

@@ -43,7 +43,7 @@ export const ExampleApp = () => {
   const [position, setPosition] = useState(scenario.position)
   const [placement, setPlacement] = useState(scenario.controls)
   const [boundaries, setBoundaries] = useState(scenario.boundaries)
-  const [country, setCountry] = useState<string | null>(null)
+  const [countries, setCountries] = useState<string[]>([])
   // one state for the colour/information modes, shared by the map and (optionally) separate controls
   const modes = useWorldMapModes({
     defaultColorMode: scenario.color,
@@ -98,12 +98,12 @@ export const ExampleApp = () => {
         <label className="header-control">
           Select:{' '}
           <select
-            value={country ?? ''}
-            onChange={(event) => setCountry(event.target.value || null)}
+            value={countries.length === 1 ? countries[0] : ''}
+            onChange={(event) => setCountries(event.target.value ? [event.target.value] : [])}
           >
-            <option value="">none</option>
-            {(country && !quickCountries.includes(country)
-              ? [...quickCountries, country]
+            <option value="">{countries.length > 1 ? `${countries.length} selected` : 'none'}</option>
+            {(countries.length === 1 && !quickCountries.includes(countries[0])
+              ? [...quickCountries, countries[0]]
               : quickCountries
             ).map((code) => (
               <option key={code} value={code}>
@@ -146,8 +146,9 @@ export const ExampleApp = () => {
             showDetails
             // keeps the selection while you use controls outside the map component
             deselectOn="background"
-            selectedCountry={country}
-            onSelectionChange={setCountry}
+            selectedCountries={countries}
+            onSelectionChange={setCountries}
+            showMultiSelectToggle={scenario.multiToggle || 'auto'}
             detailsOptions={{ position }}
             palette={scenario.palette}
             {...modes}

@@ -88,13 +88,13 @@ describe('clearing the selection by clicking away', () => {
   it('reports the clear to the parent, which decides, when the selection is controlled', () => {
     const onSelectionChange = vi.fn()
     const { container, rerender } = render(
-      <ExtendedWorldMap selectedCountry="FR" onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap selectedCountries={['FR']} onSelectionChange={onSelectionChange} />,
     )
     fireEvent.click(backdrop(container))
-    expect(onSelectionChange).toHaveBeenCalledExactlyOnceWith(null)
+    expect(onSelectionChange).toHaveBeenCalledExactlyOnceWith([])
     expect(isHighlighted(container, 'France')).toBe(true) // the parent has not accepted it
 
-    rerender(<ExtendedWorldMap selectedCountry={null} onSelectionChange={onSelectionChange} />)
+    rerender(<ExtendedWorldMap selectedCountries={[]} onSelectionChange={onSelectionChange} />)
     expect(dimmedCount(container)).toBe(0)
   })
 
@@ -137,7 +137,7 @@ describe('clearing the selection by clicking away', () => {
   it('stops listening when the component unmounts', () => {
     const onSelectionChange = vi.fn()
     const { container, unmount } = render(
-      <ExtendedWorldMap selectedCountry="FR" onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap selectedCountries={['FR']} onSelectionChange={onSelectionChange} />,
     )
     unmount()
     fireEvent.click(document.body)

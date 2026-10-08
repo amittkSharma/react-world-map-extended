@@ -8,12 +8,16 @@ import {
   useRef,
   useState,
 } from 'react'
-import WorldMap, { regions } from 'react-svg-worldmap'
+import WorldMap from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
+import { countryCodes, countryNames } from './countries'
 import { CountryDetails, ShowDetailsButton } from './CountryDetails'
+import { CountryDetailsList } from './CountryDetailsList'
 import { MapColorOptions, type MapColorMode, MapDataOptions, type MapInfoMode } from './constants'
 import { MapLegend, type LegendPosition } from './MapLegend'
+import { MapToast } from './MapToast'
+import { MultiSelectToggle } from './MultiSelectToggle'
 import { type CountryColors, type MapPalette, getPaletteColors, getPaletteLegend } from './palettes'
 import { defaultMapData } from './rawData/defaultMapData'
 import {
@@ -24,6 +28,7 @@ import {
 import type { DetailsOptions, DetailsPosition } from './detailsOptions'
 import { trackInputModality, usedKeyboardLast } from './inputModality'
 import { useControllableState } from './useControllableState'
+import { useCountrySelection } from './useCountrySelection'
 import { LAYOUT_GAP, useMapBox } from './useMapBox'
 import { useInert, useModalDialog } from './useModalDialog'
 import { useSingleTooltip } from './useSingleTooltip'
@@ -37,6 +42,9 @@ export type { LegendPosition } from './MapLegend'
 export { getCountryDetail, getWikipediaUrl } from './rawData/getDefaultMapData'
 export type { CountryDetail, InfoLinkResolver } from './rawData/getDefaultMapData'
 export { CountryDetails } from './CountryDetails'
+export { CountryDetailsList } from './CountryDetailsList'
+export type { CountryDetailsListProps, CountrySelection } from './CountryDetailsList'
+export { MAX_SELECTED_COUNTRIES } from './selectionLimit'
 export type { CountryDetailsProps, HeadingLevel } from './CountryDetails'
 export type { DetailsOptions, DetailsPosition } from './detailsOptions'
 export { WorldMapControls } from './WorldMapControls'
@@ -45,6 +53,19 @@ export { useWorldMapModes } from './useWorldMapModes'
 export type { UseWorldMapModesOptions, WorldMapModes } from './useWorldMapModes'
 
 const WHITE = '#ffffff'
+
+// for text that only screen readers should get
+const visuallyHidden: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  margin: -1,
+  padding: 0,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
 
 // Every colour can be themed from outside with these CSS custom properties, e.g.
 // `<ExtendedWorldMap style={{ '--rwme-stroke': '#336' }} />`.
@@ -83,6 +104,12 @@ const focusStyle: CSSProperties = {
 // dashed so the focus is visible too
 const focusOnSelectedStyle: CSSProperties = { strokeDasharray: '6 3', filter: FOCUS_GLOW }
 
+// The country whose entry in the details list is being pointed at (or the reverse)
+const linkedStyle: CSSProperties = {
+  strokeOpacity: 1,
+  filter: 'drop-shadow(0 0 4px var(--rwme-linked-glow, #f59e0b))',
+}
+
 const selectedStyle: CSSProperties = {
   stroke: 'var(--rwme-selected-stroke, #d62828)',
   strokeWidth: 'var(--rwme-selected-stroke-width, 2.5)',
@@ -110,17 +137,10 @@ const presetWidths: Record<SizeOption, number> = { sm: 240, md: 336, lg: 480, xl
 const getMapMaxWidth = (size: SizeOption | 'responsive' | number) =>
   typeof size === 'number' ? size : size === 'responsive' ? undefined : presetWidths[size]
 
-const countryNames = new Map(regions.map((region) => [region.code.toUpperCase(), region.name]))
-const countryCodes = new Map(regions.map((region) => [region.name, region.code.toUpperCase()]))
-
 // areas that get the library's styled tooltip (every area that has an entry in the map data)
 const styledTooltipNames: ReadonlySet<string> = new Set(
   defaultMapData.flatMap(({ country }) => countryNames.get(country.toUpperCase()) ?? []),
 )
-
-// `undefined` (not given) must stay distinct from `null` (given: nothing selected)
-const toCode = (value: string | null | undefined) =>
-  value === undefined ? undefined : (value?.toUpperCase() ?? null)
 
 export type CountryClickContext = CountryContext<string> & { event: MouseEvent<SVGElement, Event> }
 
@@ -131,13 +151,18 @@ export interface ExtendedWorldMapProps {
    * `undefined` for areas without an ISO code (Northern Cyprus, Somaliland). */
   onCountryClick?: (info: CountryDetail | undefined, context: CountryClickContext) => void
   tooltipText?: (countryContext: CountryContext<string>) => string
-  /** The highlighted country and the one shown in the details card, as an ISO 3166-1 alpha-2 code
-   * (any case). Controlled when set (`null` = none); otherwise it starts at `defaultSelectedCountry`
-   * and follows the user's clicks. Unknown codes select nothing. */
-  selectedCountry?: string | null
-  defaultSelectedCountry?: string | null
-  /** Called with the (upper-case) code when a click selects a different country. */
-  onSelectionChange?: (countryCode: string | null) => void
+  /** The selected countries, as ISO 3166-1 alpha-2 codes (any case), in the order they were selected;
+   * at most 5 (`MAX_SELECTED_COUNTRIES`), unknown codes and duplicates are ignored. Controlled when set
+   * (`[]` = none); otherwise it starts at `defaultSelectedCountries` and follows the user. A longer
+   * array shows its first 5 and a message on the map; it is never changed on your behalf. */
+  selectedCountries?: string[]
+  defaultSelectedCountries?: string[]
+  /** Called with the new list (upper-case codes) when the user changes the selection. Not called for a
+   * click that the limit blocks. */
+  onSelectionChange?: (countryCodes: string[]) => void
+  /** Shows a switch on the map for devices without a Shift key: while it is on, a plain click adds or
+   * removes a country. `'auto'` (default) shows it on touch screens only. */
+  showMultiSelectToggle?: boolean | 'auto'
   mapFrame?: boolean
   /** Where `infoLink` (a field of the country details) points. Default: the country's English Wikipedia
    * page. Return `undefined` for no link. */
@@ -172,7 +197,9 @@ export interface ExtendedWorldMapProps {
    *   around it, or anywhere outside the component. Clicks on a country, the controls and the
    *   details card never clear it.
    * - `'background'`: only a click on the map or the space around it inside the component.
-   * - `'never'`: only `selectedCountry` / a click on another country changes the selection.
+   * - `'never'`: only `selectedCountries` / clicks on countries change the selection.
+   * With two or more countries selected, nothing here clears them (that would be too easy to do by
+   * accident): use Escape, "Clear all" or the × of each country.
    * Not active while the `overlay` card is open (close it with Hide or Escape). */
   deselectOn?: 'outside' | 'background' | 'never'
   /** While a country is selected, fade all the others so it stands out. `true` (default) uses
@@ -199,9 +226,10 @@ export const ExtendedWorldMap = ({
   size,
   onCountryClick,
   tooltipText,
-  selectedCountry,
-  defaultSelectedCountry,
+  selectedCountries,
+  defaultSelectedCountries,
   onSelectionChange,
+  showMultiSelectToggle = 'auto',
   mapFrame = false,
   getInfoLink,
   interaction = true,
@@ -235,18 +263,27 @@ export const ExtendedWorldMap = ({
     defaultInfoMode,
     onInfoModeChange,
   )
-  const [selectedCode, setSelectedCode] = useControllableState<string | null>(
-    toCode(selectedCountry),
-    toCode(defaultSelectedCountry) ?? null,
+  const selection = useCountrySelection({
+    selectedCountries,
+    defaultSelectedCountries,
     onSelectionChange,
-  )
-  const selectedName = selectedCode ? countryNames.get(selectedCode) : undefined
-  const selected = selectedCode && selectedName ? { code: selectedCode, name: selectedName } : null
+  })
+  const selectedCodes = selection.codes
+  const selectedNames = selectedCodes.map((code) => countryNames.get(code) ?? code)
+  const hasSelection = selectedCodes.length > 0
+  // pointing at a country's entry in the details list lights it on the map, and the reverse
+  const [linkedCode, setLinkedCode] = useState<string | null>(null)
+  const [hoveredCode, setHoveredCode] = useState<string | null>(null)
+  const [multiMode, setMultiMode] = useState(false)
+  const [coarsePointer, setCoarsePointer] = useState(false)
+  useEffect(() => {
+    setCoarsePointer(window.matchMedia?.('(pointer: coarse)').matches ?? false)
+  }, [])
   const rootRef = useRef<HTMLDivElement>(null)
   // the country that has keyboard focus (not mouse focus), to draw its focus ring
   const [focusedCode, setFocusedCode] = useState<string | null>(null)
   useEffect(trackInputModality, [])
-  useRaiseOnTop(rootRef, highlightSelected ? selected?.name : undefined)
+  useRaiseOnTop(rootRef, highlightSelected ? selectedNames : [])
   useSingleTooltip(rootRef, styledTooltipNames)
 
   const {
@@ -271,34 +308,34 @@ export const ExtendedWorldMap = ({
   const dialogRef = useRef<HTMLDivElement>(null)
   const isOverlay = requestedPosition === 'overlay'
   // The overlay covers the map: while it is open nothing behind it may be operated
-  const overlayActive = showDetails && isOverlay && detailsOpen && selected !== null
+  const overlayActive = showDetails && isOverlay && detailsOpen && hasSelection
   const closeDetails = () => setDetailsOpen(false)
   useInert(mapRef, overlayActive)
   useModalDialog(dialogRef, overlayActive, closeDetails)
 
-  // A click that is not on a country, the controls or the card clears the selection
-  const clearSelection = () => {
-    if (selectedCode !== null) setSelectedCode(null)
-  }
-
-  // Keyboard equivalent: Escape with focus on the map or the card (the overlay dialog handles its
-  // own Escape and stops it here, so there it only closes the card)
+  // Keyboard equivalent of clicking away: Escape with focus on the map or the card (the overlay dialog
+  // handles its own Escape and stops it here, so there it only closes the card). Unlike clicking away,
+  // it also clears a selection of several countries.
   const onLayoutKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Escape' || event.defaultPrevented) return
-    if (deselectOn === 'never' || selected === null) return
+    if (deselectOn === 'never' || !hasSelection) return
     const fromCard = (event.target as Element).closest('[data-rwme-keep]') !== null
-    clearSelection()
+    const first = selectedNames[0]
+    selection.clear()
     if (fromCard) {
-      // the card's content changes; keep keyboard users in the map, on the country they cleared
+      // the card's content changes; keep keyboard users in the map, on a country they cleared
       Array.from(mapRef.current?.querySelectorAll('path') ?? [])
-        .find((path) => path.getAttribute('aria-label') === selected.name)
+        .find((path) => path.getAttribute('aria-label') === first)
         ?.focus({ preventScroll: true })
     }
   }
-  const clearRef = useRef(clearSelection)
-  clearRef.current = clearSelection
+
+  // A click that is not on a country, the controls or the card clears a selection of one country.
+  // A larger selection is not cleared this way: one stray click would throw it away.
+  const clearRef = useRef(selection.clear)
+  clearRef.current = selection.clear
   useEffect(() => {
-    if (deselectOn === 'never' || overlayActive || selectedCode === null) return
+    if (deselectOn === 'never' || overlayActive || selectedCodes.length !== 1) return
 
     const onDocumentClick = (event: globalThis.MouseEvent) => {
       const root = rootRef.current
@@ -315,7 +352,7 @@ export const ExtendedWorldMap = ({
 
     document.addEventListener('click', onDocumentClick)
     return () => document.removeEventListener('click', onDocumentClick)
-  }, [deselectOn, overlayActive, selectedCode])
+  }, [deselectOn, overlayActive, selectedCodes.length])
 
   const paletteColors = getPaletteColors(palette)
 
@@ -331,18 +368,19 @@ export const ExtendedWorldMap = ({
       : dimOthers === true
         ? DEFAULT_DIMMED_OPACITY
         : Math.min(1, Math.max(0, dimOthers))
-  const spotlight = highlightSelected && selected !== null && dimmedOpacity !== undefined
+  const spotlight = highlightSelected && hasSelection && dimmedOpacity !== undefined
 
   const getStyle = (context: CountryContext<string>): CSSProperties => {
-    const isSelected = highlightSelected && selected?.code === context.countryCode.toUpperCase()
+    const code = context.countryCode.toUpperCase()
+    const isSelected = highlightSelected && selectedCodes.includes(code)
     const isDimmed = spotlight && !isSelected
     const computed: CSSProperties = {
       ...baseStyle,
       ...(colorOption === MapColorOptions.COLORFUL && { fill: getFill(context) }),
       ...(isSelected && selectedStyle),
       ...(isDimmed && dimmedStyle(dimmedOpacity)),
-      ...(focusedCode === context.countryCode.toUpperCase() &&
-        (isSelected ? focusOnSelectedStyle : focusStyle)),
+      ...(focusedCode === code && (isSelected ? focusOnSelectedStyle : focusStyle)),
+      ...(linkedCode === code && linkedStyle),
     }
     const overrides =
       typeof styleOverrides === 'function'
@@ -355,7 +393,13 @@ export const ExtendedWorldMap = ({
     showLegend && colorOption === MapColorOptions.COLORFUL && !colors
       ? getPaletteLegend(palette)
       : undefined
-  const box = useMapBox(layoutRef, mapRef, showDetails || legend !== undefined)
+  const toggleVisible =
+    showMultiSelectToggle === true || (showMultiSelectToggle === 'auto' && coarsePointer)
+  const box = useMapBox(
+    layoutRef,
+    mapRef,
+    showDetails || legend !== undefined || selection.toast !== null || toggleVisible,
+  )
   // A side card needs room: on a narrow component it moves above / below the map instead
   const narrow = box !== null && box.layoutWidth < stackBelow
   const position: DetailsPosition =
@@ -366,29 +410,46 @@ export const ExtendedWorldMap = ({
         : requestedPosition
   const sideways = position === 'left' || position === 'right'
   const detailsFirst = position === 'top' || position === 'left'
-  const selection = selected && {
-    name: selected.name,
-    detail: getCountryDetail(selected.code, infoOption, getInfoLink),
+  const selections = selectedCodes.map((code) => ({
+    code,
+    name: countryNames.get(code) ?? code,
+    detail: getCountryDetail(code, infoOption, getInfoLink),
+  }))
+  const cardProps = {
+    headingLevel,
+    fontFamily,
+    fontStyle,
+    className: detailsClassName,
+    style: {
+      ...(isOverlay
+        ? overlayCardStyle
+        : sideways
+          ? { height: '100%', overflow: 'auto' }
+          : undefined),
+      ...detailsStyle,
+    },
+    onClose: closeDetails,
+    inDialog: isOverlay,
   }
-  const card = (
-    <CountryDetails
-      selection={selection}
-      headingLevel={headingLevel}
-      fontFamily={fontFamily}
-      fontStyle={fontStyle}
-      className={detailsClassName}
-      style={{
-        ...(isOverlay
-          ? overlayCardStyle
-          : sideways
-            ? { height: '100%', overflow: 'auto' }
-            : undefined),
-        ...detailsStyle,
-      }}
-      onClose={closeDetails}
-      inDialog={isOverlay}
-    />
-  )
+  const card =
+    selections.length >= 2 ? (
+      <CountryDetailsList
+        {...cardProps}
+        selections={selections}
+        reveal={selection.reveal}
+        highlightCode={hoveredCode}
+        onLink={setLinkedCode}
+        onRemove={selection.remove}
+        onClear={selection.clear}
+      />
+    ) : (
+      <CountryDetails
+        {...cardProps}
+        selection={selections[0] ? { name: selections[0].name, detail: selections[0].detail } : null}
+      />
+    )
+  const selectionLabel =
+    selections.length > 1 ? `${selections.length} countries` : (selections[0]?.name ?? '')
 
   // The slot positions the card against the map's real <svg> box: same width above/below it,
   // same height (and top edge) beside it
@@ -404,10 +465,10 @@ export const ExtendedWorldMap = ({
   let detailsSlot: ReactNode = null
   if (showDetails && !overlayActive) {
     if (!detailsOpen) {
-      detailsSlot = selection && (
+      detailsSlot = hasSelection && (
         <div data-rwme-keep style={slotStyle}>
           <ShowDetailsButton
-            name={selection.name}
+            name={selectionLabel}
             onClick={() => setDetailsOpen(true)}
             fontFamily={fontFamily}
             fontStyle={fontStyle}
@@ -466,6 +527,14 @@ export const ExtendedWorldMap = ({
               setFocusedCode((name && usedKeyboardLast() && countryCodes.get(name)) || null)
             }}
             onBlur={() => setFocusedCode(null)}
+            onMouseOver={(event: MouseEvent) => {
+              const name = (event.target as Element).closest('path')?.getAttribute('aria-label')
+              const code = name ? countryCodes.get(name) : undefined
+              setHoveredCode(code && selectedCodes.includes(code) ? code : null)
+            }}
+            onMouseOut={() => setHoveredCode(null)}
+            // Shift+click would otherwise select the text of the page
+            style={{ userSelect: 'none' }}
           >
             <WorldMap
               color={WHITE}
@@ -478,7 +547,8 @@ export const ExtendedWorldMap = ({
                 if (overlayActive) return
                 if (showDetails && !detailsOpen) setDetailsOpen(true)
                 const code = context.countryCode.toUpperCase()
-                if (code !== selectedCode) setSelectedCode(code)
+                const { shiftKey, metaKey, ctrlKey } = context.event
+                selection.click(code, multiMode || shiftKey || metaKey || ctrlKey)
                 onCountryClick?.(getCountryDetail(code, infoOption, getInfoLink), context)
               }}
               tooltipTextFunction={(context) =>
@@ -491,7 +561,23 @@ export const ExtendedWorldMap = ({
             // under the translucent overlay card it would only show through as clutter
             <MapLegend {...legend} position={legendPosition} box={box} />
           )}
-          {overlayActive && selection && (
+          {toggleVisible && !overlayActive && (
+            <MultiSelectToggle
+              on={multiMode}
+              onToggle={() => setMultiMode((current) => !current)}
+              corner={legendPosition === 'top-left' ? 'bottom-right' : 'top-left'}
+              box={box}
+            />
+          )}
+          {selection.toast && (
+            <MapToast
+              key={selection.toast.id}
+              text={selection.toast.text}
+              box={box}
+              onDismiss={selection.dismissToast}
+            />
+          )}
+          {overlayActive && hasSelection && (
             <div
               className="rwme-overlay"
               style={{
@@ -511,7 +597,11 @@ export const ExtendedWorldMap = ({
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
-                aria-label={`Details: ${selection.name}`}
+                aria-label={
+                  selections.length > 1
+                    ? `Details: ${selections.length} selected countries`
+                    : `Details: ${selectionLabel}`
+                }
                 tabIndex={-1}
                 style={{ width: '100%', height: '100%', outline: 'none' }}
               >
@@ -521,6 +611,9 @@ export const ExtendedWorldMap = ({
           )}
         </div>
         {!detailsFirst && detailsSlot}
+      </div>
+      <div className="rwme-announcer" aria-live="polite" style={visuallyHidden}>
+        {selection.announcement}
       </div>
     </div>
   )

@@ -15,7 +15,7 @@ const dimmedCount = (container: HTMLElement) =>
 
 describe('Escape clears the selection', () => {
   it('with focus on a country of the map', () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountry="FR" />)
+    const { container } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} />)
     const path = country(container, 'France')
     path.focus()
     fireEvent.keyDown(path, { key: 'Escape' })
@@ -38,7 +38,7 @@ describe('Escape clears the selection', () => {
   })
 
   it('with focus in the details card, and then returns focus to the cleared country', () => {
-    const { container } = render(<ExtendedWorldMap showDetails defaultSelectedCountry="FR" />)
+    const { container } = render(<ExtendedWorldMap showDetails defaultSelectedCountries={['FR']} />)
     const link = screen.getByRole('link')
     link.focus()
     fireEvent.keyDown(link, { key: 'Escape' })
@@ -51,10 +51,10 @@ describe('Escape clears the selection', () => {
   it('reports it to the parent when the selection is controlled, which decides', () => {
     const onSelectionChange = vi.fn()
     const { container } = render(
-      <ExtendedWorldMap selectedCountry="FR" onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap selectedCountries={['FR']} onSelectionChange={onSelectionChange} />,
     )
     fireEvent.keyDown(country(container, 'France'), { key: 'Escape' })
-    expect(onSelectionChange).toHaveBeenCalledExactlyOnceWith(null)
+    expect(onSelectionChange).toHaveBeenCalledExactlyOnceWith([])
     expect(isHighlighted(container, 'France')).toBe(true) // the parent has not accepted it
   })
 
@@ -68,7 +68,7 @@ describe('Escape clears the selection', () => {
   })
 
   it('ignores other keys', () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountry="FR" />)
+    const { container } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} />)
     const path = country(container, 'France')
     fireEvent.keyDown(path, { key: 'Enter' })
     fireEvent.keyDown(path, { key: 'a' })
@@ -88,7 +88,7 @@ describe('Escape clears the selection', () => {
             onColorModeChange={() => {}}
             onInfoModeChange={() => {}}
           />
-          <ExtendedWorldMap showDetails defaultSelectedCountry="FR" />
+          <ExtendedWorldMap showDetails defaultSelectedCountries={['FR']} />
         </>,
       )
       return view.container
@@ -119,14 +119,14 @@ describe('Escape clears the selection', () => {
   })
 
   it("is off with deselectOn='never'", () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountry="FR" deselectOn="never" />)
+    const { container } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} deselectOn="never" />)
     fireEvent.keyDown(country(container, 'France'), { key: 'Escape' })
     expect(isHighlighted(container, 'France')).toBe(true)
   })
 
   it('still clears with deselectOn=background (it is about the map and card, not the page)', () => {
     const { container } = render(
-      <ExtendedWorldMap defaultSelectedCountry="FR" deselectOn="background" />,
+      <ExtendedWorldMap defaultSelectedCountries={['FR']} deselectOn="background" />,
     )
     fireEvent.keyDown(country(container, 'France'), { key: 'Escape' })
     expect(isHighlighted(container, 'France')).toBe(false)
@@ -144,7 +144,7 @@ describe('Escape clears the selection', () => {
   })
 
   it('does not clear when another handler already took the key', () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountry="FR" />)
+    const { container } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} />)
     const path = country(container, 'France')
     path.addEventListener('keydown', (event) => event.preventDefault())
     fireEvent.keyDown(path, { key: 'Escape' })

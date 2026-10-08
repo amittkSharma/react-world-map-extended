@@ -38,7 +38,7 @@ describe('dimOthers', () => {
   })
 
   it('fades fill and border, with the default opacity of 0.35 and a CSS variable to theme it', () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountry="FR" />)
+    const { container } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} />)
     expect(style(container, 'Germany')).toContain('fill-opacity: var(--rwme-dimmed-opacity, 0.35)')
     expect(style(container, 'Germany')).toContain(
       'stroke-opacity: calc(var(--rwme-dimmed-opacity, 0.35) * 0.7)',
@@ -46,59 +46,59 @@ describe('dimOthers', () => {
   })
 
   it('also works for a country selected from outside, and clears when it is cleared', () => {
-    const { container, rerender } = render(<ExtendedWorldMap selectedCountry="DE" />)
+    const { container, rerender } = render(<ExtendedWorldMap selectedCountries={['DE']} />)
     expect(isDimmed(container, 'France')).toBe(true)
     expect(isDimmed(container, 'Germany')).toBe(false)
 
-    rerender(<ExtendedWorldMap selectedCountry={null} />)
+    rerender(<ExtendedWorldMap selectedCountries={[]} />)
     expect(dimmedCount(container)).toBe(0)
   })
 
   it('works in both colour modes', () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountry="FR" defaultColorMode="Colorful" />)
+    const { container } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} defaultColorMode="Colorful" />)
     expect(isDimmed(container, 'Germany')).toBe(true)
     expect(style(container, 'France')).not.toContain('--rwme-dimmed-opacity')
   })
 
   it('can be switched off, or set to another opacity (clamped to 0–1)', () => {
-    const { container, rerender } = render(<ExtendedWorldMap defaultSelectedCountry="FR" dimOthers={false} />)
+    const { container, rerender } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} dimOthers={false} />)
     expect(dimmedCount(container)).toBe(0)
 
-    rerender(<ExtendedWorldMap defaultSelectedCountry="FR" dimOthers={0.6} />)
+    rerender(<ExtendedWorldMap defaultSelectedCountries={['FR']} dimOthers={0.6} />)
     expect(style(container, 'Germany')).toContain('--rwme-dimmed-opacity, 0.6)')
 
-    rerender(<ExtendedWorldMap defaultSelectedCountry="FR" dimOthers={5} />)
+    rerender(<ExtendedWorldMap defaultSelectedCountries={['FR']} dimOthers={5} />)
     expect(style(container, 'Germany')).toContain('--rwme-dimmed-opacity, 1)')
-    rerender(<ExtendedWorldMap defaultSelectedCountry="FR" dimOthers={-1} />)
+    rerender(<ExtendedWorldMap defaultSelectedCountries={['FR']} dimOthers={-1} />)
     expect(style(container, 'Germany')).toContain('--rwme-dimmed-opacity, 0)')
 
-    rerender(<ExtendedWorldMap defaultSelectedCountry="FR" dimOthers />)
+    rerender(<ExtendedWorldMap defaultSelectedCountries={['FR']} dimOthers />)
     expect(style(container, 'Germany')).toContain('--rwme-dimmed-opacity, 0.35)')
   })
 
   it('is off with highlightSelected={false}, and for unknown codes', () => {
     const { container, rerender } = render(
-      <ExtendedWorldMap defaultSelectedCountry="FR" highlightSelected={false} />,
+      <ExtendedWorldMap defaultSelectedCountries={['FR']} highlightSelected={false} />,
     )
     expect(dimmedCount(container)).toBe(0)
 
-    rerender(<ExtendedWorldMap selectedCountry="ZZ" />)
+    rerender(<ExtendedWorldMap selectedCountries={['ZZ']} />)
     expect(dimmedCount(container)).toBe(0)
   })
 
   it('leaves dimmed countries clickable, and the spotlight moves', () => {
     const onSelectionChange = vi.fn()
     const { container } = render(
-      <ExtendedWorldMap defaultSelectedCountry="FR" onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap defaultSelectedCountries={['FR']} onSelectionChange={onSelectionChange} />,
     )
     fireEvent.click(country(container, 'Germany'))
-    expect(onSelectionChange).toHaveBeenCalledWith('DE')
+    expect(onSelectionChange).toHaveBeenCalledWith(['DE'])
   })
 
   it('tells styleOverrides which countries are dimmed', () => {
     const { container } = render(
       <ExtendedWorldMap
-        defaultSelectedCountry="FR"
+        defaultSelectedCountries={['FR']}
         styleOverrides={(_context, { dimmed }) => (dimmed ? { fill: '#eeeeee' } : { fill: '#111111' })}
       />,
     )
@@ -107,7 +107,7 @@ describe('dimOthers', () => {
   })
 
   it('stacks with the details card without hiding the selected country', () => {
-    render(<ExtendedWorldMap showDetails defaultSelectedCountry="FR" />)
+    render(<ExtendedWorldMap showDetails defaultSelectedCountries={['FR']} />)
     expect(screen.getByRole('status')).toHaveTextContent('France')
   })
 })

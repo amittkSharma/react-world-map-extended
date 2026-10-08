@@ -1,41 +1,18 @@
 import type { CSSProperties } from 'react'
+import { type Corner, type CornerBox, placeInCorner } from './corner'
 import type { LegendItem } from './palettes'
 
-export type LegendPosition = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
-
-const INSET = 8
+export type LegendPosition = Corner
 
 /** Below this map width the legend would cover too much of the map, so it goes under it instead. */
 export const LEGEND_INLINE_BELOW = 520
-
-interface Box {
-  width: number
-  height: number
-  /** The map's <svg> relative to the wrapper the legend is positioned in. */
-  inMap: { left: number; top: number }
-}
-
-/** Anchors a corner of the legend to the same corner of the map's <svg>, whatever the legend's size. */
-const place = (position: LegendPosition, box: Box | null): CSSProperties => {
-  const right = position.endsWith('right')
-  const bottom = position.startsWith('bottom')
-  if (!box) {
-    return { position: 'absolute', [right ? 'right' : 'left']: INSET, [bottom ? 'bottom' : 'top']: INSET }
-  }
-  return {
-    position: 'absolute',
-    left: right ? box.inMap.left + box.width - INSET : box.inMap.left + INSET,
-    top: bottom ? box.inMap.top + box.height - INSET : box.inMap.top + INSET,
-    transform: `translate(${right ? '-100%' : '0'}, ${bottom ? '-100%' : '0'})`,
-  }
-}
 
 interface MapLegendProps {
   title: string
   items: LegendItem[]
   position: LegendPosition
   /** The map's measured <svg> box (see useMapBox), or null before it is known. */
-  box: Box | null
+  box: CornerBox | null
 }
 
 const swatch = (color: string): CSSProperties => ({
@@ -67,6 +44,7 @@ export const MapLegend = ({ title, items, position, box }: MapLegendProps) => {
 
   return (
     <div
+      data-rwme-keep // the strip under a small map takes clicks; they are not clicks away from the selection
       className={inline ? 'rwme-legend rwme-legend--inline' : 'rwme-legend'}
       style={
         inline
@@ -83,7 +61,7 @@ export const MapLegend = ({ title, items, position, box }: MapLegendProps) => {
             }
           : {
               ...look,
-              ...place(position, box),
+              ...placeInCorner(position, box),
               zIndex: 5,
               pointerEvents: 'none', // a click on the legend is a click on the map below it
               padding: '6px 10px',

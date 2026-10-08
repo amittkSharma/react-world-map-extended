@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { continentNames } from './palettes'
+import { MAX_SELECTED_COUNTRIES } from './selectionLimit'
 import type { CountryDetail } from './rawData/getDefaultMapData'
 
 type Field = Exclude<keyof CountryDetail, 'infoLink'>
@@ -50,7 +51,7 @@ const card: CSSProperties = {
   lineHeight: 1.4,
 }
 
-const styles = {
+export const detailsStyles = {
   card,
   empty: {
     ...card,
@@ -106,9 +107,10 @@ const styles = {
   link: { color: 'var(--rwme-panel-accent, #0969da)' },
   paragraph: { margin: 0 },
 } satisfies Record<string, CSSProperties>
+const styles = detailsStyles
 
 /** `infoLink` may come from consumer code: only ever render http(s) URLs (never e.g. `javascript:`). */
-const parseWebUrl = (value: string | undefined): URL | undefined => {
+export const parseWebUrl = (value: string | undefined): URL | undefined => {
   if (!value) return undefined
   try {
     const url = new URL(value)
@@ -120,7 +122,7 @@ const parseWebUrl = (value: string | undefined): URL | undefined => {
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
 
-const headingTag = (level: number) => `h${Math.min(level, 6)}` as `h${HeadingLevel}`
+export const headingTag = (level: number) => `h${Math.min(level, 6)}` as `h${HeadingLevel}`
 
 export interface CountryDetailsProps {
   /** The country to show; `null` shows a hint to click a country. `detail` is `undefined` for areas without data. */
@@ -142,6 +144,65 @@ export interface CountryDetailsProps {
   inDialog?: boolean
 }
 
+/** The grouped facts of one country and its `infoLink`, without a title (the caller supplies it). */
+export const DetailsBody = ({
+  name,
+  detail,
+  groupHeadingLevel,
+}: {
+  name: string
+  detail: CountryDetail
+  groupHeadingLevel: number
+}) => {
+  const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      fields: group.fields.filter((field) => detail[field] !== undefined && detail[field] !== ''),
+    }))
+    .filter((group) => group.fields.length > 0)
+  const infoUrl = parseWebUrl(detail.infoLink)
+  const host = infoUrl?.hostname.replace(/^www\./, '')
+  const GroupTitle = headingTag(groupHeadingLevel)
+
+  return (
+    <>
+      {visibleGroups.length > 0 && (
+        <div style={styles.grid}>
+          {visibleGroups.map((group) => (
+            <div key={group.title}>
+              <GroupTitle style={styles.groupTitle}>{group.title}</GroupTitle>
+              <dl style={{ margin: 0 }}>
+                {group.fields.map((field) => (
+                  <div key={field}>
+                    <dt style={styles.term}>{labels[field] ?? field}</dt>
+                    <dd style={field === group.emphasis ? styles.emphasised : styles.value}>
+                      {formatValue(field, detail[field] as NonNullable<CountryDetail[Field]>)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </div>
+      )}
+      {infoUrl && (
+        <p className="rwme-details__link" style={styles.footer}>
+          More information:{' '}
+          <a
+            href={infoUrl.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`More information about ${name} on ${host} (opens in a new tab)`}
+            style={styles.link}
+          >
+            {host} ↗
+          </a>
+        </p>
+      )}
+    </>
+  )
+}
+
 /** Live region (screen readers announce updates) showing the selected country's details. */
 export const CountryDetails = ({
   selection,
@@ -154,17 +215,8 @@ export const CountryDetails = ({
   inDialog = false,
 }: CountryDetailsProps) => {
   const detail = selection?.detail
-  const visibleGroups = groups
-    .map((group) => ({
-      ...group,
-      fields: group.fields.filter((field) => detail?.[field] !== undefined && detail[field] !== ''),
-    }))
-    .filter((group) => group.fields.length > 0)
-  const infoUrl = parseWebUrl(detail?.infoLink)
-  const host = infoUrl?.hostname.replace(/^www\./, '')
 
   const Title = headingTag(headingLevel)
-  const GroupTitle = headingTag(headingLevel + 1)
 
   const base = !selection ? styles.empty : detail ? styles.card : styles.warning
   const style: CSSProperties = {
@@ -187,7 +239,10 @@ export const CountryDetails = ({
           Hide
         </button>
       )}
-      {!selection && <p style={styles.paragraph}>Click a country to see its details.</p>}
+      {!selection && <p style={styles.paragraph}>
+          Click a country to see its details. Shift+click (or ⌘/Ctrl+click) to select up to {MAX_SELECTED_COUNTRIES}{' '}
+          countries.
+        </p>}
       {selection && !detail && (
         <p style={styles.paragraph}>No details available for {selection.name}.</p>
       )}
@@ -196,39 +251,11 @@ export const CountryDetails = ({
           <Title className="rwme-details__title" style={styles.title}>
             {detail.name ?? selection.name}
           </Title>
-          {visibleGroups.length > 0 && (
-            <div style={styles.grid}>
-              {visibleGroups.map((group) => (
-                <div key={group.title}>
-                  <GroupTitle style={styles.groupTitle}>{group.title}</GroupTitle>
-                  <dl style={{ margin: 0 }}>
-                    {group.fields.map((field) => (
-                      <div key={field}>
-                        <dt style={styles.term}>{labels[field] ?? field}</dt>
-                        <dd style={field === group.emphasis ? styles.emphasised : styles.value}>
-                          {formatValue(field, detail[field] as NonNullable<CountryDetail[Field]>)}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </div>
-              ))}
-            </div>
-          )}
-          {infoUrl && (
-            <p className="rwme-details__link" style={styles.footer}>
-              More information:{' '}
-              <a
-                href={infoUrl.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={`More information about ${detail.name ?? selection.name} on ${host} (opens in a new tab)`}
-                style={styles.link}
-              >
-                {host} ↗
-              </a>
-            </p>
-          )}
+          <DetailsBody
+            name={detail.name ?? selection.name}
+            detail={detail}
+            groupHeadingLevel={headingLevel + 1}
+          />
         </>
       )}
     </div>

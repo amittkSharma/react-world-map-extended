@@ -267,10 +267,10 @@ describe('screen-reader semantics of the details card', () => {
 
   it('in the overlay, a change made from outside is still announced through the live area', () => {
     const { rerender } = render(
-      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountry="FR" />,
+      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountries={['FR']} />,
     )
     rerender(
-      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountry="DE" />,
+      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountries={['DE']} />,
     )
     const dialog = screen.getByRole('dialog', { name: 'Details: Germany' })
     expect(dialog.querySelector('[aria-live="polite"]')).toHaveTextContent('Germany')

@@ -9,6 +9,9 @@ export interface WorldMapControlsProps {
   /** Which details a click reports (name, capital, region, language, currency, complete). */
   infoMode: MapInfoMode
   onInfoModeChange: (mode: MapInfoMode) => void
+  /** `'horizontal'` (default): the two groups side by side, each with its options in a row.
+   * `'vertical'`: the groups stacked, each with its options in a column (for a sidebar). */
+  orientation?: 'horizontal' | 'vertical'
   className?: string
   /** Merged over the bar's own style (a row of two radio groups), last. */
   style?: CSSProperties
@@ -31,16 +34,24 @@ export const WorldMapControls = ({
   onColorModeChange,
   infoMode,
   onInfoModeChange,
+  orientation = 'horizontal',
   className,
   style,
 }: WorldMapControlsProps) => {
   const groupId = useId() // radio group names must be unique per instance on the page
+  const direction = orientation === 'vertical' ? 'column' : 'row'
 
   return (
     <div
       data-rwme-keep
       className={['rwme-controls', className].filter(Boolean).join(' ')}
-      style={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', ...style }}
+      style={{
+        display: 'flex',
+        flexDirection: orientation === 'vertical' ? 'column' : 'row',
+        flexWrap: 'wrap', // on a narrow screen the groups wrap instead of overflowing
+        justifyContent: 'flex-start',
+        ...style,
+      }}
     >
       <UserOptions
         legend="Map colours"
@@ -48,6 +59,7 @@ export const WorldMapControls = ({
         sources={mapColorOptions}
         selectedValue={colorMode}
         onChange={onColorModeChange}
+        direction={direction}
       />
       <UserOptions
         legend="Information on click"
@@ -55,6 +67,7 @@ export const WorldMapControls = ({
         sources={mapDataOptions}
         selectedValue={infoMode}
         onChange={onInfoModeChange}
+        direction={direction}
       />
     </div>
   )

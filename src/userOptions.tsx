@@ -7,6 +7,8 @@ interface UserOptionsProps<T extends string> {
   sources: Array<LabelValue<T>>
   selectedValue: T
   onChange: (value: T) => void
+  /** How the options run inside the group. Default `'row'`. */
+  direction?: 'row' | 'column'
 }
 
 export const UserOptions = <T extends string>({
@@ -15,9 +17,17 @@ export const UserOptions = <T extends string>({
   sources,
   selectedValue,
   onChange,
+  direction = 'row',
 }: UserOptionsProps<T>) => {
   return (
-    <fieldset style={{ display: 'flex', flexDirection: 'row', gap: '10px' }}>
+    <fieldset
+      style={{
+        display: 'flex',
+        flexDirection: direction,
+        flexWrap: 'wrap', // the options wrap instead of overflowing a narrow screen
+        gap: direction === 'row' ? '4px 10px' : '4px',
+      }}
+    >
       <legend>{legend}</legend>
 
       {sources.map(({ label, value }) => (

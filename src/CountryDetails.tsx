@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import { continentNames } from './palettes'
 import type { CountryDetail } from './rawData/getDefaultMapData'
 
 type Field = Exclude<keyof CountryDetail, 'infoLink'>
@@ -23,6 +24,7 @@ const labels: Partial<Record<Field, string>> = {
 }
 
 const formatValue = (field: Field, value: NonNullable<CountryDetail[Field]>): string => {
+  if (field === 'continent' && typeof value === 'string') return continentNames[value] ?? value
   if (Array.isArray(value)) {
     return value.map((item) => (field === 'isdCodes' ? `+${item}` : item)).join(', ')
   }
@@ -65,14 +67,14 @@ const styles = {
     position: 'absolute',
     top: '0.6rem',
     right: '0.75rem',
-    padding: '0.15rem 0.6rem',
+    padding: '0.3rem 0.75rem', // a comfortable touch target
     border: '1px solid var(--rwme-panel-border, #d0d7de)',
     borderRadius: 6,
     background: 'var(--rwme-panel-bg, #ffffff)',
     color: 'var(--rwme-panel-text, #1f2328)',
     fontFamily: 'inherit',
     fontStyle: 'inherit',
-    fontSize: '0.8rem',
+    fontSize: '0.85rem',
     cursor: 'pointer',
   },
   grid: {

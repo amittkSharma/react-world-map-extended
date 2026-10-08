@@ -7,11 +7,17 @@ const useIsoLayoutEffect = typeof window === 'undefined' ? useEffect : useLayout
 export const LAYOUT_GAP = 16
 
 export interface MapBox {
-  /** The map's <svg> relative to the layout container, in px. */
+  /** The map's <svg> relative to the layout container, in px (for what sits beside it: the card slot). */
   left: number
   top: number
   width: number
   height: number
+  /** The same <svg>, relative to the map's own positioned wrapper (for what is drawn over it: the
+   * legend and the overlay). These differ from `left`/`top` whenever a card sits above or beside
+   * the map and pushes the wrapper away from the layout's origin. */
+  inMap: { left: number; top: number }
+  /** Width of the layout container, in px: the room the component has. */
+  layoutWidth: number
 }
 
 /**
@@ -47,18 +53,27 @@ export const useMapBox = (
         setBox(null)
         return
       }
+      const wrapperRect = (map.parentElement ?? layout).getBoundingClientRect()
       const next: MapBox = {
         left: Math.round(svgRect.left - layoutRect.left),
         top: Math.round(svgRect.top - layoutRect.top),
         width: Math.round(svgRect.width),
         height: Math.round(svgRect.height),
+        inMap: {
+          left: Math.round(svgRect.left - wrapperRect.left),
+          top: Math.round(svgRect.top - wrapperRect.top),
+        },
+        layoutWidth: Math.round(layoutRect.width),
       }
       setBox((previous) =>
         previous &&
         previous.left === next.left &&
         previous.top === next.top &&
         previous.width === next.width &&
-        previous.height === next.height
+        previous.height === next.height &&
+        previous.inMap.left === next.inMap.left &&
+        previous.inMap.top === next.inMap.top &&
+        previous.layoutWidth === next.layoutWidth
           ? previous
           : next,
       )
@@ -68,6 +83,7 @@ export const useMapBox = (
     const observer = new ResizeObserver(measure)
     observer.observe(svg)
     observer.observe(layout)
+    if (map.parentElement) observer.observe(map.parentElement)
     return () => observer.disconnect()
   }, [layoutRef, mapRef, enabled])
 

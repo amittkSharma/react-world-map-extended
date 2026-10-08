@@ -56,7 +56,7 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `infoMode` / `defaultInfoMode` / `onInfoModeChange` | `'CountryName' \| 'CountryCapital' \| 'CountryRegionInfo' \| 'CountryLanguageInfo' \| 'CountryCurrencyInfo' \| 'CountryCompleteInfo'` | `'CountryName'` | Fields reported on click; same controlled/uncontrolled rules. |
 | `palette` | `'default' \| 'continent' \| 'region' \| 'monochrome'` | `'default'` | Built-in colours for Colorful mode. |
 | `colors` | `Record<ISO2, string> \| (ctx) => string \| undefined` | – | Colours for Colorful mode; wins over `palette`. Keys are upper-case ISO alpha-2 codes. |
-| `showLegend` | `boolean` | `true` | Draw a legend over a corner of the map saying what the colours mean. It appears only for the `continent` and `region` palettes, in Colorful mode, without custom `colors` (the other schemes have nothing to explain). It never takes clicks. |
+| `showLegend` | `boolean` | `true` | Draw a legend over a corner of the map saying what the colours mean. It appears only for the `continent` and `region` palettes, in Colorful mode, without custom `colors` (the other schemes have nothing to explain). It never takes clicks. On a map narrower than 520 px it becomes a wrapping strip under the map instead of covering it, and it steps aside while the `overlay` card is open. |
 | `legendPosition` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'bottom-left'` | Which corner of the map the legend sits in. |
 | `highlightSelected` | `boolean` | `true` | Outline the selected country. Turning it off also turns off `dimOthers`. |
 | `deselectOn` | `'outside' \| 'background' \| 'never'` | `'outside'` | When a click clears the selection, restoring the original map: `'outside'` = a click on the map where there is no country, on the empty space around it, or anywhere outside the component; `'background'` = only the map or the space around it inside the component; `'never'`. Clicks on a country, the controls or the details card never clear it, and nothing clears while the `overlay` card is open. **Keyboard:** `Escape` with focus on the map or in the details card also clears the selection (not with `'never'`; in the `overlay` card it closes the card instead). With a controlled `selectedCountry`, `onSelectionChange(null)` is called and the parent decides. |
@@ -84,6 +84,7 @@ Configure it with `detailsOptions`:
 |---|---|---|---|
 | `position` | `'bottom' \| 'top' \| 'left' \| 'right' \| 'overlay'` | `'bottom'` | Where the card sits relative to the map. |
 | `open` / `defaultOpen` / `onOpenChange` | `boolean` / `boolean` / `(open: boolean) => void` | `defaultOpen: true` | Show/hide. Controlled with `open`. |
+| `stackBelow` | `number` | `720` | Component width (px) below which `'left'` / `'right'` fall back to `'top'` / `'bottom'`, because a side card squeezes the map on a narrow screen. |
 | `headingLevel` | `1 \| 2 \| 3 \| 4 \| 5 \| 6` | `3` | Level of the country-name heading; category headings use the next level (max `h6`). |
 | `fontFamily` | `string` | inherited | CSS `font-family` of the card and its buttons. |
 | `fontStyle` | `string` | inherited | CSS `font-style` of the card and its buttons. |
@@ -102,7 +103,7 @@ button brings it back, and clicking a country reopens it. Control it yourself wi
 **Positions.** `top`/`bottom` place the card above/below the map, **exactly as wide as the map** and starting at its
 left edge. `left`/`right` place it beside the map, **exactly as tall as the map** (the card scrolls if its content is
 longer) and starting at the map's top edge; its width is `--rwme-panel-width` (default `20rem`) and it sits flush
-against the map. In all four, **other countries stay clickable** and update the card. The alignment is measured from
+against the map. In all four, **other countries stay clickable** and update the card. On a narrow component (under `stackBelow`, 720 px by default, measured on the component, not the viewport) `left` and `right` automatically move above and below the map. The alignment is measured from
 the map's real `<svg>`, so it holds whatever margins the host page adds. (Beside the map, `size="responsive"` has no
 fixed width to hug, so a card on the right may sit apart from a map narrower than the available room.)
 
@@ -146,7 +147,8 @@ const modes = useWorldMapModes({ defaultColorMode: 'Colorful' }) // { colorMode,
 ```
 
 `<WorldMapControls>` is always controlled (`colorMode`, `onColorModeChange`, `infoMode`, `onInfoModeChange`) and also takes
-`className` and `style`. Clicking it never clears the map's selection, even though it sits outside the map. Prefer
+`className`, `style` and `orientation` (`'horizontal'` by default; `'vertical'` stacks the groups and their options, for a
+sidebar). Clicking it never clears the map's selection, even though it sits outside the map. Prefer
 your own markup? Skip it and drive the map with `colorMode` / `infoMode` and their `on…Change` callbacks directly:
 
 ```tsx
@@ -163,6 +165,7 @@ Pass `className`/`style` for the wrapper, or theme the countries with CSS custom
 |---|---|---|
 | `--rwme-fill` | `#ffffff` | country fill in Black and White mode |
 | `--rwme-stroke`, `--rwme-stroke-width` | `#000000`, `1.2` | country border |
+| `--rwme-focus-stroke` | `#1a73e8` | the keyboard focus ring of a country |
 | `--rwme-selected-stroke`, `--rwme-selected-stroke-width` | `#d62828`, `2.5` | border of the selected country |
 | `--rwme-legend-bg`, `--rwme-legend-text`, `--rwme-legend-border` | translucent white, `#1f2328`, `#d0d7de` | the legend box |
 | `--rwme-dimmed-opacity` | `0.35` (or the `dimOthers` number) | opacity of the other countries while one is selected |
@@ -175,6 +178,8 @@ For anything else use `styleOverrides`. Hover colours are controlled by `react-s
 
 ## Known limitations
 
+- Keyboard focus on a country is drawn by this package (a glow along its outline; its red outline turns dashed when it is also the selected one), not by the browser, whose own ring is a box around the whole country. Mouse clicks never show a ring. The library restyles a focused country's border over ours, so the glow does most of the work; it relies on CSS `filter`, which older Safari versions may ignore on SVG shapes.
+- With `top` / `bottom` the card appears and disappears next to the map, so the page below it moves; `left`, `right` and `overlay` do not shift the layout.
 - `react-svg-worldmap` gives every country a styled tooltip and also a native `<title>` that browsers show as a second, plain tooltip. This package removes the `<title>` (each country keeps its `aria-label`), so you get one tooltip. It relies on the library's markup; if you pass your own `data` in the future, countries without a value keep only the native one.
 - The legend only explains the `continent` and `region` palettes. Custom `colors`, the default per-country colours and `monochrome` have no legend (a legend for your own data comes with the planned data-driven map). Its swatches keep their full colours while `dimOthers` fades the map.
 - With the default `deselectOn="outside"`, a click on any element of your page outside the map (a dropdown, a button) clears the selection; if those elements should keep it, use `deselectOn="background"`.
@@ -191,6 +196,8 @@ For anything else use `styleOverrides`. Hover colours are controlled by `react-s
 ```sh
 npm run dev            # example app (the URL is printed, path /example)
 npm run build-package  # lint, typecheck, test, build
+npm run lint           # Biome; any warning fails
+npm run lint:fix       # apply Biome's safe fixes (unsafe ones: npx biome check --write --unsafe)
 ```
 
 The example app (`example/`, TypeScript) accepts query-string hooks for repeatable screenshots, documented at the top of

@@ -70,7 +70,8 @@ export interface LegendItem {
   color: string
 }
 
-const continentNames: Record<string, string> = {
+/** The data source stores continents as two-letter codes. */
+export const continentNames: Record<string, string> = {
   AF: 'Africa',
   AS: 'Asia',
   EU: 'Europe',

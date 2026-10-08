@@ -91,6 +91,26 @@ describe('legend on the map', () => {
   })
 })
 
+describe('legend and the overlay card', () => {
+  it('steps aside while the overlay card is open, and comes back after', () => {
+    const { container } = render(
+      <ExtendedWorldMap
+        showDetails
+        detailsOptions={{ position: 'overlay' }}
+        defaultColorMode="Colorful"
+        palette="continent"
+      />,
+    )
+    expect(legend()).not.toBeNull()
+    fireEvent.click(country(container, 'France'))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(legend()).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide details' }))
+    expect(legend()).not.toBeNull()
+  })
+})
+
 describe('legend position', () => {
   afterEach(() => vi.restoreAllMocks())
 
@@ -99,7 +119,8 @@ describe('legend position', () => {
       ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect
     vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
       if (this.matches('.rwme-layout')) return rect(10, 10, 1000, 800)
-      if (this.matches('svg')) return rect(20, 40, 600, 300) // 10px right of / 30px below the layout
+      if (this.matches('.rwme-map')) return rect(10, 10, 1000, 500) // the wrapper the legend is positioned in
+      if (this.matches('svg')) return rect(20, 40, 600, 300) // 10px right of / 30px below the wrapper
       return rect(0, 0, 0, 0)
     })
   }
@@ -113,6 +134,53 @@ describe('legend position', () => {
     withBoxes()
     render(<ExtendedWorldMap defaultColorMode="Colorful" palette="continent" legendPosition={legendPosition} />)
     expect(legend()).toHaveStyle(expected)
+  })
+
+  // A card above or beside the map pushes the map's wrapper away from the layout's origin; the legend is
+  // positioned in the wrapper, so it must be placed from the wrapper, not from the layout.
+  it('is placed from the map wrapper, not the layout: a card above the map does not push it away', () => {
+    const rect = (left: number, top: number, width: number, height: number) =>
+      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      if (this.matches('.rwme-layout')) return rect(10, 10, 1000, 800)
+      if (this.matches('.rwme-map')) return rect(10, 160, 1000, 500) // below a 150px card
+      if (this.matches('svg')) return rect(20, 170, 600, 300) // 10px right of / 10px below the wrapper
+      return rect(0, 0, 0, 0)
+    })
+    render(
+      <ExtendedWorldMap
+        showDetails
+        detailsOptions={{ position: 'top' }}
+        defaultColorMode="Colorful"
+        palette="continent"
+      />,
+    )
+    expect(legend()).toHaveStyle({ left: '18px', top: '302px' }) // 10+8 / 10+300-8, not 170-10+300-8
+  })
+
+  it('becomes a strip under a small map instead of covering it', () => {
+    const rect = (left: number, top: number, width: number, height: number) =>
+      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      if (this.matches('.rwme-layout')) return rect(0, 0, 420, 600)
+      if (this.matches('.rwme-map')) return rect(0, 0, 420, 400)
+      if (this.matches('svg')) return rect(0, 0, 400, 260)
+      return rect(0, 0, 0, 0)
+    })
+    render(<ExtendedWorldMap defaultColorMode="Colorful" palette="continent" />)
+    const strip = legend()
+    expect(strip).toHaveClass('rwme-legend--inline')
+    expect(strip?.style.position).toBe('') // in the flow, under the map: not drawn over it
+    expect(strip).toHaveStyle({ width: '400px' })
+    expect(strip?.style.pointerEvents).toBe('') // nothing is underneath, so it can take clicks
+    expect(screen.getAllByRole('listitem')).toHaveLength(6)
+  })
+
+  it('stays over the map on a wide one', () => {
+    withBoxes()
+    render(<ExtendedWorldMap defaultColorMode="Colorful" palette="continent" />)
+    expect(legend()).not.toHaveClass('rwme-legend--inline')
+    expect(legend()).toHaveStyle({ position: 'absolute' })
   })
 
   it('defaults to the bottom-left corner', () => {

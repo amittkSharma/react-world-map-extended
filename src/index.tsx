@@ -1,10 +1,12 @@
 import {
   type CSSProperties,
+  type FocusEvent,
   type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
   useEffect,
   useRef,
+  useState,
 } from 'react'
 import WorldMap, { regions } from 'react-svg-worldmap'
 
@@ -19,7 +21,8 @@ import {
   type InfoLinkResolver,
   getCountryDetail,
 } from './rawData/getDefaultMapData'
-import type { DetailsOptions } from './detailsOptions'
+import type { DetailsOptions, DetailsPosition } from './detailsOptions'
+import { trackInputModality, usedKeyboardLast } from './inputModality'
 import { useControllableState } from './useControllableState'
 import { LAYOUT_GAP, useMapBox } from './useMapBox'
 import { useInert, useModalDialog } from './useModalDialog'
@@ -52,6 +55,7 @@ const baseStyle: CSSProperties = {
   strokeWidth: 'var(--rwme-stroke-width, 1.2)',
   strokeOpacity: 0.7,
   cursor: 'pointer',
+  // the browser's focus ring is a box around the whole path; keyboard focus is drawn by `focusStyle`
   outline: 'none',
 }
 
@@ -62,6 +66,22 @@ const dimmedStyle = (opacity: number): CSSProperties => ({
   fillOpacity: `var(--rwme-dimmed-opacity, ${opacity})`,
   strokeOpacity: `calc(var(--rwme-dimmed-opacity, ${opacity}) * 0.7)`,
 })
+
+// Keyboard focus on a country: follows the country's shape, unlike the browser's focus ring.
+// react-svg-worldmap restyles a focused country's border width and opacity (as it does on hover) over
+// whatever is set here, so the ring is mostly a glow, which that restyling leaves alone.
+const FOCUS_GLOW =
+  'drop-shadow(0 0 2px var(--rwme-focus-stroke, #1a73e8)) drop-shadow(0 0 1px var(--rwme-focus-stroke, #1a73e8))'
+const focusStyle: CSSProperties = {
+  stroke: 'var(--rwme-focus-stroke, #1a73e8)',
+  strokeWidth: 'var(--rwme-focus-stroke-width, 3)',
+  strokeOpacity: 1,
+  filter: FOCUS_GLOW,
+}
+
+// Keyboard focus on the selected country: its red outline stays (it is what marks the selection),
+// dashed so the focus is visible too
+const focusOnSelectedStyle: CSSProperties = { strokeDasharray: '6 3', filter: FOCUS_GLOW }
 
 const selectedStyle: CSSProperties = {
   stroke: 'var(--rwme-selected-stroke, #d62828)',
@@ -91,6 +111,7 @@ const getMapMaxWidth = (size: SizeOption | 'responsive' | number) =>
   typeof size === 'number' ? size : size === 'responsive' ? undefined : presetWidths[size]
 
 const countryNames = new Map(regions.map((region) => [region.code.toUpperCase(), region.name]))
+const countryCodes = new Map(regions.map((region) => [region.name, region.code.toUpperCase()]))
 
 // areas that get the library's styled tooltip (every area that has an entry in the map data)
 const styledTooltipNames: ReadonlySet<string> = new Set(
@@ -222,11 +243,15 @@ export const ExtendedWorldMap = ({
   const selectedName = selectedCode ? countryNames.get(selectedCode) : undefined
   const selected = selectedCode && selectedName ? { code: selectedCode, name: selectedName } : null
   const rootRef = useRef<HTMLDivElement>(null)
+  // the country that has keyboard focus (not mouse focus), to draw its focus ring
+  const [focusedCode, setFocusedCode] = useState<string | null>(null)
+  useEffect(trackInputModality, [])
   useRaiseOnTop(rootRef, highlightSelected ? selected?.name : undefined)
   useSingleTooltip(rootRef, styledTooltipNames)
 
   const {
-    position = 'bottom',
+    position: requestedPosition = 'bottom',
+    stackBelow = 720,
     open,
     defaultOpen = true,
     onOpenChange,
@@ -244,7 +269,7 @@ export const ExtendedWorldMap = ({
   const layoutRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
-  const isOverlay = position === 'overlay'
+  const isOverlay = requestedPosition === 'overlay'
   // The overlay covers the map: while it is open nothing behind it may be operated
   const overlayActive = showDetails && isOverlay && detailsOpen && selected !== null
   const closeDetails = () => setDetailsOpen(false)
@@ -316,6 +341,8 @@ export const ExtendedWorldMap = ({
       ...(colorOption === MapColorOptions.COLORFUL && { fill: getFill(context) }),
       ...(isSelected && selectedStyle),
       ...(isDimmed && dimmedStyle(dimmedOpacity)),
+      ...(focusedCode === context.countryCode.toUpperCase() &&
+        (isSelected ? focusOnSelectedStyle : focusStyle)),
     }
     const overrides =
       typeof styleOverrides === 'function'
@@ -329,6 +356,14 @@ export const ExtendedWorldMap = ({
       ? getPaletteLegend(palette)
       : undefined
   const box = useMapBox(layoutRef, mapRef, showDetails || legend !== undefined)
+  // A side card needs room: on a narrow component it moves above / below the map instead
+  const narrow = box !== null && box.layoutWidth < stackBelow
+  const position: DetailsPosition =
+    narrow && requestedPosition === 'left'
+      ? 'top'
+      : narrow && requestedPosition === 'right'
+        ? 'bottom'
+        : requestedPosition
   const sideways = position === 'left' || position === 'right'
   const detailsFirst = position === 'top' || position === 'left'
   const selection = selected && {
@@ -413,6 +448,7 @@ export const ExtendedWorldMap = ({
       >
         {detailsFirst && detailsSlot}
         <div
+          className="rwme-map"
           style={{
             position: 'relative',
             // beside the map: take the remaining width, but no more than the map can use, so a card
@@ -422,7 +458,15 @@ export const ExtendedWorldMap = ({
               : { width: '100%' }),
           }}
         >
-          <div ref={mapRef}>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: delegates focus events from the focusable countries inside; the wrapper itself is not interactive */}
+          <div
+            ref={mapRef}
+            onFocus={(event: FocusEvent) => {
+              const name = (event.target as Element).closest('path')?.getAttribute('aria-label')
+              setFocusedCode((name && usedKeyboardLast() && countryCodes.get(name)) || null)
+            }}
+            onBlur={() => setFocusedCode(null)}
+          >
             <WorldMap
               color={WHITE}
               size={size || 'xxl'}
@@ -443,7 +487,10 @@ export const ExtendedWorldMap = ({
               styleFunction={getStyle}
             />
           </div>
-          {legend && <MapLegend {...legend} position={legendPosition} box={box} />}
+          {legend && !overlayActive && (
+            // under the translucent overlay card it would only show through as clutter
+            <MapLegend {...legend} position={legendPosition} box={box} />
+          )}
           {overlayActive && selection && (
             <div
               className="rwme-overlay"
@@ -451,7 +498,12 @@ export const ExtendedWorldMap = ({
                 position: 'absolute',
                 zIndex: 10,
                 ...(box
-                  ? { left: box.left, top: box.top, width: box.width, height: box.height }
+                  ? {
+                      left: box.inMap.left,
+                      top: box.inMap.top,
+                      width: box.width,
+                      height: box.height,
+                    }
                   : { inset: 0 }),
               }}
             >

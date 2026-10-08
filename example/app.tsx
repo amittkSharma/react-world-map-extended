@@ -56,7 +56,7 @@ export const ExampleApp = () => {
   const sideways = placement === 'left' || placement === 'right'
   const controls = apart && (
     <div className="demo-controls">
-      <WorldMapControls {...modes} style={sideways ? { flexDirection: 'column' } : undefined} />
+      <WorldMapControls {...modes} orientation={sideways ? 'vertical' : 'horizontal'} />
     </div>
   )
 
@@ -102,7 +102,10 @@ export const ExampleApp = () => {
             onChange={(event) => setCountry(event.target.value || null)}
           >
             <option value="">none</option>
-            {quickCountries.map((code) => (
+            {(country && !quickCountries.includes(country)
+              ? [...quickCountries, country]
+              : quickCountries
+            ).map((code) => (
               <option key={code} value={code}>
                 {code}
               </option>
@@ -146,7 +149,7 @@ export const ExampleApp = () => {
             selectedCountry={country}
             onSelectionChange={setCountry}
             detailsOptions={{ position }}
-            palette="continent"
+            palette={scenario.palette}
             {...modes}
           />
           {(placement === 'below' || placement === 'right') && controls}

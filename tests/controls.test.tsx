@@ -57,6 +57,38 @@ describe('<WorldMapControls>', () => {
     expect(new Set(names).size).toBe(4)
   })
 
+  it('lays the groups side by side with options in a row by default', () => {
+    const { container } = render(<WorldMapControls {...props()} />)
+    expect(container.querySelector('.rwme-controls')).toHaveStyle({ flexDirection: 'row' })
+    for (const group of container.querySelectorAll('fieldset')) {
+      expect(group).toHaveStyle({ flexDirection: 'row', gap: '4px 10px' })
+    }
+  })
+
+  it("stacks the groups and their options with orientation='vertical', without losing `style`", () => {
+    const { container } = render(
+      <WorldMapControls {...props()} orientation="vertical" style={{ gap: '12px' }} />,
+    )
+    expect(container.querySelector('.rwme-controls')).toHaveStyle({
+      flexDirection: 'column',
+      gap: '12px', // `style` still wins over the component's own style
+    })
+    const groups = container.querySelectorAll('fieldset')
+    expect(groups).toHaveLength(2)
+    for (const group of groups) {
+      expect(group).toHaveStyle({ flexDirection: 'column', gap: '4px' })
+    }
+    expect(screen.getAllByRole('radio')).toHaveLength(8) // same controls, only the layout changed
+  })
+
+  it('wraps instead of overflowing on a narrow screen', () => {
+    const { container } = render(<WorldMapControls {...props()} />)
+    expect(container.querySelector('.rwme-controls')).toHaveStyle({ flexWrap: 'wrap' })
+    for (const group of container.querySelectorAll('fieldset')) {
+      expect(group).toHaveStyle({ flexWrap: 'wrap' })
+    }
+  })
+
   it('is what <ExtendedWorldMap> renders itself, so the two look the same', () => {
     const { container } = render(<ExtendedWorldMap />)
     expect(container.querySelector('.rwme-controls')).toBeInTheDocument()

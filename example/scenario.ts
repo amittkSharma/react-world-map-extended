@@ -1,5 +1,6 @@
 import {
   type DetailsPosition,
+  type MapPalette,
   type MapColorMode,
   MapColorOptions,
   MapDataOptions,
@@ -14,11 +15,15 @@ import {
  *   &select=Germany              click that country (by its map name) once the map has rendered
  *   &info=CountryCompleteInfo    information mode
  *   &color=BlackAndWhite         colour mode
+ *   &palette=region              colour palette (default|continent|region|monochrome; the example starts with continent)
  *   &controls=above|below|left|right   place the radio controls apart from the map, as a separate
  *                                <WorldMapControls> (default: built into the map)
  *   &boundaries=off              hide the dashed outlines that show which part is which component
- *   &then=background | escape    half a second later, clear the selection by clicking the empty
- *                                map / pressing Escape on the selected country
+ *   &then=background | escape | focusclick | keyboard
+ *                                half a second later, clear the selection by clicking the empty
+ *                                map / pressing Escape on the selected country; `focusclick` focuses the country and
+ *                                clicks it (a mouse click on a focusable country); `keyboard` presses Tab and
+ *                                focuses it (keyboard focus)
  *
  * e.g. chrome --headless=new --screenshot=out.png "http://localhost:3000/example?select=Germany&then=escape"
  */
@@ -26,7 +31,8 @@ export const detailsPositions: DetailsPosition[] = ['bottom', 'top', 'left', 'ri
 
 const infoModes = Object.values(MapDataOptions) as MapInfoMode[]
 const colorModes = Object.values(MapColorOptions) as MapColorMode[]
-const followUps = ['background', 'escape'] as const
+const palettes: MapPalette[] = ['default', 'continent', 'region', 'monochrome']
+const followUps = ['background', 'escape', 'focusclick', 'keyboard'] as const
 
 /** `inside`: part of `<ExtendedWorldMap>`; the others: a separate `<WorldMapControls>` placed apart. */
 export const controlsPlacements = ['inside', 'above', 'below', 'left', 'right'] as const
@@ -36,6 +42,7 @@ export interface Scenario {
   position: DetailsPosition
   info: MapInfoMode
   color: MapColorMode
+  palette: MapPalette
   /** `?controls=`: where the radio controls are drawn */
   controls: ControlsPlacement
   /** `?boundaries=off` hides the labelled outlines */
@@ -57,6 +64,7 @@ export const readScenario = (search: string = window.location.search): Scenario 
     color: pick(params.get('color'), colorModes) ?? MapColorOptions.COLORFUL,
     controls: pick(params.get('controls'), controlsPlacements) ?? 'inside',
     boundaries: params.get('boundaries') !== 'off',
+    palette: pick(params.get('palette'), palettes) ?? 'continent',
     select: params.get('select') ?? undefined,
     followUp: pick(params.get('then'), followUps),
   }
@@ -81,6 +89,13 @@ export const runScenario = ({ select, followUp }: Scenario): (() => void) => {
     } else if (followUp === 'escape') {
       path.focus()
       path.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+    } else if (followUp === 'focusclick') {
+      // what a mouse click does to a focusable country: it takes focus, then the click handler runs
+      path.focus()
+      path.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    } else if (followUp === 'keyboard') {
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+      path.focus()
     }
   }, 500)
   return () => clearTimeout(timer)

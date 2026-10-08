@@ -8,6 +8,9 @@ export interface DetailsOptions {
   /** Default `'bottom'`. With `'overlay'` the map cannot be clicked while the card is open; in every
    * other position other countries stay clickable and update the card. */
   position?: DetailsPosition
+  /** Component width, in px, below which `'left'` and `'right'` fall back to `'top'` and `'bottom'`
+   * (a side card needs room; on a narrow screen it would squeeze the map). Default `720`. */
+  stackBelow?: number
   /** Whether the card is shown. Controlled when set; otherwise starts at `defaultOpen` (default `true`).
    * The card has a "Hide" button; a "Show details" button brings it back, and clicking a country reopens it. */
   open?: boolean

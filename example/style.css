@@ -7,22 +7,25 @@
 
 .main-header {
   display: flex;
+  flex-wrap: wrap; /* on a narrow screen the controls wrap under the title instead of being cut off */
+  align-items: center;
+  gap: 0 1em;
+  padding: 4px 1em;
   background-color: #324157;
   margin-bottom: 5px;
 }
 .main-header .app-name {
   color: white;
-  margin: 0 2em 0 1em;
+  margin: 0;
   font: 20px sans-serif;
   line-height: 40px;
-  width: 100%;
+  flex: 1 1 16rem;
 }
 
 .header-control {
   color: white;
   white-space: nowrap;
-  line-height: 40px;
-  margin-right: 1em;
+  line-height: 32px;
 }
 
 /* How the example is laid out: the controls either live inside the map component or apart from it */
@@ -70,16 +73,10 @@
 .demo-controls {
   flex: 0 0 auto;
 }
-/* as a sidebar the radios stack instead of running in a row */
+/* as a sidebar the radios stack: <WorldMapControls orientation="vertical" /> */
 .demo-stage-left .demo-controls,
 .demo-stage-right .demo-controls {
   flex: 0 0 15rem;
-}
-.demo-stage-left .demo-controls fieldset,
-.demo-stage-right .demo-controls fieldset {
-  /* the component sets these inline, hence !important in this demo */
-  flex-direction: column !important;
-  gap: 4px !important;
 }
 
 /* Dashed, labelled outlines: blue = <ExtendedWorldMap>, orange = <WorldMapControls> */

@@ -1,15 +1,13 @@
-import { fireEvent, render, renderHook, screen, act } from '@testing-library/react'
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import {
   ExtendedWorldMap,
+  useWorldMapModes,
   WorldMapControls,
   type WorldMapControlsProps,
-  useWorldMapModes,
 } from '../src'
-import { countryColors } from '../src/rawData/defaultMapData'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { countryColors } from '../src/data/defaultMapData'
+import { country } from './helpers'
 
 const isHighlighted = (container: HTMLElement, name: string) =>
   (country(container, name).getAttribute('style') ?? '').includes('var(--rwme-selected-stroke')
@@ -52,7 +50,10 @@ describe('<WorldMapControls>', () => {
         <WorldMapControls {...props()} />
       </>,
     )
-    expect(container.querySelector('.rwme-controls.side')).toHaveStyle({ display: 'flex', gap: '4px' })
+    expect(container.querySelector('.rwme-controls.side')).toHaveStyle({
+      display: 'flex',
+      gap: '4px',
+    })
     const names = screen.getAllByRole('radio').map((radio) => radio.getAttribute('name'))
     expect(new Set(names).size).toBe(4)
   })

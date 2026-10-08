@@ -2,12 +2,8 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type CountryData, type CountryDataIssue, ExtendedWorldMap, WorldMapControls } from '../src'
-import { formatNumber, shade } from '../src/colorScale'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
-
-const shiftClick = (element: Element) => fireEvent.click(element, { shiftKey: true })
+import { formatNumber, shade } from '../src/lib/colorScale'
+import { country, shiftClick, styleOf } from './helpers'
 
 const LITERACY = { name: 'Literacy rate (%)', color: '#1a73e8' }
 const POPULATION = { name: 'Population (millions)', color: '#d55e00' }
@@ -42,9 +38,8 @@ const normal = (color: string) => {
   return probe.style.color
 }
 const fill = (container: HTMLElement, name: string) => normal(country(container, name).style.fill)
-const style = (container: HTMLElement, name: string) =>
-  country(container, name).getAttribute('style') ?? ''
-const dropdown = () => screen.queryByRole('combobox', { name: 'Show on map' }) as HTMLSelectElement | null
+const dropdown = () =>
+  screen.queryByRole('combobox', { name: 'Show on map' }) as HTMLSelectElement | null
 const legend = () => document.querySelector('.rwme-legend')
 
 afterEach(() => vi.restoreAllMocks())
@@ -64,7 +59,11 @@ describe('showing your own data in the details', () => {
 
   it('puts the property that colours the map first', () => {
     const { container } = render(
-      <ExtendedWorldMap showDetails countryData={DATA} defaultDataProperty="Population (millions)" />,
+      <ExtendedWorldMap
+        showDetails
+        countryData={DATA}
+        defaultDataProperty="Population (millions)"
+      />,
     )
     fireEvent.click(country(container, 'France'))
     expect(labels()).toEqual(['Population (millions)', 'Literacy rate (%)'])
@@ -120,7 +119,7 @@ describe('detailsSource', () => {
     fireEvent.click(country(container, 'France'))
     expect(screen.getByRole('status')).toHaveTextContent('Paris')
     expect(document.querySelector('.rwme-details__custom')).toBeNull()
-    expect(style(container, 'Brazil')).not.toContain('--rwme-no-data-fill')
+    expect(styleOf(container, 'Brazil')).not.toContain('--rwme-no-data-fill')
     expect(fill(container, 'France')).toBe(normal('#0072B2')) // the continent colour, not the scale
     expect(screen.getByRole('group', { name: 'Information on click' })).toBeInTheDocument()
     expect(dropdown()).toBeNull()
@@ -129,7 +128,12 @@ describe('detailsSource', () => {
 
   it("'both' shows your data first, then the built-in facts, and keeps the radio buttons", () => {
     const { container } = render(
-      <ExtendedWorldMap showDetails countryData={DATA} detailsSource="both" defaultInfoMode="CountryCapital" />,
+      <ExtendedWorldMap
+        showDetails
+        countryData={DATA}
+        detailsSource="both"
+        defaultInfoMode="CountryCapital"
+      />,
     )
     fireEvent.click(country(container, 'France'))
     const card = screen.getByRole('status')
@@ -148,7 +152,14 @@ describe('detailsSource', () => {
     fireEvent.click(country(container, 'Brazil'))
     expect(screen.getByRole('status')).toHaveTextContent('No data for Brazil.')
 
-    rerender(<ExtendedWorldMap showDetails countryData={DATA} detailsSource="both" defaultInfoMode="CountryCapital" />)
+    rerender(
+      <ExtendedWorldMap
+        showDetails
+        countryData={DATA}
+        detailsSource="both"
+        defaultInfoMode="CountryCapital"
+      />,
+    )
     expect(screen.getByRole('status')).toHaveTextContent('No custom data for Brazil.')
     expect(screen.getByRole('status')).toHaveTextContent('Brasília') // the built-in facts are still there
   })
@@ -187,22 +198,24 @@ describe('colouring the map with your data', () => {
   it('paints countries without a value for the chosen property grey, and the others keep their shade', () => {
     const { container } = render(<ExtendedWorldMap countryData={DATA} />)
     for (const name of ['Brazil', 'Japan', 'Northern Cyprus']) {
-      expect(style(container, name)).toContain('var(--rwme-no-data-fill, #e5e7eb)') // Japan has no literacy
+      expect(styleOf(container, name)).toContain('var(--rwme-no-data-fill, #e5e7eb)') // Japan has no literacy
     }
     for (const name of ['France', 'Germany', 'Switzerland']) {
-      expect(style(container, name)).not.toContain('--rwme-no-data-fill')
+      expect(styleOf(container, name)).not.toContain('--rwme-no-data-fill')
     }
   })
 
   it('can leave countries without data as they are', () => {
-    const { container } = render(<ExtendedWorldMap countryData={DATA} greyOutCountriesWithoutData={false} />)
-    expect(style(container, 'Brazil')).not.toContain('--rwme-no-data-fill')
+    const { container } = render(
+      <ExtendedWorldMap countryData={DATA} greyOutCountriesWithoutData={false} />,
+    )
+    expect(styleOf(container, 'Brazil')).not.toContain('--rwme-no-data-fill')
   })
 
   it('does not colour the map in Black and White mode (countries without data stay grey)', () => {
     const { container } = render(<ExtendedWorldMap countryData={DATA} colorMode="BlackAndWhite" />)
     expect(fill(container, 'France')).toBe('var(--rwme-fill, #ffffff)')
-    expect(style(container, 'Brazil')).toContain('--rwme-no-data-fill')
+    expect(styleOf(container, 'Brazil')).toContain('--rwme-no-data-fill')
     expect(legend()).toBeNull()
   })
 
@@ -245,18 +258,18 @@ describe('colouring the map with your data', () => {
   it('does not fade the other countries when one is selected (the shades carry the meaning), unless asked to', () => {
     const first = render(<ExtendedWorldMap countryData={DATA} />)
     fireEvent.click(country(first.container, 'France'))
-    expect(style(first.container, 'Germany')).not.toContain('--rwme-dimmed-opacity')
+    expect(styleOf(first.container, 'Germany')).not.toContain('--rwme-dimmed-opacity')
     first.unmount()
 
     const { container } = render(<ExtendedWorldMap countryData={DATA} dimOthers />)
     fireEvent.click(country(container, 'France'))
-    expect(style(container, 'Germany')).toContain('--rwme-dimmed-opacity')
+    expect(styleOf(container, 'Germany')).toContain('--rwme-dimmed-opacity')
   })
 
   it('still fades the others with the built-in data, as before', () => {
     const { container } = render(<ExtendedWorldMap />)
     fireEvent.click(country(container, 'France'))
-    expect(style(container, 'Germany')).toContain('--rwme-dimmed-opacity')
+    expect(styleOf(container, 'Germany')).toContain('--rwme-dimmed-opacity')
   })
 })
 
@@ -265,10 +278,11 @@ describe('the property dropdown', () => {
     render(<ExtendedWorldMap countryData={DATA} />)
     const select = dropdown()
     expect(select).not.toBeNull()
-    expect(within(select as HTMLElement).getAllByRole('option').map((option) => option.textContent)).toEqual([
-      'Literacy rate (%)',
-      'Population (millions)',
-    ])
+    expect(
+      within(select as HTMLElement)
+        .getAllByRole('option')
+        .map((option) => option.textContent),
+    ).toEqual(['Literacy rate (%)', 'Population (millions)'])
     expect(select?.value).toBe('Literacy rate (%)')
   })
 
@@ -287,10 +301,12 @@ describe('the property dropdown', () => {
     expect(legend()).toHaveTextContent('Literacy rate (%)')
     expect(labels()[0]).toBe('Literacy rate (%)')
 
-    fireEvent.change(dropdown() as HTMLSelectElement, { target: { value: 'Population (millions)' } })
+    fireEvent.change(dropdown() as HTMLSelectElement, {
+      target: { value: 'Population (millions)' },
+    })
     expect(fill(container, 'Japan')).toBe(normal('#d55e00')) // 124.5: the highest
     expect(fill(container, 'Germany')).toBe(normal(shade('#d55e00', 0))) // 20: the lowest
-    expect(style(container, 'Switzerland')).toContain('--rwme-no-data-fill') // null: no value
+    expect(styleOf(container, 'Switzerland')).toContain('--rwme-no-data-fill') // null: no value
     expect(legend()).toHaveTextContent('Population (millions)')
     expect(legend()).toHaveTextContent('20')
     expect(legend()).toHaveTextContent('124.5')
@@ -301,9 +317,11 @@ describe('the property dropdown', () => {
   it('keeps the selected country and the card when the property changes', () => {
     const { container } = render(<ExtendedWorldMap showDetails countryData={DATA} />)
     fireEvent.click(country(container, 'Germany'))
-    fireEvent.change(dropdown() as HTMLSelectElement, { target: { value: 'Population (millions)' } })
+    fireEvent.change(dropdown() as HTMLSelectElement, {
+      target: { value: 'Population (millions)' },
+    })
     expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('Germany')
-    expect(style(container, 'Germany')).toContain('--rwme-selected-stroke')
+    expect(styleOf(container, 'Germany')).toContain('--rwme-selected-stroke')
   })
 
   it('can be controlled with dataProperty, and tells you about a change', () => {
@@ -322,7 +340,11 @@ describe('the property dropdown', () => {
     expect(fill(container, 'Japan')).toBe(normal('#d55e00'))
 
     rerender(
-      <ExtendedWorldMap countryData={DATA} dataProperty="Literacy rate (%)" onDataPropertyChange={onDataPropertyChange} />,
+      <ExtendedWorldMap
+        countryData={DATA}
+        dataProperty="Literacy rate (%)"
+        onDataPropertyChange={onDataPropertyChange}
+      />,
     )
     expect(fill(container, 'Germany')).toBe(normal(shade('#1a73e8', 0)))
   })
@@ -376,7 +398,9 @@ describe('the property dropdown', () => {
     }
     const { container } = render(<Page />)
     expect(fill(container, 'Germany')).toBe(normal(shade('#1a73e8', 0)))
-    fireEvent.change(dropdown() as HTMLSelectElement, { target: { value: 'Population (millions)' } })
+    fireEvent.change(dropdown() as HTMLSelectElement, {
+      target: { value: 'Population (millions)' },
+    })
     expect(fill(container, 'Japan')).toBe(normal('#d55e00'))
   })
 })
@@ -427,7 +451,11 @@ describe('the legend', () => {
       'aria-label',
       `Literacy rate (%): from ${formatNumber(80)} to ${formatNumber(99)}, light to dark`,
     )
-    expect(within(box).getAllByRole('listitem').map((item) => item.textContent)).toEqual(['No data'])
+    expect(
+      within(box)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(['No data'])
     const bar = box.querySelector('[style*="linear-gradient"]') as HTMLElement
     expect(bar.style.background).toContain('linear-gradient')
   })
@@ -450,7 +478,9 @@ describe('the legend', () => {
   })
 
   it('can be turned off, and has no "No data" entry when grey is turned off', () => {
-    const { rerender } = render(<ExtendedWorldMap countryData={DATA} greyOutCountriesWithoutData={false} />)
+    const { rerender } = render(
+      <ExtendedWorldMap countryData={DATA} greyOutCountriesWithoutData={false} />,
+    )
     expect(screen.queryByText('No data')).not.toBeInTheDocument()
     expect(legend()).toHaveTextContent('Literacy rate (%)') // the scale is still explained
     rerender(<ExtendedWorldMap countryData={DATA} showLegend={false} />)
@@ -490,7 +520,11 @@ describe('checking the data', () => {
     expect(onDataIssues.mock.calls[0][0]).toEqual([
       { row: null, property: 'Bad colour', message: expect.stringContaining('hex colour') },
       { row: 1, property: 'country', message: expect.stringContaining('names are not accepted') },
-      { row: 2, property: 'Literacy rate (%)', message: expect.stringContaining('must be a finite number') },
+      {
+        row: 2,
+        property: 'Literacy rate (%)',
+        message: expect.stringContaining('must be a finite number'),
+      },
       { row: 2, message: 'DE has no number for any listed property.' },
       { row: 3, message: 'Each row must be an object.' },
     ])
@@ -535,7 +569,7 @@ describe('checking the data', () => {
     ])
     fireEvent.click(country(container, 'France'))
     expect(screen.getByRole('status')).toHaveTextContent('Paris')
-    expect(style(container, 'Brazil')).not.toContain('--rwme-no-data-fill')
+    expect(styleOf(container, 'Brazil')).not.toContain('--rwme-no-data-fill')
     expect(screen.getByRole('group', { name: 'Information on click' })).toBeInTheDocument()
   })
 
@@ -559,7 +593,10 @@ describe('checking the data', () => {
     rerender(
       <ExtendedWorldMap
         showDetails
-        countryData={{ properties: [{ name: 'Different', color: '#336' }], countries: [{ country: 'FR', Different: 5 }] }}
+        countryData={{
+          properties: [{ name: 'Different', color: '#336' }],
+          countries: [{ country: 'FR', Different: 5 }],
+        }}
       />,
     )
     expect(labels()).toEqual(['Different'])
@@ -579,7 +616,10 @@ describe('data written inline in a component', () => {
             showDetails
             countryData={{
               properties: [{ name: 'a', color: '#336' }],
-              countries: [{ country: 'FR', a: 1 }, { country: 'nope', a: 2 }],
+              countries: [
+                { country: 'FR', a: 1 },
+                { country: 'nope', a: 2 },
+              ],
             }} // a new object each time
             onDataIssues={setIssues}
           />
@@ -597,7 +637,9 @@ describe('data written inline in a component', () => {
       properties: [{ name: 'a', color: '#336' }],
       countries: [{ country, a: 1 }],
     })
-    const { rerender } = render(<ExtendedWorldMap countryData={bad('France')} onDataIssues={onDataIssues} />)
+    const { rerender } = render(
+      <ExtendedWorldMap countryData={bad('France')} onDataIssues={onDataIssues} />,
+    )
     rerender(<ExtendedWorldMap countryData={bad('France')} onDataIssues={onDataIssues} />)
     expect(onDataIssues).toHaveBeenCalledTimes(1)
     rerender(<ExtendedWorldMap countryData={bad('Spain')} onDataIssues={onDataIssues} />)
@@ -605,10 +647,20 @@ describe('data written inline in a component', () => {
   })
 
   it('keeps working when the data cannot be turned into JSON', () => {
-    const circular: Record<string, unknown> = { properties: [{ name: 'a', color: '#336' }], countries: [] }
+    const circular: Record<string, unknown> = {
+      properties: [{ name: 'a', color: '#336' }],
+      countries: [],
+    }
     circular.self = circular
     const onDataIssues = vi.fn()
-    expect(() => render(<ExtendedWorldMap countryData={circular as unknown as CountryData} onDataIssues={onDataIssues} />)).not.toThrow()
+    expect(() =>
+      render(
+        <ExtendedWorldMap
+          countryData={circular as unknown as CountryData}
+          onDataIssues={onDataIssues}
+        />,
+      ),
+    ).not.toThrow()
     expect(onDataIssues).toHaveBeenCalledTimes(1) // no property has a number
   })
 })
@@ -625,7 +677,10 @@ describe('infoLink in your data', () => {
     const { container } = render(
       <ExtendedWorldMap
         showDetails
-        countryData={{ ...ONE_PROPERTY, countries: [{ country: 'FR', 'Literacy rate (%)': 1, infoLink: 'javascript:alert(1)' }] }}
+        countryData={{
+          ...ONE_PROPERTY,
+          countries: [{ country: 'FR', 'Literacy rate (%)': 1, infoLink: 'javascript:alert(1)' }],
+        }}
       />,
     )
     fireEvent.click(country(container, 'France'))
@@ -642,7 +697,9 @@ describe('infoLink in your data', () => {
 describe('onCountryClick with your data', () => {
   const click = (props: Record<string, unknown>, name: string) => {
     const onCountryClick = vi.fn()
-    const { container } = render(<ExtendedWorldMap countryData={DATA} onCountryClick={onCountryClick} {...props} />)
+    const { container } = render(
+      <ExtendedWorldMap countryData={DATA} onCountryClick={onCountryClick} {...props} />,
+    )
     fireEvent.click(country(container, name))
     return onCountryClick.mock.calls[0][0]
   }
@@ -663,7 +720,9 @@ describe('onCountryClick with your data', () => {
   })
 
   it("still gets the built-in facts for 'default'", () => {
-    expect(click({ detailsSource: 'default', defaultInfoMode: 'CountryCapital' }, 'France')).toMatchObject({ capital: 'Paris' })
+    expect(
+      click({ detailsSource: 'default', defaultInfoMode: 'CountryCapital' }, 'France'),
+    ).toMatchObject({ capital: 'Paris' })
   })
 })
 
@@ -674,7 +733,12 @@ describe('with several countries selected', () => {
     shiftClick(country(container, 'Germany'))
     const list = document.querySelector('.rwme-details--list') as HTMLElement
     expect(within(list).getByRole('button', { name: 'Germany' })).toBeInTheDocument()
-    expect(labels()).toEqual(['Literacy rate (%)', 'Population (millions)', 'Literacy rate (%)', 'Population (millions)'])
+    expect(labels()).toEqual([
+      'Literacy rate (%)',
+      'Population (millions)',
+      'Literacy rate (%)',
+      'Population (millions)',
+    ])
     expect(values()).toEqual(['99', '68.2', '80', '20'])
     shiftClick(country(container, 'Brazil'))
     expect(list).toHaveTextContent('No data for Brazil.')

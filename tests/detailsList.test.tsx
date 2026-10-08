@@ -1,9 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { CountryDetailsList, ExtendedWorldMap } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { country, shiftClick } from './helpers'
 
 const list = () => document.querySelector('.rwme-details--list') as HTMLElement
 // the entry of a country in the list (the country on the map is a button of the same name)
@@ -11,8 +9,6 @@ const header = (name: string) => within(list()).getByRole('button', { name })
 const panel = (name: string) =>
   document.getElementById(header(name).getAttribute('aria-controls') as string) as HTMLElement
 const isOpen = (name: string) => header(name).getAttribute('aria-expanded') === 'true'
-
-const shiftClick = (element: Element) => fireEvent.click(element, { shiftKey: true })
 
 const FRANCE = { code: 'FR', name: 'France', detail: { name: 'France', capital: 'Paris' } }
 const GERMANY = { code: 'DE', name: 'Germany', detail: { name: 'Germany', capital: 'Berlin' } }
@@ -55,7 +51,9 @@ describe('details of several countries', () => {
   })
 
   it('still lets you open several by hand, and keeps them when one is removed', () => {
-    const { container } = render(<ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE', 'IT']} />)
+    const { container } = render(
+      <ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE', 'IT']} />,
+    )
     fireEvent.click(header('France'))
     fireEvent.click(header('Germany'))
     expect(isOpen('France') && isOpen('Germany') && isOpen('Italy')).toBe(true)
@@ -66,7 +64,9 @@ describe('details of several countries', () => {
   })
 
   it('opens and closes an entry from its header', () => {
-    const { container } = render(<ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE']} />)
+    const { container } = render(
+      <ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE']} />,
+    )
     expect(container).toBeTruthy()
     fireEvent.click(header('France'))
     expect(isOpen('France')).toBe(true)
@@ -96,7 +96,9 @@ describe('details of several countries', () => {
   })
 
   it('also reopens a hidden details card for that click', () => {
-    const { container } = render(<ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE']} />)
+    const { container } = render(
+      <ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE']} />,
+    )
     fireEvent.click(screen.getByRole('button', { name: 'Hide details' }))
     expect(document.querySelector('.rwme-details--list')).toBeNull()
     expect(screen.getByRole('button', { name: 'Show details: 2 countries' })).toBeInTheDocument()
@@ -109,8 +111,11 @@ describe('details of several countries', () => {
     vi.useFakeTimers()
     const pageScroll = vi.fn()
     Element.prototype.scrollIntoView = pageScroll
-    const rect = (top: number, bottom: number) => ({ top, bottom, left: 0, right: 0, width: 0, height: bottom - top }) as DOMRect
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    const rect = (top: number, bottom: number) =>
+      ({ top, bottom, left: 0, right: 0, width: 0, height: bottom - top }) as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
       if (this.matches('.rwme-details')) return rect(0, 300) // the card's visible window
       if (this.matches('[data-code="FR"]')) return rect(420, 470) // the entry is below it
       return rect(0, 0)
@@ -139,7 +144,9 @@ describe('details of several countries', () => {
   it('leaves the page alone when no card scrolls', () => {
     const pageScroll = vi.fn()
     Element.prototype.scrollIntoView = pageScroll
-    const { container } = render(<ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE']} />)
+    const { container } = render(
+      <ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE']} />,
+    )
     fireEvent.click(country(container, 'France'))
     expect(pageScroll).not.toHaveBeenCalled()
     Reflect.deleteProperty(Element.prototype, 'scrollIntoView')
@@ -248,7 +255,14 @@ describe('<CountryDetailsList> on its own', () => {
     const onRemove = vi.fn()
     const onClear = vi.fn()
     const onClose = vi.fn()
-    rerender(<CountryDetailsList selections={selections} onRemove={onRemove} onClear={onClear} onClose={onClose} />)
+    rerender(
+      <CountryDetailsList
+        selections={selections}
+        onRemove={onRemove}
+        onClear={onClear}
+        onClose={onClose}
+      />,
+    )
     fireEvent.click(screen.getByRole('button', { name: 'Remove Italy from the selection' }))
     fireEvent.click(screen.getByRole('button', { name: 'Clear all' }))
     fireEvent.click(screen.getByRole('button', { name: 'Hide details' }))
@@ -280,7 +294,9 @@ describe('<CountryDetailsList> on its own', () => {
 
   it('marks the highlighted country', () => {
     render(<CountryDetailsList selections={selections} highlightCode="DE" />)
-    expect(document.querySelector('[data-code="DE"]')).toHaveStyle({ background: 'var(--rwme-panel-highlight, #eef4ff)' })
+    expect(document.querySelector('[data-code="DE"]')).toHaveStyle({
+      background: 'var(--rwme-panel-highlight, #eef4ff)',
+    })
     expect((document.querySelector('[data-code="FR"]') as HTMLElement).style.background).toBe('')
   })
 
@@ -298,7 +314,11 @@ describe('<CountryDetailsList> on its own', () => {
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Selected countries')
     expect(header('France').closest('h3')).not.toBeNull()
     expect(list()).toHaveClass('rwme-details', 'mine')
-    expect(list()).toHaveStyle({ fontFamily: 'Georgia, serif', fontStyle: 'italic', borderRadius: '0px' })
+    expect(list()).toHaveStyle({
+      fontFamily: 'Georgia, serif',
+      fontStyle: 'italic',
+      borderRadius: '0px',
+    })
   })
 
   it('drops its own status role inside a dialog', () => {
@@ -316,7 +336,17 @@ describe('<CountryDetailsList> on its own', () => {
     expect(isOpen('Italy')).toBe(true)
     expect(isOpen('France') || isOpen('Germany')).toBe(false)
 
-    rerender(<CountryDetailsList selections={[FRANCE, GERMANY, ITALY, { code: 'ES', name: 'Spain', detail: undefined }, { code: 'PL', name: 'Poland', detail: undefined }]} />)
+    rerender(
+      <CountryDetailsList
+        selections={[
+          FRANCE,
+          GERMANY,
+          ITALY,
+          { code: 'ES', name: 'Spain', detail: undefined },
+          { code: 'PL', name: 'Poland', detail: undefined },
+        ]}
+      />,
+    )
     expect(isOpen('Spain') && isOpen('Poland')).toBe(true) // two added at once: both open
     expect(isOpen('Italy')).toBe(false)
   })

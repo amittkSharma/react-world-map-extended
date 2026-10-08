@@ -2,9 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { flushSync } from 'react-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { country } from './helpers'
 
 const dimmedCount = (container: HTMLElement) =>
   Array.from(container.querySelectorAll('path')).filter((path) =>

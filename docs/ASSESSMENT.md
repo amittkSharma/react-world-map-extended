@@ -10,41 +10,14 @@ The package is a React map of the world. It is built on top of a smaller library
 
 | What | State today |
 |---|---|
-| Automated checks | Lint has zero warnings. Type checks pass. 390 tests pass. |
-| Package size | Our own code is 85.5 kB (19.9 kB when compressed). The download is 96.6 kB in 62 files. |
-| Package format | Works as ESM and CommonJS and ships its types. The package checker finds no problems with the main entry (it complains about the JSON schema file entry only, because a JSON file has no types; Node and TypeScript can still import it). |
+| Automated checks | Lint (which also checks formatting and import order) has zero warnings. Type checks pass. 390 tests pass. |
+| Package size | Our own code is 86.4 kB (20.9 kB when compressed). The download is 63.4 kB in 8 files: the built code, one bundled set of types, the schema, README, licence and package.json. |
+| Package format | Works as ESM and CommonJS and ships its types. The package checker finds no problems with the main entry (it complains about the JSON schema file entry only, because a JSON file has no types; Node and TypeScript can still import it). Sources, tests and docs are not in the download. |
 | Build on GitHub (CI) | The workflow file exists but has **never run**. |
 | Testing in a real browser | Only automated tests and screenshots with scripted clicks. **No person has used it with a real mouse, keyboard, touch screen or screen reader.** |
 | Release | Version is `0.0.0`. Nothing is published. The data-driven colour map is **not committed** to git yet (earlier work is). |
 
-Where the code lives:
-
-```text
-src/index.tsx                The main component (state and wiring)
-src/useCountrySelection.ts   Which countries are selected, the limit of 5, messages
-src/countryData.ts           Checks your own data against the schema (properties, rows, ISO codes only)
-src/colorScale.ts            Turns a number into a shade of the property's colour; number formatting
-src/useCountryData.ts        Runs that check when the data changes and reports problems
-src/rawData/alpha3.ts        Table of three-letter country codes
-schema/                      The JSON Schema file for your own data
-src/CountryDetails.tsx       Details card for one country
-src/CountryDetailsList.tsx   Details list (accordion) for 2 or more countries
-src/MapLegend.tsx            Legend on the map (colour list, or a light-to-dark scale)
-src/MapToast.tsx             Small message in the map's top-right corner
-src/MultiSelectToggle.tsx    "Select multiple" switch for touch screens
-src/WorldMapControls.tsx     The radio buttons and the "Show on map" dropdown, usable on their own
-src/useWorldMapModes.ts      Keeps the radio button and dropdown choices in your own code
-src/corner.ts                Places things in a corner of the map
-src/countries.ts             Country codes and names
-src/inputModality.ts         Knows whether you last used keyboard or mouse
-src/useMapBox.ts             Measures where the map really is on the page
-src/useModalDialog.ts        Overlay behaviour (focus, Escape)
-src/useRaiseOnTop.ts         Draws selected countries on top of the others
-src/useSingleTooltip.ts      Removes the library's second (duplicate) tooltip
-src/palettes.ts              Colour schemes and their legends
-docs/images/                 Screenshots used by the README (not part of the download)
-example/                     Demo app; the URL options are listed in scenario.ts
-```
+Where the code lives, and how it fits together: `docs/ARCHITECTURE.md`.
 
 ## 2. How much is it worth? (short version)
 
@@ -148,7 +121,7 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 | C9 | The built-in legend only appears for two colour schemes (your own data has its own scale legend). Its colour squares stay at full strength while other countries are faded. Its text cannot be changed. The point where it moves under a small map (520 px) was chosen by eye and checked at only a few widths. | Low |
 | C10 | The tooltip fix has two edges: (a) before the page finishes loading in the browser, a second plain tooltip can still show for a moment; (b) it needs every drawn area to have an entry in the internal map data (this is unrelated to your own data, which does not change it). | Low |
 | C11 | A type workaround: two area codes (`CYP`, `SOM`) are forced into a type that does not list them. It works today, but a library update could break it. | Low |
-| C12 | The package is getting bigger. Our code grew from 8.9 to 18.1 kB compressed, and the download from 31.6 to 98.6 kB. The multi-select feature alone added about 4 kB and 14 files. This is fine now, but we need a size limit in the build before version 1.0. | Low |
+| C12 | The package keeps growing: our code is 20.9 kB compressed (it was 8.9 at the start). The download is smaller now (63.4 kB in 8 files, from 98.6 kB in 62) because the types are bundled into one file and the internals are no longer shipped. We still need a size limit in the build before version 1.0. | Low |
 | C13 | With the card above or below the map, the page below it jumps when a country is selected or cleared. Cards on the side or in the overlay do not do this. | Low |
 | C14 | Sizes where the layout switches (card to the top or bottom below 720 px, legend under the map below 520 px) were chosen by eye and only checked at a few widths. Phones under 400 px and very large screens were not checked. | Low |
 | C15 | The keyboard focus ring is custom and nobody has tried it by hand. It is mostly a glow, which older Safari versions may not show. Only scripted keyboard events were tested. | Low |
@@ -164,7 +137,7 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 | C25 | **The schema is written twice** (a JSON Schema file and the checker in code). The JSON Schema cannot express some rules (the code must be a country on the map, no country twice, a property name used once and not `country` or `infoLink`, a number in at least one row for each property), so only the code checks them. A test makes both agree on everything the file can express, but a future rule must be added in both places. | Low |
 | C26 | **The data is compared by content on every render** (turned into text to see whether it changed). That is cheap for normal data (up to 500 rows) but not free; very large data on a map that re-renders a lot (hover, focus) would cost a little each time. | Low |
 | C27 | **Using names was refused on purpose, so rows with country names are all rejected.** People who only have names must convert them to codes first. There is no helper for that. | Low |
-| C28 | **The size grew again:** our code is now 19.9 kB compressed (from 18.1) and the download 96.6 kB in 62 files. The package checker also complains about the JSON schema file entry (no types), which is harmless but noisy. | Low |
+| C28 | The package checker complains about the JSON schema file entry (a JSON file has no types). It is harmless but noisy, and it is the only thing that keeps the checker from being a clean step in CI. | Low |
 | C29 | **The README screenshots only show after the files are pushed to GitHub.** They are linked by their full GitHub address (so the npm page can show them too, because `docs/` is not in the download), and the files are not pushed yet, so today the images are broken everywhere except in a local file view. | Medium |
 | C30 | **The screenshots are made by hand and will go out of date.** They come from the demo app in headless Chrome, cropped with a throw-away page. There is no script to make them again, so a later change to the look leaves the README showing the old one. The three data screenshots were retaken for the new format; the others were not affected. | Low |
 | C31 | **The README hides some technical limits on purpose** (it should read well, and has no inner workings). The technical ones live here: the library's margin and tooltip changes (C6, C10), the drawing order and Tab order change, the focus ring and old Safari (C15), and the library's own hover style (C3). Check that nothing a user needs is missing from "Good to know". | Low |

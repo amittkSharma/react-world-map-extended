@@ -1,9 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { CountryDetails, ExtendedWorldMap, type DetailsOptions } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { CountryDetails, type DetailsOptions, ExtendedWorldMap } from '../src'
+import { country } from './helpers'
 
 const renderMap = (detailsOptions?: DetailsOptions, props = {}) =>
   render(<ExtendedWorldMap showDetails detailsOptions={detailsOptions} {...props} />)
@@ -267,10 +265,18 @@ describe('screen-reader semantics of the details card', () => {
 
   it('in the overlay, a change made from outside is still announced through the live area', () => {
     const { rerender } = render(
-      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountries={['FR']} />,
+      <ExtendedWorldMap
+        showDetails
+        detailsOptions={{ position: 'overlay' }}
+        selectedCountries={['FR']}
+      />,
     )
     rerender(
-      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountries={['DE']} />,
+      <ExtendedWorldMap
+        showDetails
+        detailsOptions={{ position: 'overlay' }}
+        selectedCountries={['DE']}
+      />,
     )
     const dialog = screen.getByRole('dialog', { name: 'Details: Germany' })
     expect(dialog.querySelector('[aria-live="polite"]')).toHaveTextContent('Germany')
@@ -287,28 +293,43 @@ describe('screen-reader semantics of the details card', () => {
 describe('narrow components', () => {
   const layoutWidth = (width: number) => {
     const rect = (left: number, top: number, w: number, h: number) =>
-      ({ left, top, width: w, height: h, right: left + w, bottom: top + h, x: left, y: top }) as DOMRect
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      ({
+        left,
+        top,
+        width: w,
+        height: h,
+        right: left + w,
+        bottom: top + h,
+        x: left,
+        y: top,
+      }) as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
       if (this.matches('.rwme-layout')) return rect(0, 0, width, 800)
       if (this.matches('.rwme-map')) return rect(0, 0, width, 500)
       if (this.matches('svg')) return rect(0, 0, Math.min(width, 600), 300)
       return rect(0, 0, 0, 0)
     })
   }
-  const follows = (a: Node, b: Node) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+  const follows = (a: Node, b: Node) =>
+    Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
   afterEach(() => vi.restoreAllMocks())
 
   it.each([
     ['left', 'column', true],
     ['right', 'column', false],
-  ] as const)('%s falls back to above/below the map when there is no room beside it', (position, direction, cardFirst) => {
-    layoutWidth(600) // below the default 720
-    const { container } = renderMap({ position })
-    const card = screen.getByRole('status')
-    expect(card.closest('.rwme-layout')).toHaveStyle({ flexDirection: direction })
-    expect(follows(card, container.querySelector('svg') as SVGElement)).toBe(cardFirst)
-    expect(card.parentElement?.style.width).not.toContain('--rwme-panel-width') // full map width, not a side column
-  })
+  ] as const)(
+    '%s falls back to above/below the map when there is no room beside it',
+    (position, direction, cardFirst) => {
+      layoutWidth(600) // below the default 720
+      const { container } = renderMap({ position })
+      const card = screen.getByRole('status')
+      expect(card.closest('.rwme-layout')).toHaveStyle({ flexDirection: direction })
+      expect(follows(card, container.querySelector('svg') as SVGElement)).toBe(cardFirst)
+      expect(card.parentElement?.style.width).not.toContain('--rwme-panel-width') // full map width, not a side column
+    },
+  )
 
   it('keeps the side layout when the component is wide enough', () => {
     layoutWidth(900)
@@ -322,13 +343,17 @@ describe('narrow components', () => {
     expect(screen.getByRole('status').closest('.rwme-layout')).toHaveStyle({ flexDirection: 'row' })
     unmount()
     renderMap({ position: 'right', stackBelow: 800 })
-    expect(screen.getByRole('status').closest('.rwme-layout')).toHaveStyle({ flexDirection: 'column' })
+    expect(screen.getByRole('status').closest('.rwme-layout')).toHaveStyle({
+      flexDirection: 'column',
+    })
   })
 
   it('never touches top, bottom or overlay', () => {
     layoutWidth(300)
     const { unmount } = renderMap({ position: 'top' })
-    expect(screen.getByRole('status').closest('.rwme-layout')).toHaveStyle({ flexDirection: 'column' })
+    expect(screen.getByRole('status').closest('.rwme-layout')).toHaveStyle({
+      flexDirection: 'column',
+    })
     unmount()
     const { container } = renderMap({ position: 'overlay' })
     fireEvent.click(country(container, 'France'))

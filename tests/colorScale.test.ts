@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatNumber, scaleColor, shade } from '../src/colorScale'
+import { formatNumber, scaleColor, shade } from '../src/lib/colorScale'
 
 describe('shade', () => {
   it('is the colour itself at the top of the scale', () => {

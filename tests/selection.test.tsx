@@ -1,9 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { country } from './helpers'
 
 const isHighlighted = (container: HTMLElement, name: string) =>
   (country(container, name).getAttribute('style') ?? '').includes('var(--rwme-selected-stroke')
@@ -26,7 +24,11 @@ describe('selection', () => {
   it('is controlled by selectedCountries: clicks only report, the parent decides', () => {
     const onSelectionChange = vi.fn()
     const { container, rerender } = render(
-      <ExtendedWorldMap showDetails selectedCountries={['DE']} onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap
+        showDetails
+        selectedCountries={['DE']}
+        onSelectionChange={onSelectionChange}
+      />,
     )
     expect(isHighlighted(container, 'Germany')).toBe(true)
 
@@ -36,14 +38,22 @@ describe('selection', () => {
     expect(isHighlighted(container, 'Germany')).toBe(true) // the parent has not accepted it
     expect(isHighlighted(container, 'France')).toBe(false)
 
-    rerender(<ExtendedWorldMap showDetails selectedCountries={['FR']} onSelectionChange={onSelectionChange} />)
+    rerender(
+      <ExtendedWorldMap
+        showDetails
+        selectedCountries={['FR']}
+        onSelectionChange={onSelectionChange}
+      />,
+    )
     expect(isHighlighted(container, 'France')).toBe(true)
     expect(isHighlighted(container, 'Germany')).toBe(false)
     expect(screen.getByRole('status')).toHaveTextContent('France')
   })
 
   it('can be changed and cleared from outside without any click', () => {
-    const { container, rerender } = render(<ExtendedWorldMap showDetails selectedCountries={['DE']} />)
+    const { container, rerender } = render(
+      <ExtendedWorldMap showDetails selectedCountries={['DE']} />,
+    )
     rerender(<ExtendedWorldMap showDetails selectedCountries={['JP']} />)
     expect(isHighlighted(container, 'Japan')).toBe(true)
     expect(screen.getByRole('status')).toHaveTextContent('Japan')
@@ -86,12 +96,16 @@ describe('selection', () => {
   })
 
   it('ignores unknown codes, and handles areas without an ISO code', () => {
-    const { container, rerender } = render(<ExtendedWorldMap showDetails selectedCountries={['ZZ']} />)
+    const { container, rerender } = render(
+      <ExtendedWorldMap showDetails selectedCountries={['ZZ']} />,
+    )
     expect(screen.getByRole('status')).toHaveTextContent('Click a country')
     expect(container.querySelector('[style*="--rwme-selected-stroke"]')).toBeNull()
 
     rerender(<ExtendedWorldMap showDetails selectedCountries={['CYP']} />)
-    expect(screen.getByRole('status')).toHaveTextContent('No details available for Northern Cyprus.')
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'No details available for Northern Cyprus.',
+    )
     expect(isHighlighted(container, 'Northern Cyprus')).toBe(true)
   })
 
@@ -102,11 +116,19 @@ describe('selection', () => {
 
   it('opens the overlay for a country selected from outside', () => {
     const { container, rerender } = render(
-      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountries={[]} />,
+      <ExtendedWorldMap
+        showDetails
+        detailsOptions={{ position: 'overlay' }}
+        selectedCountries={[]}
+      />,
     )
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     rerender(
-      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountries={['FR']} />,
+      <ExtendedWorldMap
+        showDetails
+        detailsOptions={{ position: 'overlay' }}
+        selectedCountries={['FR']}
+      />,
     )
     expect(screen.getByRole('dialog', { name: 'Details: France' })).toBeInTheDocument()
     expect(container.querySelector('[inert]')).not.toBeNull()

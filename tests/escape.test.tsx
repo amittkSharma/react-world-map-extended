@@ -1,9 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap, WorldMapControls } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { country } from './helpers'
 
 const isHighlighted = (container: HTMLElement, name: string) =>
   (country(container, name).getAttribute('style') ?? '').includes('var(--rwme-selected-stroke')
@@ -108,7 +106,10 @@ describe('Escape clears the selection', () => {
 
     it.each([
       ['a radio button of the map’s own controls', () => screen.getAllByLabelText('Capital')[1]],
-      ['a radio button of a separate <WorldMapControls>', () => screen.getAllByLabelText('Capital')[0]],
+      [
+        'a radio button of a separate <WorldMapControls>',
+        () => screen.getAllByLabelText('Capital')[0],
+      ],
       ['a button elsewhere on the page', () => screen.getByRole('button', { name: /elsewhere/ })],
       ['the page itself', () => document.body],
     ])('keeps the selection when Escape comes from %s', (_name, target) => {
@@ -119,7 +120,9 @@ describe('Escape clears the selection', () => {
   })
 
   it("is off with deselectOn='never'", () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountries={['FR']} deselectOn="never" />)
+    const { container } = render(
+      <ExtendedWorldMap defaultSelectedCountries={['FR']} deselectOn="never" />,
+    )
     fireEvent.keyDown(country(container, 'France'), { key: 'Escape' })
     expect(isHighlighted(container, 'France')).toBe(true)
   })

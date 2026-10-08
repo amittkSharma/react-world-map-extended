@@ -5,15 +5,66 @@
     { "name": "Internet users (%)", "color": "#009e73" }
   ],
   "countries": [
-    { "country": "FR", "Literacy rate (%)": 99, "Population (millions)": 68.2, "Internet users (%)": 92 },
-    { "country": "DEU", "Literacy rate (%)": 99, "Population (millions)": 83.2, "Internet users (%)": 93 },
-    { "country": "jp", "Literacy rate (%)": 99, "Population (millions)": 124.5, "Internet users (%)": 83 },
-    { "country": "BRA", "Literacy rate (%)": 94, "Population (millions)": 214.3, "Internet users (%)": 81 },
-    { "country": "NG", "Literacy rate (%)": 62, "Population (millions)": 213.4, "Internet users (%)": 36 },
-    { "country": "IND", "Literacy rate (%)": 77, "Population (millions)": 1407.5, "Internet users (%)": 46, "infoLink": "https://en.wikipedia.org/wiki/Demographics_of_India" },
-    { "country": "CH", "Literacy rate (%)": 99, "Population (millions)": 8.7, "Internet users (%)": null },
-    { "country": "EG", "Literacy rate (%)": 71, "Population (millions)": 109.3, "Internet users (%)": 72 },
-    { "country": "AU", "Literacy rate (%)": 99, "Population (millions)": 25.9, "Internet users (%)": 91 },
-    { "country": "CAN", "Literacy rate (%)": 99, "Population (millions)": 38.2, "Internet users (%)": 94 }
+    {
+      "country": "FR",
+      "Literacy rate (%)": 99,
+      "Population (millions)": 68.2,
+      "Internet users (%)": 92
+    },
+    {
+      "country": "DEU",
+      "Literacy rate (%)": 99,
+      "Population (millions)": 83.2,
+      "Internet users (%)": 93
+    },
+    {
+      "country": "jp",
+      "Literacy rate (%)": 99,
+      "Population (millions)": 124.5,
+      "Internet users (%)": 83
+    },
+    {
+      "country": "BRA",
+      "Literacy rate (%)": 94,
+      "Population (millions)": 214.3,
+      "Internet users (%)": 81
+    },
+    {
+      "country": "NG",
+      "Literacy rate (%)": 62,
+      "Population (millions)": 213.4,
+      "Internet users (%)": 36
+    },
+    {
+      "country": "IND",
+      "Literacy rate (%)": 77,
+      "Population (millions)": 1407.5,
+      "Internet users (%)": 46,
+      "infoLink": "https://en.wikipedia.org/wiki/Demographics_of_India"
+    },
+    {
+      "country": "CH",
+      "Literacy rate (%)": 99,
+      "Population (millions)": 8.7,
+      "Internet users (%)": null
+    },
+    {
+      "country": "EG",
+      "Literacy rate (%)": 71,
+      "Population (millions)": 109.3,
+      "Internet users (%)": 72
+    },
+    {
+      "country": "AU",
+      "Literacy rate (%)": 99,
+      "Population (millions)": 25.9,
+      "Internet users (%)": 91
+    },
+    {
+      "country": "CAN",
+      "Literacy rate (%)": 99,
+      "Population (millions)": 38.2,
+      "Internet users (%)": 94
+    }
   ]
 }

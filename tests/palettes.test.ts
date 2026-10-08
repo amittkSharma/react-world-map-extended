@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { getPaletteColors } from '../src/palettes'
-import { countryColors } from '../src/rawData/defaultMapData'
+import { countryColors } from '../src/data/defaultMapData'
+import { getPaletteColors } from '../src/lib/palettes'
 
 describe('getPaletteColors', () => {
   const codes = Object.keys(countryColors)

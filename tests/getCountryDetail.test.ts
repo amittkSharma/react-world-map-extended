@@ -1,8 +1,8 @@
 import { regions } from 'react-svg-worldmap'
 import { describe, expect, it, vi } from 'vitest'
 import { MapDataOptions } from '../src/constants'
-import { countryColors } from '../src/rawData/defaultMapData'
-import { getCountryDetail, getWikipediaUrl } from '../src/rawData/getDefaultMapData'
+import { countryColors } from '../src/data/defaultMapData'
+import { getCountryDetail, getWikipediaUrl } from '../src/lib/countryDetail'
 
 // The map also draws Northern Cyprus and Somaliland under non-ISO codes (CYP, SOM); they are
 // intentionally left out here (no details, no colour).
@@ -17,7 +17,17 @@ describe('getCountryDetail', () => {
     [MapDataOptions.COUNTRY_CURRENCY_INFO, ['name', 'currency', 'symbol', 'currencyName']],
     [
       MapDataOptions.COUNTRY_COMPLETE_INFO,
-      ['name', 'capital', 'region', 'continent', 'isdCodes', 'currency', 'symbol', 'currencyName', 'language'],
+      [
+        'name',
+        'capital',
+        'region',
+        'continent',
+        'isdCodes',
+        'currency',
+        'symbol',
+        'currencyName',
+        'language',
+      ],
     ],
   ])('%s returns exactly its fields', (option, fields) => {
     const detail = getCountryDetail('FR', option)
@@ -37,7 +47,10 @@ describe('getCountryDetail', () => {
   })
 
   it('accepts lower-case codes', () => {
-    expect(getCountryDetail('fr', MapDataOptions.COUNTRY_NAME)).toEqual({ name: 'France', infoLink: 'https://en.wikipedia.org/wiki/France' })
+    expect(getCountryDetail('fr', MapDataOptions.COUNTRY_NAME)).toEqual({
+      name: 'France',
+      infoLink: 'https://en.wikipedia.org/wiki/France',
+    })
   })
 
   describe('infoLink', () => {
@@ -68,7 +81,9 @@ describe('getCountryDetail', () => {
 
   // Regression: lookups by display name failed for 14 countries (e.g. "Dem. Rep. Congo").
   it('resolves every country the map can draw', () => {
-    const missing = isoCodes.filter((code) => !getCountryDetail(code, MapDataOptions.COUNTRY_CAPITAL)?.capital)
+    const missing = isoCodes.filter(
+      (code) => !getCountryDetail(code, MapDataOptions.COUNTRY_CAPITAL)?.capital,
+    )
     expect(missing).toEqual([])
   })
 

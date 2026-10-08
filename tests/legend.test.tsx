@@ -1,10 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap } from '../src'
-import { getPaletteColors, getPaletteLegend } from '../src/palettes'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { getPaletteColors, getPaletteLegend } from '../src/lib/palettes'
+import { country } from './helpers'
 
 const legend = () => document.querySelector('.rwme-legend') as HTMLElement | null
 
@@ -67,7 +65,10 @@ describe('legend on the map', () => {
     ['black and white mode', { palette: 'continent' }],
     ['the default palette', { ...colorful }],
     ['the monochrome palette', { ...colorful, palette: 'monochrome' }],
-    ['custom colours (the legend could not describe them)', { ...colorful, palette: 'continent', colors: { FR: '#123456' } }],
+    [
+      'custom colours (the legend could not describe them)',
+      { ...colorful, palette: 'continent', colors: { FR: '#123456' } },
+    ],
     ['showLegend={false}', { ...colorful, palette: 'continent', showLegend: false }],
   ] as const)('is not shown for %s', (_name, props) => {
     render(<ExtendedWorldMap {...props} />)
@@ -82,7 +83,12 @@ describe('legend on the map', () => {
   it('does not get in the way of selecting, clearing or the details card', () => {
     const onCountryClick = vi.fn()
     const { container } = render(
-      <ExtendedWorldMap {...colorful} palette="continent" showDetails onCountryClick={onCountryClick} />,
+      <ExtendedWorldMap
+        {...colorful}
+        palette="continent"
+        showDetails
+        onCountryClick={onCountryClick}
+      />,
     )
     fireEvent.click(country(container, 'France'))
     expect(onCountryClick).toHaveBeenCalledTimes(1)
@@ -116,8 +122,19 @@ describe('legend position', () => {
 
   const withBoxes = () => {
     const rect = (left: number, top: number, width: number, height: number) =>
-      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      ({
+        left,
+        top,
+        width,
+        height,
+        right: left + width,
+        bottom: top + height,
+        x: left,
+        y: top,
+      }) as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
       if (this.matches('.rwme-layout')) return rect(10, 10, 1000, 800)
       if (this.matches('.rwme-map')) return rect(10, 10, 1000, 500) // the wrapper the legend is positioned in
       if (this.matches('svg')) return rect(20, 40, 600, 300) // 10px right of / 30px below the wrapper
@@ -132,7 +149,13 @@ describe('legend position', () => {
     ['top-right', { left: '602px', top: '38px', transform: 'translate(-100%, 0)' }],
   ] as const)('%s hugs that corner of the measured map', (legendPosition, expected) => {
     withBoxes()
-    render(<ExtendedWorldMap defaultColorMode="Colorful" palette="continent" legendPosition={legendPosition} />)
+    render(
+      <ExtendedWorldMap
+        defaultColorMode="Colorful"
+        palette="continent"
+        legendPosition={legendPosition}
+      />,
+    )
     expect(legend()).toHaveStyle(expected)
   })
 
@@ -140,8 +163,19 @@ describe('legend position', () => {
   // positioned in the wrapper, so it must be placed from the wrapper, not from the layout.
   it('is placed from the map wrapper, not the layout: a card above the map does not push it away', () => {
     const rect = (left: number, top: number, width: number, height: number) =>
-      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      ({
+        left,
+        top,
+        width,
+        height,
+        right: left + width,
+        bottom: top + height,
+        x: left,
+        y: top,
+      }) as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
       if (this.matches('.rwme-layout')) return rect(10, 10, 1000, 800)
       if (this.matches('.rwme-map')) return rect(10, 160, 1000, 500) // below a 150px card
       if (this.matches('svg')) return rect(20, 170, 600, 300) // 10px right of / 10px below the wrapper
@@ -160,8 +194,19 @@ describe('legend position', () => {
 
   it('becomes a strip under a small map instead of covering it', () => {
     const rect = (left: number, top: number, width: number, height: number) =>
-      ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top }) as DOMRect
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      ({
+        left,
+        top,
+        width,
+        height,
+        right: left + width,
+        bottom: top + height,
+        x: left,
+        y: top,
+      }) as DOMRect
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
       if (this.matches('.rwme-layout')) return rect(0, 0, 420, 600)
       if (this.matches('.rwme-map')) return rect(0, 0, 420, 400)
       if (this.matches('svg')) return rect(0, 0, 400, 260)
@@ -190,7 +235,9 @@ describe('legend position', () => {
   })
 
   it('still has a place before the map has been measured', () => {
-    render(<ExtendedWorldMap defaultColorMode="Colorful" palette="region" legendPosition="top-right" />)
+    render(
+      <ExtendedWorldMap defaultColorMode="Colorful" palette="region" legendPosition="top-right" />,
+    )
     expect(legend()).toHaveStyle({ right: '8px', top: '8px' })
   })
 })

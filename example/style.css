@@ -41,7 +41,9 @@
 }
 .demo-info pre {
   margin: 0;
-  font: 12px/1.5 ui-monospace, monospace;
+  font:
+    12px / 1.5 ui-monospace,
+    monospace;
   white-space: pre-wrap;
 }
 .tag-map {
@@ -97,16 +99,18 @@
   width: fit-content;
   margin-bottom: 6px;
   padding: 1px 8px;
-  font: 12px ui-monospace, monospace;
+  font:
+    12px ui-monospace,
+    monospace;
   border-radius: 3px;
 }
 .show-boundaries .demo-map::before {
-  content: '<ExtendedWorldMap>';
+  content: "<ExtendedWorldMap>";
   color: #1d4fb8;
   background: #e5eeff;
 }
 .show-boundaries .demo-controls::before {
-  content: '<WorldMapControls>  (separate component: place it anywhere)';
+  content: "<WorldMapControls>  (separate component: place it anywhere)";
   color: #a4570a;
   background: #fff0e0;
 }

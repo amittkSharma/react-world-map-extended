@@ -1,9 +1,7 @@
 import { fireEvent, render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { country } from './helpers'
 
 const titles = (container: HTMLElement) => container.querySelectorAll('path > title')
 

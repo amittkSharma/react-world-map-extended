@@ -4,14 +4,14 @@ import {
   type CountryDataIssue,
   type DetailsPosition,
   ExtendedWorldMap,
-  WorldMapControls,
   useWorldMapModes,
+  WorldMapControls,
 } from '../src'
 import sampleData from './sample-data.json'
 import {
   type ControlsPlacement,
-  type DataMode,
   controlsPlacements,
+  type DataMode,
   dataModes,
   detailsPositions,
   readScenario,
@@ -90,7 +90,7 @@ export const ExampleApp = () => {
 
   const countryData =
     dataMode === 'default' ? undefined : dataMode === 'invalid' ? WITH_MISTAKES : SAMPLE
-  const propertyNames = (dataMode === 'invalid' ? [] : SAMPLE.properties.map(({ name }) => name)) // for separate controls
+  const propertyNames = dataMode === 'invalid' ? [] : SAMPLE.properties.map(({ name }) => name) // for separate controls
   const ownDataOnly = dataMode === 'custom' || dataMode === 'invalid'
   const apart = placement !== 'inside'
   const sideways = placement === 'left' || placement === 'right'
@@ -140,7 +140,10 @@ export const ExampleApp = () => {
         </label>
         <label className="header-control">
           Details position:{' '}
-          <select value={position} onChange={(event) => setPosition(toPosition(event.target.value))}>
+          <select
+            value={position}
+            onChange={(event) => setPosition(toPosition(event.target.value))}
+          >
             {detailsPositions.map((value) => (
               <option key={value} value={value}>
                 {value}
@@ -162,7 +165,9 @@ export const ExampleApp = () => {
             value={countries.length === 1 ? countries[0] : ''}
             onChange={(event) => setCountries(event.target.value ? [event.target.value] : [])}
           >
-            <option value="">{countries.length > 1 ? `${countries.length} selected` : 'none'}</option>
+            <option value="">
+              {countries.length > 1 ? `${countries.length} selected` : 'none'}
+            </option>
             {(countries.length === 1 && !quickCountries.includes(countries[0])
               ? [...quickCountries, countries[0]]
               : quickCountries
@@ -186,8 +191,9 @@ export const ExampleApp = () => {
             </>
           ) : (
             <>
-              The radio buttons are <b>part of</b> <b className="tag-map">&lt;ExtendedWorldMap&gt;</b>{' '}
-              (the default). Pick a "separate" option above to see them as an independent{' '}
+              The radio buttons are <b>part of</b>{' '}
+              <b className="tag-map">&lt;ExtendedWorldMap&gt;</b> (the default). Pick a "separate"
+              option above to see them as an independent{' '}
               <b className="tag-controls">&lt;WorldMapControls&gt;</b> you can place anywhere.
             </>
           )}

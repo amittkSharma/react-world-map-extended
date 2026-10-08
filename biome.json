@@ -1,7 +1,15 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "files": { "includes": ["src/**", "example/**", "tests/**", "*.ts"] },
-  "formatter": { "enabled": false },
-  "assist": { "enabled": false },
-  "linter": { "enabled": true }
+  "files": { "includes": ["src/**", "tests/**", "example/**", "*.ts"] },
+  "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
+  "javascript": {
+    "formatter": { "quoteStyle": "single", "semicolons": "asNeeded", "trailingCommas": "all" }
+  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "correctness": { "noUnusedImports": "error", "noUnusedVariables": "error" }
+    }
+  }
 }

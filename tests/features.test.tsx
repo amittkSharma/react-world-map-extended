@@ -1,10 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap, MapColorOptions } from '../src'
-import { getPaletteColors } from '../src/palettes'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { getPaletteColors } from '../src/lib/palettes'
+import { country } from './helpers'
 
 describe('controls and modes', () => {
   it('hides the radio groups with showControls={false}', () => {
@@ -50,7 +48,11 @@ describe('onCountryClick', () => {
     )
     fireEvent.click(country(container, 'France'))
     const [info, context] = onCountryClick.mock.calls[0]
-    expect(info).toEqual({ name: 'France', capital: 'Paris', infoLink: 'https://en.wikipedia.org/wiki/France' })
+    expect(info).toEqual({
+      name: 'France',
+      capital: 'Paris',
+      infoLink: 'https://en.wikipedia.org/wiki/France',
+    })
     expect(context.countryCode.toUpperCase()).toBe('FR')
     expect(context.event).toBeDefined()
   })
@@ -61,7 +63,6 @@ describe('onCountryClick', () => {
     fireEvent.click(country(container, 'Northern Cyprus'))
     expect(onCountryClick.mock.calls[0][0]).toBeUndefined()
   })
-
 })
 
 describe('colours', () => {
@@ -79,7 +80,9 @@ describe('colours', () => {
       <ExtendedWorldMap {...colourful} palette="monochrome" colors={{ FR: '#123456' }} />,
     )
     expect(country(container, 'France')).toHaveStyle({ fill: '#123456' })
-    expect(country(container, 'Germany')).toHaveStyle({ fill: getPaletteColors('monochrome').DE as string })
+    expect(country(container, 'Germany')).toHaveStyle({
+      fill: getPaletteColors('monochrome').DE as string,
+    })
 
     rerender(
       <ExtendedWorldMap
@@ -114,7 +117,9 @@ describe('styling', () => {
   })
 
   it('merges styleOverrides last (object and function forms)', () => {
-    const { container, rerender } = render(<ExtendedWorldMap styleOverrides={{ fill: '#abcdef' }} />)
+    const { container, rerender } = render(
+      <ExtendedWorldMap styleOverrides={{ fill: '#abcdef' }} />,
+    )
     expect(country(container, 'France')).toHaveStyle({ fill: '#abcdef' })
 
     rerender(
@@ -205,7 +210,7 @@ describe('infoLink', () => {
     expect(container.querySelectorAll('svg a')).toHaveLength(0)
   })
 
-  it('shows the country\'s link in the details, opening in a new tab', () => {
+  it("shows the country's link in the details, opening in a new tab", () => {
     const { container } = render(<ExtendedWorldMap showDetails />)
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
     fireEvent.click(country(container, 'France'))
@@ -264,7 +269,9 @@ describe('details panel', () => {
   })
 
   it('groups the details by category and formats dialling prefixes', () => {
-    const { container } = render(<ExtendedWorldMap showDetails defaultInfoMode="CountryCompleteInfo" />)
+    const { container } = render(
+      <ExtendedWorldMap showDetails defaultInfoMode="CountryCompleteInfo" />,
+    )
     fireEvent.click(country(container, 'France'))
     const panel = screen.getByRole('status')
     expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent('France')
@@ -278,12 +285,16 @@ describe('details panel', () => {
   it('shows only the groups that have data for the current mode', () => {
     const { container } = render(<ExtendedWorldMap showDetails defaultInfoMode="CountryCapital" />)
     fireEvent.click(country(container, 'France'))
-    expect(screen.getAllByRole('heading', { level: 4 }).map((h) => h.textContent)).toEqual(['Geography'])
+    expect(screen.getAllByRole('heading', { level: 4 }).map((h) => h.textContent)).toEqual([
+      'Geography',
+    ])
   })
 
   it('says so when a country has no details', () => {
     const { container } = render(<ExtendedWorldMap showDetails />)
     fireEvent.click(country(container, 'Northern Cyprus'))
-    expect(screen.getByRole('status')).toHaveTextContent('No details available for Northern Cyprus.')
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'No details available for Northern Cyprus.',
+    )
   })
 })

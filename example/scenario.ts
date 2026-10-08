@@ -1,10 +1,10 @@
 import {
   type DetailsPosition,
-  type MapPalette,
   type MapColorMode,
   MapColorOptions,
   MapDataOptions,
   type MapInfoMode,
+  type MapPalette,
 } from '../src'
 
 /**

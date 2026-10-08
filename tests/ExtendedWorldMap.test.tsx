@@ -1,10 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap } from '../src'
-import { countryColors } from '../src/rawData/defaultMapData'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
+import { countryColors } from '../src/data/defaultMapData'
+import { country } from './helpers'
 
 describe('ExtendedWorldMap', () => {
   it('renders two radio groups with their own legends', () => {
@@ -35,7 +33,9 @@ describe('ExtendedWorldMap', () => {
 
   it('switches fills between black-and-white and colourful', () => {
     const { container } = render(<ExtendedWorldMap />)
-    expect(country(container, 'France').getAttribute('style')).toContain('fill: var(--rwme-fill, #ffffff)')
+    expect(country(container, 'France').getAttribute('style')).toContain(
+      'fill: var(--rwme-fill, #ffffff)',
+    )
     fireEvent.click(screen.getByLabelText('Colorful'))
     expect(country(container, 'France')).toHaveStyle({ fill: countryColors.FR as string })
   })
@@ -64,5 +64,4 @@ describe('ExtendedWorldMap', () => {
     fireEvent.click(country(container, 'Democratic Republic of the Congo'))
     expect(onCountryClick.mock.calls[0][0].name).toBe('Democratic Republic of the Congo')
   })
-
 })

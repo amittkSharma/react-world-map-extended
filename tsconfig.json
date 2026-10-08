@@ -4,33 +4,17 @@
     "lib": ["es2020", "dom"],
     "module": "esnext",
     "moduleResolution": "bundler",
-    "outDir": "dist",
-    "rootDir": "src",
-    "sourceMap": true,
     "target": "es2020",
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": true,
+    "strict": true,
     "noImplicitReturns": true,
-    "noImplicitThis": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": false,
-    "declaration": true
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "rootDir": "src"
   },
-  "exclude": [
-    "node_modules",
-    "build",
-    "scripts",
-    "acceptance-tests",
-    "webpack",
-    "jest",
-    "src/setupTests.ts"
-  ],
-  "include": ["src", "typings/*.d.ts"]
+  "include": ["src"]
 }

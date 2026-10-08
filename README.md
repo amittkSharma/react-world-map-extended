@@ -359,7 +359,7 @@ Need more? `styleOverrides` takes a style object (or a function that returns one
 ```sh
 npm run dev            # open the example app
 npm run build-package  # lint, type check, test, build
-npm run lint:fix       # tidy the code style
+npm run lint:fix       # fix formatting, import order and safe lint issues
 ```
 
 ## License

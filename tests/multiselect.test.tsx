@@ -1,19 +1,12 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap, MAX_SELECTED_COUNTRIES } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
-
-const style = (container: HTMLElement, name: string) =>
-  country(container, name).getAttribute('style') ?? ''
+import { country, shiftClick, styleOf } from './helpers'
 
 const selectedNames = (container: HTMLElement) =>
   Array.from(container.querySelectorAll('path'))
     .filter((path) => (path.getAttribute('style') ?? '').includes('var(--rwme-selected-stroke'))
     .map((path) => path.getAttribute('aria-label'))
-
-const shiftClick = (element: Element) => fireEvent.click(element, { shiftKey: true })
 
 const FIVE = ['France', 'Germany', 'Italy', 'Spain', 'Poland']
 const addAll = (container: HTMLElement, names: string[]) => {
@@ -54,7 +47,10 @@ describe('selecting several countries', () => {
   it('shift+click on a selected country removes it', () => {
     const onSelectionChange = vi.fn()
     const { container } = render(
-      <ExtendedWorldMap defaultSelectedCountries={['FR', 'DE', 'IT']} onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap
+        defaultSelectedCountries={['FR', 'DE', 'IT']}
+        onSelectionChange={onSelectionChange}
+      />,
     )
     shiftClick(country(container, 'Germany'))
     expect(selectedNames(container).sort()).toEqual(['France', 'Italy'])
@@ -64,7 +60,10 @@ describe('selecting several countries', () => {
   it('a plain click on a country that is not selected replaces the whole selection', () => {
     const onSelectionChange = vi.fn()
     const { container } = render(
-      <ExtendedWorldMap defaultSelectedCountries={['FR', 'DE']} onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap
+        defaultSelectedCountries={['FR', 'DE']}
+        onSelectionChange={onSelectionChange}
+      />,
     )
     fireEvent.click(country(container, 'Japan'))
     expect(selectedNames(container)).toEqual(['Japan'])
@@ -114,18 +113,28 @@ describe('selecting several countries', () => {
     const { container } = render(<ExtendedWorldMap onSelectionChange={onSelectionChange} />)
     act(() => {
       country(container, 'Germany').dispatchEvent(new MouseEvent('click', { bubbles: true }))
-      country(container, 'France').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
-      country(container, 'Italy').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
+      country(container, 'France').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, shiftKey: true }),
+      )
+      country(container, 'Italy').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, shiftKey: true }),
+      )
     })
     expect(selectedNames(container).sort()).toEqual(['France', 'Germany', 'Italy'])
     expect(onSelectionChange).toHaveBeenLastCalledWith(['DE', 'FR', 'IT'])
   })
 
   it('a controlled parent that refuses a batch of clicks still wins', () => {
-    const { container } = render(<ExtendedWorldMap selectedCountries={['FR']} onSelectionChange={() => {}} />)
+    const { container } = render(
+      <ExtendedWorldMap selectedCountries={['FR']} onSelectionChange={() => {}} />,
+    )
     act(() => {
-      country(container, 'Germany').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
-      country(container, 'Italy').dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey: true }))
+      country(container, 'Germany').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, shiftKey: true }),
+      )
+      country(container, 'Italy').dispatchEvent(
+        new MouseEvent('click', { bubbles: true, shiftKey: true }),
+      )
     })
     expect(selectedNames(container)).toEqual(['France'])
   })
@@ -226,14 +235,18 @@ describe('controlled selection', () => {
     expect(onSelectionChange).toHaveBeenCalledWith(['FR', 'DE'])
     expect(selectedNames(container)).toEqual(['France'])
 
-    rerender(<ExtendedWorldMap selectedCountries={['FR', 'DE']} onSelectionChange={onSelectionChange} />)
+    rerender(
+      <ExtendedWorldMap selectedCountries={['FR', 'DE']} onSelectionChange={onSelectionChange} />,
+    )
     expect(selectedNames(container).sort()).toEqual(['France', 'Germany'])
   })
 })
 
 describe('clearing', () => {
   it('does not treat dismissing the message as a click away from the selection', () => {
-    const { container } = render(<ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE', 'IT', 'ES', 'PL']} />)
+    const { container } = render(
+      <ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE', 'IT', 'ES', 'PL']} />,
+    )
     shiftClick(country(container, 'Japan')) // the limit: a message appears
     for (const name of ['Germany', 'Italy', 'Spain', 'Poland']) {
       fireEvent.click(screen.getByRole('button', { name: `Remove ${name} from the selection` }))
@@ -249,7 +262,10 @@ describe('clearing', () => {
   it('Escape clears every selected country', () => {
     const onSelectionChange = vi.fn()
     const { container } = render(
-      <ExtendedWorldMap defaultSelectedCountries={['FR', 'DE', 'IT']} onSelectionChange={onSelectionChange} />,
+      <ExtendedWorldMap
+        defaultSelectedCountries={['FR', 'DE', 'IT']}
+        onSelectionChange={onSelectionChange}
+      />,
     )
     fireEvent.keyDown(country(container, 'France'), { key: 'Escape' })
     expect(selectedNames(container)).toEqual([])
@@ -304,7 +320,9 @@ describe('looks of a larger selection', () => {
 
   it('puts neighbours back where they were, whichever order they were selected in', () => {
     const order = (container: HTMLElement) =>
-      Array.from(container.querySelectorAll('path')).map((path) => path.getAttribute('aria-label') as string)
+      Array.from(container.querySelectorAll('path')).map(
+        (path) => path.getAttribute('aria-label') as string,
+      )
     const { container } = render(<ExtendedWorldMap />)
     const original = order(container)
     const [first, second, third] = original.slice(40, 43) // three neighbours in the drawing order
@@ -325,12 +343,12 @@ describe('looks of a larger selection', () => {
     const { container } = render(
       <ExtendedWorldMap showDetails defaultSelectedCountries={['FR', 'DE']} />,
     )
-    expect(style(container, 'France')).not.toContain('--rwme-linked-glow')
+    expect(styleOf(container, 'France')).not.toContain('--rwme-linked-glow')
     fireEvent.mouseEnter(header('France'))
-    expect(style(container, 'France')).toContain('--rwme-linked-glow')
-    expect(style(container, 'Germany')).not.toContain('--rwme-linked-glow')
+    expect(styleOf(container, 'France')).toContain('--rwme-linked-glow')
+    expect(styleOf(container, 'Germany')).not.toContain('--rwme-linked-glow')
     fireEvent.mouseLeave(header('France'))
-    expect(style(container, 'France')).not.toContain('--rwme-linked-glow')
+    expect(styleOf(container, 'France')).not.toContain('--rwme-linked-glow')
 
     const item = document.querySelector('.rwme-details__item[data-code="DE"]') as HTMLElement
     expect(item.style.background).toBe('')
@@ -346,7 +364,9 @@ describe('looks of a larger selection', () => {
 
 describe('the switch for devices without a Shift key', () => {
   const coarse = (matches: boolean) =>
-    vi.stubGlobal('matchMedia', (query: string) => ({ matches: matches && query.includes('coarse') }))
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: matches && query.includes('coarse'),
+    }))
   afterEach(() => vi.unstubAllGlobals())
 
   it('is not shown without a touch screen, unless asked for', () => {
@@ -384,7 +404,10 @@ describe('the switch for devices without a Shift key', () => {
 
   it('moves out of the way of a legend in the top-left corner', () => {
     render(<ExtendedWorldMap showMultiSelectToggle legendPosition="top-left" />)
-    expect(screen.getByRole('button', { name: /Select multiple/ })).toHaveStyle({ right: '8px', bottom: '8px' })
+    expect(screen.getByRole('button', { name: /Select multiple/ })).toHaveStyle({
+      right: '8px',
+      bottom: '8px',
+    })
   })
 })
 

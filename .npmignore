@@ -1,0 +1,8 @@
+# `files` in package.json already limits the package to dist/ and schema/. This keeps sources, tests,
+# docs, the example app and every config out even if `files` is ever widened.
+*
+!dist/**
+!schema/**
+!README.md
+!LICENSE
+!package.json

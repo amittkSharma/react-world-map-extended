@@ -1,7 +1,7 @@
 {
   "name": "react-world-map-extended",
   "version": "0.0.0",
-  "description": "React World Map Extended is a React component that provides an interactive world map with extended features. It allows users to visualize data on a world map, customize the appearance, and interact with countries.",
+  "description": "An interactive React world map: colour countries with your own data, select several and compare their details.",
   "author": "Amitt K Sharma",
   "license": "MIT",
   "type": "module",
@@ -56,6 +56,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
+    "@microsoft/api-extractor": "7.59.4",
     "@rsbuild/core": "2.1.4",
     "@rsbuild/plugin-react": "2.1.0",
     "@rslib/core": "1.0.3",
@@ -76,12 +77,13 @@
     "dev": "rsbuild dev",
     "build": "rslib build",
     "build-example": "rsbuild build",
-    "lint": "biome lint --error-on-warnings .",
-    "lint:fix": "biome check --write",
-    "build-package": "npm run lint && npm run typecheck && npm test && npm run build",
-    "release": "commit-and-tag-version",
+    "lint": "biome check --error-on-warnings .",
+    "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit && tsc -p tests --noEmit && tsc -p example --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build-package": "npm run lint && npm run typecheck && npm test && npm run build",
+    "prepublishOnly": "npm run build-package",
+    "release": "commit-and-tag-version"
   },
   "dependencies": {
     "i18n-iso-countries-extended-info": "1.8.0",

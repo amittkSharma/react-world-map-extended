@@ -1,12 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ExtendedWorldMap } from '../src'
-
-const country = (container: HTMLElement, name: string) =>
-  container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
-
-const styleOf = (container: HTMLElement, name: string) =>
-  country(container, name).getAttribute('style') ?? ''
+import { country, styleOf } from './helpers'
 
 const hasFocusRing = (container: HTMLElement, name: string) =>
   styleOf(container, name).includes('--rwme-focus-stroke')

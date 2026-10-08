@@ -64,3 +64,31 @@ export const getPaletteColors = (palette: MapPalette): CountryColors => {
   }
   return colors
 }
+
+export interface LegendItem {
+  label: string
+  color: string
+}
+
+const continentNames: Record<string, string> = {
+  AF: 'Africa',
+  AS: 'Asia',
+  EU: 'Europe',
+  NA: 'North America',
+  SA: 'South America',
+  OC: 'Oceania',
+}
+
+/** What the colours of a palette stand for; `undefined` when they mean nothing in particular. */
+export const getPaletteLegend = (
+  palette: MapPalette,
+): { title: string; items: LegendItem[] } | undefined => {
+  const items = (colors: Record<string, string>, names: Record<string, string> = {}) =>
+    Object.entries(colors).map(([key, color]) => ({ label: names[key] ?? key, color }))
+
+  if (palette === 'continent') {
+    return { title: 'Continents', items: items(continentColors, continentNames) }
+  }
+  if (palette === 'region') return { title: 'Regions', items: items(regionColors) }
+  return undefined // 'default' colours every country differently, 'monochrome' uses one colour
+}

@@ -1,4 +1,4 @@
-import type { Data, ISOCode } from 'react-svg-worldmap'
+import { type Data, type ISOCode, regions } from 'react-svg-worldmap'
 
 // Fill colour per country (ISO 3166-1 alpha-2) used by the 'Colorful' map mode.
 export const countryColors: Partial<Record<Uppercase<ISOCode>, string>> = {
@@ -177,6 +177,17 @@ export const countryColors: Partial<Record<Uppercase<ISOCode>, string>> = {
   XK: '#A8DADC',
 }
 
-export const defaultMapData: Data<string> = Object.entries(countryColors).map(
-  ([country, color]) => ({ country: country as ISOCode, value: color }),
-)
+// Every area the map draws needs an entry: react-svg-worldmap shows its styled tooltip only for
+// areas that have a value. Northern Cyprus and Somaliland have no ISO code and no colour; they get an
+// empty value, which keeps them white in Colorful mode but gives them the same tooltip as the rest.
+const withoutIsoCode = regions
+  .filter((region) => region.code.length !== 2)
+  .map((region) => ({ country: region.code as ISOCode, value: '' }))
+
+export const defaultMapData: Data<string> = [
+  ...Object.entries(countryColors).map(([country, color]) => ({
+    country: country as ISOCode,
+    value: color,
+  })),
+  ...withoutIsoCode,
+]

@@ -134,6 +134,10 @@ export interface CountryDetailsProps {
   style?: CSSProperties
   /** When given, a "Hide" button is shown and calls this. */
   onClose?: () => void
+  /** Set when the card is the content of a dialog that already names and announces it. The card then
+   * is a plain polite live area instead of a second, separately named `status` region, which would
+   * make a screen reader announce the same content twice. */
+  inDialog?: boolean
 }
 
 /** Live region (screen readers announce updates) showing the selected country's details. */
@@ -145,6 +149,7 @@ export const CountryDetails = ({
   className,
   style: styleOverride,
   onClose,
+  inDialog = false,
 }: CountryDetailsProps) => {
   const detail = selection?.detail
   const visibleGroups = groups
@@ -169,8 +174,9 @@ export const CountryDetails = ({
 
   return (
     <div
-      role="status"
-      aria-label="Country details"
+      {...(inDialog
+        ? { 'aria-live': 'polite' as const }
+        : { role: 'status', 'aria-label': 'Country details' })}
       className={['rwme-details', className].filter(Boolean).join(' ')}
       style={style}
     >

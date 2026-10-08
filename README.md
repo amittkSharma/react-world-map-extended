@@ -47,7 +47,7 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `size` | `'sm' \| 'md' \| 'lg' \| 'xl' \| 'xxl' \| 'responsive' \| number` | `'xxl'` | Map size (same as `react-svg-worldmap`). |
 | `onCountryClick` | `(info: CountryDetail \| undefined, context: CountryClickContext) => void` | – | Called on click. `info` is `undefined` for Northern Cyprus and Somaliland (no ISO code). `context` is the `react-svg-worldmap` context plus the click `event`. |
 | `selectedCountry` / `defaultSelectedCountry` / `onSelectionChange` | `string \| null` / `string \| null` / `(countryCode: string \| null) => void` | `null` | The highlighted country and the one in the details card, as an ISO alpha-2 code (any case). Controlled with `selectedCountry` (`null` = none), otherwise it starts at `defaultSelectedCountry` and follows clicks. `onSelectionChange` gets the upper-case code when a click selects a different country. Unknown codes select nothing. |
-| `tooltipText` | `(ctx: CountryContext<string>) => string` | country name | Custom tooltip text. |
+| `tooltipText` | `(ctx: CountryContext<string>) => string` | country name | Text of the styled tooltip shown on hover. |
 | `getInfoLink` | `(countryCode: string, countryName: string) => string \| undefined` | English Wikipedia page of the country | Where the `infoLink` detail points. Return `undefined` for no link. |
 | `mapFrame` | `boolean` | `false` | Draw a frame around the map. |
 | `interaction` | `boolean` | `true` | Enable hover/click interaction (`richInteraction`). |
@@ -56,6 +56,8 @@ the country, by default its English Wikipedia page. It does not change the map i
 | `infoMode` / `defaultInfoMode` / `onInfoModeChange` | `'CountryName' \| 'CountryCapital' \| 'CountryRegionInfo' \| 'CountryLanguageInfo' \| 'CountryCurrencyInfo' \| 'CountryCompleteInfo'` | `'CountryName'` | Fields reported on click; same controlled/uncontrolled rules. |
 | `palette` | `'default' \| 'continent' \| 'region' \| 'monochrome'` | `'default'` | Built-in colours for Colorful mode. |
 | `colors` | `Record<ISO2, string> \| (ctx) => string \| undefined` | – | Colours for Colorful mode; wins over `palette`. Keys are upper-case ISO alpha-2 codes. |
+| `showLegend` | `boolean` | `true` | Draw a legend over a corner of the map saying what the colours mean. It appears only for the `continent` and `region` palettes, in Colorful mode, without custom `colors` (the other schemes have nothing to explain). It never takes clicks. |
+| `legendPosition` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'bottom-left'` | Which corner of the map the legend sits in. |
 | `highlightSelected` | `boolean` | `true` | Outline the selected country. Turning it off also turns off `dimOthers`. |
 | `deselectOn` | `'outside' \| 'background' \| 'never'` | `'outside'` | When a click clears the selection, restoring the original map: `'outside'` = a click on the map where there is no country, on the empty space around it, or anywhere outside the component; `'background'` = only the map or the space around it inside the component; `'never'`. Clicks on a country, the controls or the details card never clear it, and nothing clears while the `overlay` card is open. **Keyboard:** `Escape` with focus on the map or in the details card also clears the selection (not with `'never'`; in the `overlay` card it closes the card instead). With a controlled `selectedCountry`, `onSelectionChange(null)` is called and the parent decides. |
 | `dimOthers` | `boolean \| number` | `true` | While a country is selected, fade all the others so it stands out. `true` = opacity `0.35`, a number (0–1) sets it, `false` turns it off. Fill and border fade; faded countries stay hoverable and clickable. |
@@ -74,7 +76,7 @@ category (**Geography**, **Currency**, **Language**, **Calling codes**) and only
 information mode appear. The most important fact of each group (capital, currency code, language, dialling prefix)
 is set larger. The footer holds the `infoLink`. Three states are distinguished: a dashed neutral card before any
 click, the details card with an accent bar, and an amber warning card when a clicked area has no data. It is an
-`aria-live` status region, so screen readers announce changes.
+`aria-live` status region, so screen readers announce changes (in the `overlay` position the dialog is the named container and the card inside is just a polite live area, so nothing is announced twice).
 
 Configure it with `detailsOptions`:
 
@@ -111,7 +113,7 @@ and clicks are ignored. Close it with **Hide** or **Escape**; focus moves into t
 focus returns to the clicked country afterwards. Nothing opens until a country is selected.
 
 The card is also exported as `CountryDetails` (props: `selection`, `headingLevel`, `fontFamily`, `fontStyle`,
-`className`, `style`, `onClose`) so you can render it in your own layout, fed from `onCountryClick`. Theme it with
+`className`, `style`, `onClose`, and `inDialog` when you put it inside your own named dialog) so you can render it in your own layout, fed from `onCountryClick`. Theme it with
 `--rwme-panel-bg`, `--rwme-panel-text`, `--rwme-panel-muted`, `--rwme-panel-border`, `--rwme-panel-accent`,
 `--rwme-panel-warning` and `--rwme-panel-warning-bg`.
 
@@ -162,6 +164,7 @@ Pass `className`/`style` for the wrapper, or theme the countries with CSS custom
 | `--rwme-fill` | `#ffffff` | country fill in Black and White mode |
 | `--rwme-stroke`, `--rwme-stroke-width` | `#000000`, `1.2` | country border |
 | `--rwme-selected-stroke`, `--rwme-selected-stroke-width` | `#d62828`, `2.5` | border of the selected country |
+| `--rwme-legend-bg`, `--rwme-legend-text`, `--rwme-legend-border` | translucent white, `#1f2328`, `#d0d7de` | the legend box |
 | `--rwme-dimmed-opacity` | `0.35` (or the `dimOthers` number) | opacity of the other countries while one is selected |
 
 ```tsx
@@ -172,10 +175,12 @@ For anything else use `styleOverrides`. Hover colours are controlled by `react-s
 
 ## Known limitations
 
+- `react-svg-worldmap` gives every country a styled tooltip and also a native `<title>` that browsers show as a second, plain tooltip. This package removes the `<title>` (each country keeps its `aria-label`), so you get one tooltip. It relies on the library's markup; if you pass your own `data` in the future, countries without a value keep only the native one.
+- The legend only explains the `continent` and `region` palettes. Custom `colors`, the default per-country colours and `monochrome` have no legend (a legend for your own data comes with the planned data-driven map). Its swatches keep their full colours while `dimOthers` fades the map.
 - With the default `deselectOn="outside"`, a click on any element of your page outside the map (a dropdown, a button) clears the selection; if those elements should keep it, use `deselectOn="background"`.
 - `react-svg-worldmap` restyles a hovered country's border (width 2, a bit more opaque) over whatever this package sets, so hovering the selected country thins its outline slightly (2 instead of 2.5).
 - When `showDetails` is on, the component sets `margin: 0` on the `<figure>` that `react-svg-worldmap` renders (the browser's default 40px side margin is not accounted for by the library and pushed the map into a neighbouring card), and measures the map's `<svg>` to align the card.
-- Northern Cyprus and Somaliland have no ISO code in the map data: they stay white in colour mode and `onCountryClick` receives `undefined`.
+- Northern Cyprus and Somaliland have no ISO code in the map data: they stay white in colour mode (they do get the normal tooltip) and `onCountryClick` receives `undefined`.
 - Antarctica and the French Southern Territories are not drawn (not supported by `react-svg-worldmap`).
 - SVG has no z-index, so the selected country's `<path>` is moved to the end of the map's `<g>` (drawn on top) while it is selected, and put back afterwards. Keyboard focus is restored after each move. Tab order changes while a country is selected: it then comes last. If `react-svg-worldmap` re-creates its country elements (not observed), the highlight can be partly covered until the next click.
 - Only one country can be selected at a time.

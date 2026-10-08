@@ -10,13 +10,9 @@ import WorldMap, { regions } from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
 import { CountryDetails, ShowDetailsButton } from './CountryDetails'
-import {
-  MapColorOptions,
-  type MapColorMode,
-  MapDataOptions,
-  type MapInfoMode,
-} from './constants'
-import { type CountryColors, type MapPalette, getPaletteColors } from './palettes'
+import { MapColorOptions, type MapColorMode, MapDataOptions, type MapInfoMode } from './constants'
+import { MapLegend, type LegendPosition } from './MapLegend'
+import { type CountryColors, type MapPalette, getPaletteColors, getPaletteLegend } from './palettes'
 import { defaultMapData } from './rawData/defaultMapData'
 import {
   type CountryDetail,
@@ -27,12 +23,14 @@ import type { DetailsOptions } from './detailsOptions'
 import { useControllableState } from './useControllableState'
 import { LAYOUT_GAP, useMapBox } from './useMapBox'
 import { useInert, useModalDialog } from './useModalDialog'
+import { useSingleTooltip } from './useSingleTooltip'
 import { WorldMapControls } from './WorldMapControls'
 import { useRaiseOnTop } from './useRaiseOnTop'
 
 export { MapColorOptions, MapDataOptions } from './constants'
 export type { MapColorMode, MapInfoMode } from './constants'
 export type { CountryColors, MapPalette } from './palettes'
+export type { LegendPosition } from './MapLegend'
 export { getCountryDetail, getWikipediaUrl } from './rawData/getDefaultMapData'
 export type { CountryDetail, InfoLinkResolver } from './rawData/getDefaultMapData'
 export { CountryDetails } from './CountryDetails'
@@ -94,6 +92,11 @@ const getMapMaxWidth = (size: SizeOption | 'responsive' | number) =>
 
 const countryNames = new Map(regions.map((region) => [region.code.toUpperCase(), region.name]))
 
+// areas that get the library's styled tooltip (every area that has an entry in the map data)
+const styledTooltipNames: ReadonlySet<string> = new Set(
+  defaultMapData.flatMap(({ country }) => countryNames.get(country.toUpperCase()) ?? []),
+)
+
 // `undefined` (not given) must stay distinct from `null` (given: nothing selected)
 const toCode = (value: string | null | undefined) =>
   value === undefined ? undefined : (value?.toUpperCase() ?? null)
@@ -135,6 +138,12 @@ export interface ExtendedWorldMapProps {
   palette?: MapPalette
   /** Colours for 'Colorful' mode, by ISO alpha-2 code (upper case) or per country; wins over `palette`. */
   colors?: CountryColors | ((context: CountryContext<string>) => string | undefined)
+  /** Show a legend over a corner of the map saying what the colours mean. Default `true`; it appears
+   * only for the `continent` and `region` palettes, in Colorful mode, without custom `colors`
+   * (the other schemes have nothing to explain). */
+  showLegend?: boolean
+  /** Which corner of the map the legend sits in. Default `'bottom-left'`. */
+  legendPosition?: LegendPosition
   /** Highlight the selected country. Default `true`. Turning it off also turns off `dimOthers`. */
   highlightSelected?: boolean
   /** When a click clears the selection (the map goes back to its original look):
@@ -184,6 +193,8 @@ export const ExtendedWorldMap = ({
   onInfoModeChange,
   palette = 'default',
   colors,
+  showLegend = true,
+  legendPosition = 'bottom-left',
   highlightSelected = true,
   dimOthers = true,
   deselectOn = 'outside',
@@ -212,6 +223,7 @@ export const ExtendedWorldMap = ({
   const selected = selectedCode && selectedName ? { code: selectedCode, name: selectedName } : null
   const rootRef = useRef<HTMLDivElement>(null)
   useRaiseOnTop(rootRef, highlightSelected ? selected?.name : undefined)
+  useSingleTooltip(rootRef, styledTooltipNames)
 
   const {
     position = 'bottom',
@@ -312,7 +324,11 @@ export const ExtendedWorldMap = ({
     return { ...computed, ...overrides }
   }
 
-  const box = useMapBox(layoutRef, mapRef, showDetails)
+  const legend =
+    showLegend && colorOption === MapColorOptions.COLORFUL && !colors
+      ? getPaletteLegend(palette)
+      : undefined
+  const box = useMapBox(layoutRef, mapRef, showDetails || legend !== undefined)
   const sideways = position === 'left' || position === 'right'
   const detailsFirst = position === 'top' || position === 'left'
   const selection = selected && {
@@ -335,6 +351,7 @@ export const ExtendedWorldMap = ({
         ...detailsStyle,
       }}
       onClose={closeDetails}
+      inDialog={isOverlay}
     />
   )
 
@@ -426,6 +443,7 @@ export const ExtendedWorldMap = ({
               styleFunction={getStyle}
             />
           </div>
+          {legend && <MapLegend {...legend} position={legendPosition} box={box} />}
           {overlayActive && selection && (
             <div
               className="rwme-overlay"

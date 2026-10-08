@@ -212,7 +212,7 @@ describe('alignment with the map', () => {
       width: '600px',
       height: '300px',
     })
-    const card = screen.getByRole('status')
+    const card = screen.getByRole('dialog').querySelector('.rwme-details') as HTMLElement
     expect(card).toHaveStyle({ width: '100%', height: '100%' })
     expect(card.style.background).toContain('--rwme-overlay-bg')
     expect(card.style.background).toContain('rgba(')
@@ -237,6 +237,50 @@ describe('alignment with the map', () => {
       expect(slot.style.maxWidth).toBe(maxWidth)
     },
   )
+})
+
+describe('screen-reader semantics of the details card', () => {
+  it('is a named status region when it sits in the page', () => {
+    const { container } = renderMap({ position: 'bottom' })
+    fireEvent.click(country(container, 'France'))
+    const card = screen.getByRole('status', { name: 'Country details' })
+    expect(card).toHaveTextContent('France')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('is a status region when used on its own', () => {
+    render(<CountryDetails selection={null} />)
+    expect(screen.getByRole('status', { name: 'Country details' })).toBeInTheDocument()
+  })
+
+  it('in the overlay, the dialog is the only named container: no second status region inside it', () => {
+    const { container } = renderMap({ position: 'overlay' })
+    fireEvent.click(country(container, 'France'))
+
+    const dialog = screen.getByRole('dialog', { name: 'Details: France' })
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(dialog.querySelector('[role], [aria-label="Country details"]')).toBeNull() // no nested region role or duplicate name
+    expect(dialog.querySelectorAll('[aria-live]')).toHaveLength(1) // updates are still announced, politely
+    expect(dialog.querySelector('[aria-live]')).toHaveAttribute('aria-live', 'polite')
+  })
+
+  it('in the overlay, a change made from outside is still announced through the live area', () => {
+    const { rerender } = render(
+      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountry="FR" />,
+    )
+    rerender(
+      <ExtendedWorldMap showDetails detailsOptions={{ position: 'overlay' }} selectedCountry="DE" />,
+    )
+    const dialog = screen.getByRole('dialog', { name: 'Details: Germany' })
+    expect(dialog.querySelector('[aria-live="polite"]')).toHaveTextContent('Germany')
+  })
+
+  it('leaves the standalone card a status region unless told it is inside a dialog', () => {
+    const { rerender } = render(<CountryDetails selection={null} inDialog />)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    rerender(<CountryDetails selection={null} />)
+    expect(screen.getByRole('status')).toBeInTheDocument()
+  })
 })
 
 describe('overlay', () => {
@@ -286,7 +330,7 @@ describe('overlay', () => {
 
   it('does not close when the card itself is clicked', () => {
     open()
-    fireEvent.click(screen.getByRole('status'))
+    fireEvent.click(screen.getByRole('dialog').querySelector('.rwme-details') as Element)
     expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 

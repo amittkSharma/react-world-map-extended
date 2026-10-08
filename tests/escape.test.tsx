@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { ExtendedWorldMap } from '../src'
+import { ExtendedWorldMap, WorldMapControls } from '../src'
 
 const country = (container: HTMLElement, name: string) =>
   container.querySelector(`path[aria-label="${name}"]`) as SVGPathElement
@@ -75,10 +75,47 @@ describe('Escape clears the selection', () => {
     expect(isHighlighted(container, 'France')).toBe(true)
   })
 
-  it('leaves the controls alone: Escape on a radio button keeps the selection', () => {
-    const { container } = render(<ExtendedWorldMap defaultSelectedCountry="FR" />)
-    fireEvent.keyDown(screen.getByLabelText('Capital'), { key: 'Escape' })
-    expect(isHighlighted(container, 'France')).toBe(true)
+  // The scope is "the map and the details card": the handler sits on the element that holds exactly
+  // those two, so every case below pairs an inside target (clears) with the outside ones (keep).
+  describe('scope', () => {
+    const selected = () => {
+      const view = render(
+        <>
+          <button type="button">a button elsewhere on the page</button>
+          <WorldMapControls
+            colorMode="BlackAndWhite"
+            infoMode="CountryName"
+            onColorModeChange={() => {}}
+            onInfoModeChange={() => {}}
+          />
+          <ExtendedWorldMap showDetails defaultSelectedCountry="FR" />
+        </>,
+      )
+      return view.container
+    }
+
+    it.each([
+      ['a country', (c: HTMLElement) => country(c, 'France')],
+      ['another country', (c: HTMLElement) => country(c, 'Germany')],
+      ['the empty map (<svg>)', (c: HTMLElement) => c.querySelector('svg') as Element],
+      ['the card’s Hide button', () => screen.getByRole('button', { name: 'Hide details' })],
+      ['the card’s link', () => screen.getByRole('link')],
+    ])('clears when Escape comes from %s', (_name, target) => {
+      const container = selected()
+      fireEvent.keyDown(target(container), { key: 'Escape' })
+      expect(isHighlighted(container, 'France')).toBe(false)
+    })
+
+    it.each([
+      ['a radio button of the map’s own controls', () => screen.getAllByLabelText('Capital')[1]],
+      ['a radio button of a separate <WorldMapControls>', () => screen.getAllByLabelText('Capital')[0]],
+      ['a button elsewhere on the page', () => screen.getByRole('button', { name: /elsewhere/ })],
+      ['the page itself', () => document.body],
+    ])('keeps the selection when Escape comes from %s', (_name, target) => {
+      const container = selected()
+      fireEvent.keyDown(target(), { key: 'Escape' })
+      expect(isHighlighted(container, 'France')).toBe(true)
+    })
   })
 
   it("is off with deselectOn='never'", () => {

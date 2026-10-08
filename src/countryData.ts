@@ -1,26 +1,50 @@
-import { countryColors } from './rawData/defaultMapData'
 import { alpha3ToAlpha2 } from './rawData/alpha3'
+import { countryColors } from './rawData/defaultMapData'
 
-/** What a custom value can be. */
+/** What a value in your data can be. Numbers are what colour the map; `null` means "no value". */
 export type CountryDataValue = string | number | boolean | null
 
-/** One row of your own data: a `country` (ISO 3166-1 alpha-2 or alpha-3 code) and the values to show. */
+/** One property to show and to colour the map by: its name (the label) and the colour of its scale. */
+export interface CountryDataProperty {
+  /** The property's name in the rows. It is the label in the details and in the dropdown. */
+  name: string
+  /** The colour of the scale as a hex value (`#336` or `#3366aa`): the highest value gets this colour,
+   * the lowest a light tint of it. */
+  color: string
+}
+
+/** One row: a `country` (ISO 3166-1 alpha-2 or alpha-3 code) and a number per listed property. */
 // `undefined` is allowed so that a JSON file imported by TypeScript fits: it types rows that lack a
 // property as `prop?: undefined`. An undefined value is simply "not there" (as in JSON).
 export type CountryDataRow = { country: string } & Record<string, CountryDataValue | undefined>
 
+/** Your own data: the properties to show, and a row of numbers per country. */
+export interface CountryData {
+  properties: readonly CountryDataProperty[]
+  countries: readonly CountryDataRow[]
+}
+
 export interface CountryDataIssue {
-  /** Index of the row in the array, or `null` for a problem with the data as a whole. */
+  /** Index of the row in `countries`, or `null` for a problem with the data as a whole or its `properties`. */
   row: number | null
   /** The property concerned, when it is about one property. */
   property?: string
   message: string
 }
 
-/** The values of one country, in the order they were written, without `country`. */
+/** The values of one country: a number or null per listed property, in the order of `properties`
+ * (plus `infoLink` when the row has one). */
 export type CountryDataValues = Record<string, CountryDataValue>
 
+/** A usable property, with the lowest and highest number it has in the rows. */
+export interface ValidatedProperty extends CountryDataProperty {
+  min: number
+  max: number
+}
+
 export interface ValidatedCountryData {
+  /** The properties that can be used: valid, and with at least one number in the rows. */
+  properties: ValidatedProperty[]
   /** Valid rows by the map's country code (upper-case alpha-2). */
   rows: Map<string, CountryDataValues>
   issues: CountryDataIssue[]
@@ -28,6 +52,11 @@ export interface ValidatedCountryData {
 
 /** Limits that keep a data set small enough to render by hand. */
 export const COUNTRY_DATA_LIMITS = { rows: 500, properties: 50, textLength: 2000 } as const
+
+/** Names a property cannot have: the row's own fields. */
+const RESERVED = ['country', 'infoLink']
+
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i
 
 const ALPHA2 = new Set(Object.keys(countryColors))
 
@@ -53,39 +82,110 @@ export const resolveCountryCode = (input: unknown): string | undefined => {
   return undefined
 }
 
-/**
- * Checks your own data against the schema and sorts it into the rows that can be used and a list of
- * what was wrong (invalid rows are left out, valid ones are kept). The schema:
- * - the data is an array of at most 500 objects;
- * - each object has a `country`: an ISO 3166-1 alpha-2 or alpha-3 code the map knows (names are not
- *   accepted), at most once in the whole array (the first row wins);
- * - and at least one more property, at most 50, each with a non-empty name; its value is text (at most
- *   2000 characters), a finite number, true / false or null: no objects, no arrays (`undefined` counts
- *   as "not there");
- * - `infoLink` is optional and is only used when it is an http(s) URL.
- */
-export const validateCountryData = (input: unknown): ValidatedCountryData => {
-  const rows = new Map<string, CountryDataValues>()
-  const issues: CountryDataIssue[] = []
+const validateProperties = (input: unknown, issues: CountryDataIssue[]): CountryDataProperty[] => {
   const limits = COUNTRY_DATA_LIMITS
-
-  if (!Array.isArray(input)) {
-    issues.push({ row: null, message: 'The data must be an array of objects.' })
-    return { rows, issues }
-  }
-  if (input.length > limits.rows) {
+  if (!Array.isArray(input) || input.length === 0) {
     issues.push({
       row: null,
-      message: `The data has ${input.length} rows; only the first ${limits.rows} are used.`,
+      message: '"properties" must be a list with at least one { name, color } entry.',
+    })
+    return []
+  }
+  if (input.length > limits.properties) {
+    issues.push({
+      row: null,
+      message: `"properties" has ${input.length} entries; only the first ${limits.properties} are used.`,
     })
   }
 
-  input.slice(0, limits.rows).forEach((entry, row) => {
+  const properties: CountryDataProperty[] = []
+  input.slice(0, limits.properties).forEach((entry, index) => {
+    const where = `properties[${index}]`
+    if (!isPlainObject(entry)) {
+      issues.push({ row: null, message: `${where} must be an object { name, color }.` })
+      return
+    }
+    const { name, color } = entry
+    if (typeof name !== 'string' || name.trim() === '') {
+      issues.push({ row: null, message: `${where} needs a "name" (text, not empty).` })
+      return
+    }
+    if (RESERVED.includes(name)) {
+      issues.push({
+        row: null,
+        property: name,
+        message: `${where}: "${name}" is a field of the row and cannot be a property.`,
+      })
+      return
+    }
+    if (typeof color !== 'string' || !HEX_COLOR.test(color.trim())) {
+      issues.push({
+        row: null,
+        property: name,
+        message: `${where}: "color" must be a hex colour like #336 or #3366aa.`,
+      })
+      return
+    }
+    if (properties.some((known) => known.name === name)) {
+      issues.push({
+        row: null,
+        property: name,
+        message: `${where}: "${name}" is listed more than once; the first entry is used.`,
+      })
+      return
+    }
+    properties.push({ name, color: color.trim() })
+  })
+  return properties
+}
+
+/**
+ * Checks your own data against the schema and sorts it into what can be used and a list of what was
+ * wrong (invalid parts are left out, valid ones are kept). The schema:
+ * - the data is an object with `properties` and `countries`;
+ * - `properties` is a list of 1 to 50 `{ name, color }`: a name (not empty, once, not `country` or
+ *   `infoLink`) and a hex colour;
+ * - `countries` is a list of at most 500 objects, each with a `country`: an ISO 3166-1 alpha-2 or
+ *   alpha-3 code the map knows (names are not accepted), at most once (the first row wins);
+ * - a row's value for a listed property is a finite number, or `null` (no value); other properties of
+ *   the row are ignored; `infoLink` is optional and only used when it is an http(s) URL;
+ * - a listed property needs a number in at least one row, and a row needs a number for at least one
+ *   listed property; otherwise they are left out.
+ */
+export const validateCountryData = (input: unknown): ValidatedCountryData => {
+  const issues: CountryDataIssue[] = []
+  const nothing = (): ValidatedCountryData => ({ properties: [], rows: new Map(), issues })
+  const limits = COUNTRY_DATA_LIMITS
+
+  if (!isPlainObject(input)) {
+    issues.push({
+      row: null,
+      message: 'The data must be an object with "properties" and "countries".',
+    })
+    return nothing()
+  }
+  const properties = validateProperties(input.properties, issues)
+  const countries = input.countries
+  if (!Array.isArray(countries)) {
+    issues.push({ row: null, message: '"countries" must be an array of objects.' })
+    return nothing()
+  }
+  if (countries.length > limits.rows) {
+    issues.push({
+      row: null,
+      message: `"countries" has ${countries.length} rows; only the first ${limits.rows} are used.`,
+    })
+  }
+
+  const rows = new Map<string, CountryDataValues>()
+  const isNumber = (value: unknown): value is number => typeof value === 'number'
+
+  countries.slice(0, limits.rows).forEach((entry, row) => {
     if (!isPlainObject(entry)) {
       issues.push({ row, message: 'Each row must be an object.' })
       return
     }
-    const { country, ...rest } = entry
+    const { country, infoLink } = entry
     if (country === undefined) {
       issues.push({
         row,
@@ -112,47 +212,54 @@ export const validateCountryData = (input: unknown): ValidatedCountryData => {
       return
     }
 
-    const names = Object.keys(rest)
-    if (names.length > limits.properties) {
-      issues.push({
-        row,
-        message: `More than ${limits.properties} properties; only the first ${limits.properties} are used.`,
-      })
-    }
     const values: CountryDataValues = {}
-    for (const name of names.slice(0, limits.properties)) {
-      const value = rest[name]
-      if (value === undefined) {
-        // not there, as in JSON
-      } else if (name.trim() === '') {
-        issues.push({ row, message: 'A property has an empty name and is left out.' })
-      } else if (value === null || typeof value === 'boolean') {
+    for (const { name } of properties) {
+      const value = entry[name]
+      if (value === undefined) continue // not there, as in JSON
+      if (value === null || (typeof value === 'number' && Number.isFinite(value))) {
         setValue(values, name, value)
-      } else if (typeof value === 'number') {
-        if (Number.isFinite(value)) setValue(values, name, value)
-        else issues.push({ row, property: name, message: `"${name}" must be a finite number.` })
-      } else if (typeof value === 'string') {
-        if (value.length <= limits.textLength) setValue(values, name, value)
-        else
-          issues.push({
-            row,
-            property: name,
-            message: `"${name}" is longer than ${limits.textLength} characters.`,
-          })
       } else {
+        const kind = Array.isArray(value) ? 'an array' : typeof value
         issues.push({
           row,
           property: name,
-          message: `"${name}" must be text, a number, true / false or null (not ${Array.isArray(value) ? 'an array' : typeof value}).`,
+          message: `"${name}" must be a finite number or null (not ${kind === 'number' ? 'a non-finite number' : kind}).`,
         })
       }
     }
-    if (Object.keys(values).length === 0) {
-      issues.push({ row, message: `${code} has no usable values besides "country".` })
+    if (infoLink !== undefined) {
+      if (typeof infoLink !== 'string' || infoLink.length > limits.textLength) {
+        issues.push({
+          row,
+          property: 'infoLink',
+          message: `"infoLink" must be text of at most ${limits.textLength} characters.`,
+        })
+      } else {
+        setValue(values, 'infoLink', infoLink)
+      }
+    }
+    if (!Object.values(values).some(isNumber)) {
+      issues.push({ row, message: `${code} has no number for any listed property.` })
       return
     }
     rows.set(code, values)
   })
 
-  return { rows, issues }
+  const usable: ValidatedProperty[] = []
+  for (const property of properties) {
+    const numbers = [...rows.values()].map((values) => values[property.name]).filter(isNumber)
+    if (numbers.length === 0) {
+      issues.push({
+        row: null,
+        property: property.name,
+        message: `No row has a number for "${property.name}"; the property is left out.`,
+      })
+      for (const values of rows.values()) delete values[property.name]
+    } else {
+      usable.push({ ...property, min: Math.min(...numbers), max: Math.max(...numbers) })
+    }
+  }
+  if (usable.length === 0) return { properties: [], rows: new Map(), issues }
+
+  return { properties: usable, rows, issues }
 }

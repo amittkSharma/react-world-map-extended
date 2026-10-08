@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
+  type CountryData,
   type CountryDataIssue,
-  type CountryDataRow,
   type DetailsPosition,
   ExtendedWorldMap,
   WorldMapControls,
@@ -21,17 +21,23 @@ import './style.css'
 
 const scenario = readScenario()
 // the same arrays on every render: the data is checked once per array
-const SAMPLE: CountryDataRow[] = sampleData
-const WITH_MISTAKES = [
-  { country: 'FR', 'Population (millions)': 68.2, Landlocked: false },
-  { country: 'France', Population: 'a name is not a code' },
-  { country: 'DE', cities: ['Berlin', 'Hamburg'], area: { km2: 357000 } },
-  { country: 'ZZ', Population: 1 },
-  { country: 'FR', Population: 'a second row for France' },
-  { country: 'JP' },
-  'not an object',
-] as unknown as CountryDataRow[]
-
+const SAMPLE: CountryData = sampleData
+const WITH_MISTAKES = {
+  properties: [
+    { name: 'Literacy rate (%)', color: '#1a73e8' },
+    { name: 'Population (millions)', color: 'blue' },
+    { name: 'Notes', color: '#009e73' },
+  ],
+  countries: [
+    { country: 'FR', 'Literacy rate (%)': 99 },
+    { country: 'France', 'Literacy rate (%)': 90 },
+    { country: 'DE', 'Literacy rate (%)': 'a word, not a number' },
+    { country: 'ZZ', 'Literacy rate (%)': 1 },
+    { country: 'FR', 'Literacy rate (%)': 50 },
+    { country: 'BR', 'Literacy rate (%)': 94 },
+    'not an object',
+  ],
+} as unknown as CountryData
 const dataLabels: Record<DataMode, string> = {
   default: 'built-in facts',
   custom: 'my data (sample-data.json)',
@@ -77,12 +83,14 @@ export const ExampleApp = () => {
   const modes = useWorldMapModes({
     defaultColorMode: scenario.color,
     defaultInfoMode: scenario.info,
+    defaultDataProperty: scenario.property,
   })
 
   useEffect(() => runScenario(scenario), [])
 
   const countryData =
     dataMode === 'default' ? undefined : dataMode === 'invalid' ? WITH_MISTAKES : SAMPLE
+  const propertyNames = (dataMode === 'invalid' ? [] : SAMPLE.properties.map(({ name }) => name)) // for separate controls
   const ownDataOnly = dataMode === 'custom' || dataMode === 'invalid'
   const apart = placement !== 'inside'
   const sideways = placement === 'left' || placement === 'right'
@@ -91,6 +99,7 @@ export const ExampleApp = () => {
       <WorldMapControls
         {...modes}
         showInfoModes={!ownDataOnly}
+        properties={ownDataOnly || dataMode === 'both' ? propertyNames : undefined}
         orientation={sideways ? 'vertical' : 'horizontal'}
       />
     </div>

@@ -2,30 +2,54 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/amittkSharma/react-world-map-extended/blob/main/schema/country-data.schema.json",
   "title": "react-world-map-extended: country data",
-  "description": "Your own values to show in the map's details. An array of rows: a `country` (ISO 3166-1 alpha-2 or alpha-3 code) and the values. Not expressible here and checked by `validateCountryData`: the code must be a country on the map, and each country may appear only once (the first row is used).",
-  "type": "array",
-  "maxItems": 500,
-  "items": {
-    "type": "object",
-    "required": ["country"],
-    "minProperties": 2,
-    "maxProperties": 51,
-    "propertyNames": { "minLength": 1 },
+  "description": "Your own data for the map: the properties to show (each with the colour of its scale) and a row of numbers per country. Not expressible here and checked by `validateCountryData`: a property name may appear only once and may not be `country` or `infoLink`; the country code must be a country on the map and may appear only once (the first row is used); each listed property needs a number in at least one row, and each row a number for at least one listed property.",
+  "type": "object",
+  "required": ["properties", "countries"],
+  "properties": {
     "properties": {
-      "country": {
-        "type": "string",
-        "pattern": "^\\s*([A-Za-z]{2}|[A-Za-z]{3})\\s*$",
-        "description": "ISO 3166-1 alpha-2 (FR) or alpha-3 (FRA) code, any case. Names are not accepted."
-      },
-      "infoLink": {
-        "type": "string",
-        "description": "Optional. Shown as a link in the details when it is an http(s) URL."
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": ["name", "color"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "\\S",
+            "description": "The property's name in the rows. It is the label in the details and in the dropdown."
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^\\s*#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\\s*$",
+            "description": "Hex colour of the scale: the highest number gets it, the lowest a light tint of it."
+          }
+        }
       }
     },
-    "additionalProperties": {
-      "description": "A value to show. The property name is the label.",
-      "type": ["string", "number", "boolean", "null"],
-      "maxLength": 2000
+    "countries": {
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": ["country"],
+        "properties": {
+          "country": {
+            "type": "string",
+            "pattern": "^\\s*([A-Za-z]{2}|[A-Za-z]{3})\\s*$",
+            "description": "ISO 3166-1 alpha-2 (FR) or alpha-3 (FRA) code, any case. Names are not accepted."
+          },
+          "infoLink": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Optional. Shown as a link in the details when it is an http(s) URL."
+          }
+        },
+        "additionalProperties": {
+          "description": "The number of a listed property (null: no value). Other properties are ignored.",
+          "type": ["number", "string", "boolean", "null"]
+        }
+      }
     }
   }
 }

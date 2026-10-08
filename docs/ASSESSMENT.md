@@ -1,6 +1,6 @@
 # react-world-map-extended: what is left to do
 
-Last updated 2026-10-08, after the custom data feature and the README rewrite.
+Last updated 2026-10-09, after the data-driven colour map (properties, colour scale, dropdown, legend).
 
 Finished features are not listed here. To see what the package can do, read the README. This file only keeps three things: where we stand, what is still open, and what could go wrong.
 
@@ -10,29 +10,30 @@ The package is a React map of the world. It is built on top of a smaller library
 
 | What | State today |
 |---|---|
-| Automated checks | Lint has zero warnings. Type checks pass. 346 tests pass. |
-| Package size | Our own code is 77.8 kB (18.1 kB when compressed). The download is 98.6 kB in 62 files. |
+| Automated checks | Lint has zero warnings. Type checks pass. 390 tests pass. |
+| Package size | Our own code is 85.5 kB (19.9 kB when compressed). The download is 96.6 kB in 62 files. |
 | Package format | Works as ESM and CommonJS and ships its types. The package checker finds no problems with the main entry (it complains about the JSON schema file entry only, because a JSON file has no types; Node and TypeScript can still import it). |
 | Build on GitHub (CI) | The workflow file exists but has **never run**. |
 | Testing in a real browser | Only automated tests and screenshots with scripted clicks. **No person has used it with a real mouse, keyboard, touch screen or screen reader.** |
-| Release | Version is `0.0.0`. Nothing is published. The latest work is **not committed** to git. |
+| Release | Version is `0.0.0`. Nothing is published. The data-driven colour map is **not committed** to git yet (earlier work is). |
 
 Where the code lives:
 
 ```text
 src/index.tsx                The main component (state and wiring)
 src/useCountrySelection.ts   Which countries are selected, the limit of 5, messages
-src/countryData.ts           Checks your own data against the schema (ISO codes only)
+src/countryData.ts           Checks your own data against the schema (properties, rows, ISO codes only)
+src/colorScale.ts            Turns a number into a shade of the property's colour; number formatting
 src/useCountryData.ts        Runs that check when the data changes and reports problems
 src/rawData/alpha3.ts        Table of three-letter country codes
 schema/                      The JSON Schema file for your own data
 src/CountryDetails.tsx       Details card for one country
 src/CountryDetailsList.tsx   Details list (accordion) for 2 or more countries
-src/MapLegend.tsx            Legend on the map
+src/MapLegend.tsx            Legend on the map (colour list, or a light-to-dark scale)
 src/MapToast.tsx             Small message in the map's top-right corner
 src/MultiSelectToggle.tsx    "Select multiple" switch for touch screens
-src/WorldMapControls.tsx     The radio buttons, usable on their own
-src/useWorldMapModes.ts      Keeps the radio button choices in your own code
+src/WorldMapControls.tsx     The radio buttons and the "Show on map" dropdown, usable on their own
+src/useWorldMapModes.ts      Keeps the radio button and dropdown choices in your own code
 src/corner.ts                Places things in a corner of the map
 src/countries.ts             Country codes and names
 src/inputModality.ts         Knows whether you last used keyboard or mouse
@@ -48,17 +49,16 @@ example/                     Demo app; the URL options are listed in scenario.ts
 ## 2. How much is it worth? (short version)
 
 - The code quality is high for a small package. It is well tested and its behaviour is carefully thought through.
-- The biggest thing missing is the ability to colour the map with **your own data**. Most people who want a world map want exactly that. See section 5.
+- The feature most people want from a world map, colouring it with **your own data**, now exists (section 5). It has only been tried by us, not by anyone else.
 - Expect a small audience. The library underneath has about 36,000 downloads a week. A similar package, `react-simple-maps`, has about 1.2 million. Our related package `i18n-iso-countries-extended-info` has 7.
 - Many features were added without any outside user. Publishing a first version and listening is now more valuable than adding another option.
 
 ## 3. Decisions waiting for you
 
-1. **Colour the map by a value.** The first step (showing your own data in the details) is done. Next step: pick which numeric property colours the map, with a legend (section 5). The questions there need answers first.
-2. **Should `infoLink` appear in every information mode?** Today it appears in all of them, even "Only Name". The other option is to show it only in "Complete Information". It is a one-line change.
-3. **What to do with the region colour scheme (finding C8).** The nine regions come from the data source and look uneven. Options: (1) keep it; (2) keep it but remove its legend (about 10 minutes); (3) replace it with a standard list such as the UN or World Bank regions (about 3 to 4 hours, recommended if you keep the scheme).
-4. **Which version of `react-svg-worldmap` to use.** We use `2.0.2`. The newest is `2.1.0`. Decide after the check in step 5 of the release plan.
-5. **The first version number.** The release tool can set it, for example `npm run release -- --release-as 0.1.0`.
+1. **Should `infoLink` appear in every information mode?** Today it appears in all of them, even "Only Name". The other option is to show it only in "Complete Information". It is a one-line change.
+2. **What to do with the region colour scheme (finding C8).** The nine regions come from the data source and look uneven. Options: (1) keep it; (2) keep it but remove its legend (about 10 minutes); (3) replace it with a standard list such as the UN or World Bank regions (about 3 to 4 hours, recommended if you keep the scheme).
+3. **Which version of `react-svg-worldmap` to use.** We use `2.0.2`. The newest is `2.1.0`. Decide after the check in step 5 of the release plan.
+4. **The first version number.** The release tool can set it, for example `npm run release -- --release-as 0.1.0`.
 
 Already decided: while a country is selected it is drawn last, so keyboard Tab reaches it last. We keep this.
 
@@ -74,9 +74,9 @@ Already decided: while a country is selected it is drawn last, so keyboard Tab r
 6. **Make it look ready.** The README is rewritten in plain language with 6 screenshots (done). Still open: push the commit so the screenshot links work (C29), a live demo page, a repository description, and the same author and licence name everywhere. Right now `LICENSE` says "Amit Sharma" and `package.json` says "Amitt K Sharma" (about 2 hours).
 7. **Publish `0.1.0`** as experimental. Add release notes that mention the change from `selectedCountry` to `selectedCountries` (finding C20).
 
-### B. Colour the map by your own data (about 3 to 4 days, after the questions are answered)
+### B. Make the data map better (after the first release and some feedback)
 
-See section 5. Showing your own data in the details is already done.
+See section 5: outliers, text categories, the tooltip.
 
 ### C. Polish (about 2 to 3 days)
 
@@ -98,34 +98,37 @@ A side-by-side comparison table for selected countries. Zoom and "focus on a reg
 
 ### What "done" means for version 1.0.0
 
-Automatic real-browser tests in the GitHub build. Tests cover at least 80% of the logic (not measured yet). The GitHub build passes (never run so far). The README has a demo and screenshots. A release is made with the release tool. The package size is written down. The data-driven map is either built or clearly postponed.
+Automatic real-browser tests in the GitHub build. Tests cover at least 80% of the logic (not measured yet). The GitHub build passes (never run so far). The README has a demo and screenshots. A release is made with the release tool. The package size is written down. The data-driven map has been tried by someone who is not us.
 
 ## 5. Your own data: what is done and what is left
 
-**Done.** You can pass a list of rows (a country code plus values) to the map. The details show those values instead of, or next to, the built-in facts. The data is checked against a schema; mistakes are reported and the valid rows still work. Countries without data are greyed out. Details are in the README.
+**Done.** You pass an object with two lists. `properties` is a list of `{ name, color }`. `countries` is a list of rows: a country code and a number per property. The map then:
+
+- shades every country from a light tint (lowest number) to the property's colour (highest number);
+- paints countries without a number grey;
+- shows a legend with the property name, both ends of the scale and "No data";
+- shows a "Show on map" dropdown when there are two or more properties, and recolours straight away when it changes (it can also be controlled from outside);
+- shows your properties in the details card, labelled exactly as named, the chosen one first.
+
+The data is checked against a schema. Mistakes are reported and the valid parts still work. Details are in the README.
 
 **What we decided on the way**
 
-- Countries are matched by ISO two-letter or three-letter code only. Names are not accepted (they differ between languages and spellings). The error message says so.
-- The labels in the card are exactly the property names. The values are shown as given.
-- By default only your data is shown once you pass it. `'both'` shows yours first and then the built-in facts.
-- The radio buttons for the built-in facts are hidden when only your data is shown.
-- A bad row or value is left out and reported. It never stops the map.
+- Countries are matched by ISO two-letter or three-letter code only. Names are not accepted.
+- The colour belongs to the property, not to the country row. A fixed colour per row could not follow the dropdown.
+- The built-in continent and region legend is never shown with your data. Only the colour scale legend is.
+- The map starts colourful when your data is given. Fading the other countries is off by default with your data, because fading changes the shades.
+- Only numbers (or `null`) are values. Text categories are not supported.
+- The lowest value is a light tint (25% of the colour), not white, so it stays apart from the grey of "no data".
+- A bad property, row or value is left out and reported. It never stops the map. If nothing usable is left, the normal map stays.
 
-**What is left (the next step): colour the map by a value.** Open questions:
+**What could come next**
 
-1. **Which property colours the map?** For example `colorBy="Literacy rate (%)"`. Should a visitor be able to switch between several numeric properties with a selector?
-2. **What kind of colour scale?** A smooth scale from light to dark, steps (for example 0 to 25, 25 to 50, …), or categories (for text values)? What colour for missing data (today: grey)?
-3. **The legend.** A gradient or steps, with the unit. It must replace the colour-scheme legend, not appear next to it.
-4. **A file picker for visitors** (read in their own browser, never sent anywhere). Do we want it, and with CSV or only JSON?
-
-**Things to keep in mind for that step**
-
-- Colours that colour-blind people can tell apart.
-- Colour alone is hard for some people to read: show the values in the card as well (already the case).
-- Fading the other countries while one is selected would distort colours that carry meaning. There is already a switch to turn fading off.
-- Disputed areas and areas with no ISO code (Kosovo is covered by `XK`; Northern Cyprus and Somaliland cannot have data).
-- Sensitive data (such as crime figures) must stay in the visitor's browser.
+1. **Outliers.** One huge number makes the others pale. Options: `min` and `max`, or a log scale, inside each property entry. Files stay valid.
+2. **Value in the tooltip** (for example "France: 99"). Today it shows only the country name.
+3. **Text categories and data that goes both ways** (two colours).
+4. **A file picker for visitors** (read in their own browser, never sent anywhere). CSV or only JSON?
+5. **Colours that colour-blind people can tell apart.** One colour from light to dark is a good start, but the colour is chosen by the data author.
 
 ## 6. Open problems
 
@@ -134,15 +137,15 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 | ID | Problem | Severity |
 |---|---|---|
 | B11 | Not ours to fix: the library `react-svg-worldmap` triggers a type error (`Cannot find namespace 'JSX'`) for people who turn off `skipLibCheck` and use `@types/react` 19. | Info |
-| C1 | Nobody has checked accessibility with a real browser or screen reader. Colour alone carries meaning in the default and custom colour modes. Only the continent and region colour schemes have a legend. | Medium |
+| C1 | Nobody has checked accessibility with a real browser or screen reader. Colour alone carries meaning in the default and custom colour modes. Only the continent and region colour schemes and the colour scale of your own data have a legend. | Medium |
 | C2 | Northern Cyprus and Somaliland have no standard country code. They stay white in colour mode and give no details when clicked, and they can never have data of your own (this is in the README). The codes `CYP` and `SOM` in your data mean Cyprus and Somalia, as in ISO. They do get the normal tooltip. | Low |
 | C3 | Hovering the selected country makes its outline thinner, because the library's own hover style wins (this is in the README). | Low |
 | C4 | The radio buttons can only be partly restyled from outside. The bar can change direction, but the groups, labels and inputs have no class names and use inline styles, so a website's CSS cannot override them without `!important`. | Low |
-| C5 | Many texts cannot be changed or translated: the radio button labels, the card headings and field names, "Selected countries", "Clear all", "Select multiple", the limit message, the screen-reader announcements, and the texts for your own data ("Data", "No data", "No custom data for X"). This must be solved before any translation work. | Medium |
+| C5 | Many texts cannot be changed or translated: the radio button labels, the "Show on map" dropdown title, the legend's "No data" and its screen-reader sentence ("from 80 to 99, light to dark"), the card headings and field names, "Selected countries", "Clear all", "Select multiple", the limit message, the screen-reader announcements, and the texts for your own data ("Data", "No data", "No custom data for X"). This must be solved before any translation work. | Medium |
 | C6 | The library puts a 40 px margin around the map. We remove it only when a details card or a legend is shown. Without it the layout differs, and in narrow spaces the map may overflow. This comes from reading the code, not from a screenshot. | Medium |
 | C7 | With several maps on one page, clicking the card or controls of one map does not clear the selection of another. Probably fine, but not tested or written down. | Low |
 | C8 | The region colour scheme and its legend are questionable. The groups come from the data source: "Asia" is only the two Koreas, "Caribbean" is only the Bahamas, "South Atlantic Ocean" is only the Falklands, Israel, Turkey and Cyprus count as Europe, and Mexico counts as Latin America. See decision 3. | Medium |
-| C9 | The legend only appears for two colour schemes. Its colour squares stay at full strength while other countries are faded. Its text cannot be changed. The point where it moves under a small map (520 px) was chosen by eye and checked at only a few widths. | Low |
+| C9 | The built-in legend only appears for two colour schemes (your own data has its own scale legend). Its colour squares stay at full strength while other countries are faded. Its text cannot be changed. The point where it moves under a small map (520 px) was chosen by eye and checked at only a few widths. | Low |
 | C10 | The tooltip fix has two edges: (a) before the page finishes loading in the browser, a second plain tooltip can still show for a moment; (b) it needs every drawn area to have an entry in the internal map data (this is unrelated to your own data, which does not change it). | Low |
 | C11 | A type workaround: two area codes (`CYP`, `SOM`) are forced into a type that does not list them. It works today, but a library update could break it. | Low |
 | C12 | The package is getting bigger. Our code grew from 8.9 to 18.1 kB compressed, and the download from 31.6 to 98.6 kB. The multi-select feature alone added about 4 kB and 14 files. This is fine now, but we need a size limit in the build before version 1.0. | Low |
@@ -153,18 +156,22 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 | C17 | Multi-select and the overlay position do not work well together. The first selection opens the card over the map, which blocks it, so you must close the card before adding the next country (this is in the README). | Low |
 | C18 | Multi-select was only tested with scripted clicks. Real Shift+click, the touch switch (read once when the page loads, and only shown on touch-first devices), the position of the message, quick repeated clicks with a slow-updating parent, and screen readers have not been tried by a person. | Medium |
 | C19 | The list choices have not been tried with real users. Adding a country opens it and closes the older ones (on purpose, to keep the list short, and you can still open several by hand). There is no side-by-side comparison, which is probably what people want. After clearing, the first click replaces instead of adds. | Low |
-| C20 | The way to select countries changed (not backwards compatible): `selectedCountry` became `selectedCountries` (a list) and `onSelectionChange` now gets a list. This is fine at version `0.0.0`, but it must appear in the first release notes. | Info |
+| C20 | Two things changed in a way that is not backwards compatible: `selectedCountry` became `selectedCountries` (a list, and `onSelectionChange` gets a list), and `countryData` went from an array of rows to an object `{ properties, countries }`. Fine at version `0.0.0`, but both must appear in the first release notes. | Info |
 | C21 | With two or more countries selected, clicking empty map no longer clears them. The only buttons for clearing ("Clear all" and the × on each entry) are in the details card. If the card is hidden or details are turned off, a mouse or touch user cannot clear the selection (they can only press Escape, Shift+click each selected country one by one, or click one other country to replace the whole selection). | Medium |
 | C22 | The "Select multiple" switch appears on touch-first devices only. Laptops with a touch screen and a mouse will not get it, and the only other way to add a country is Shift, Cmd or Ctrl plus click. | Low |
 | C23 | When the card has no scrolling area (for example the card is below the map) and a country far down the list is clicked, the page does not scroll to its entry. This was done on purpose, so that a click on the map never moves the page, but the user may not notice that the entry opened. | Low |
-| C24 | **Your own data is shown as a plain list.** There is no grouping, no units, no number formatting and no way to rename or order the labels apart from renaming the properties (labels are the property names, by design). Large numbers such as `83000000` are hard to read. | Low |
-| C25 | **The schema is written twice** (a JSON Schema file and the checker in code). The JSON Schema cannot express two rules (the code must be a country on the map, and no country twice), so only the code checks them. A test makes both agree on everything the file can express, but a future rule must be added in both places. | Low |
+| C24 | **Your data is numbers only, shown as a plain list.** The card has no grouping, units or number formatting. Large numbers such as `83000000` are hard to read in the card (the legend does format them). Units must be part of the property name. | Low |
+| C25 | **The schema is written twice** (a JSON Schema file and the checker in code). The JSON Schema cannot express some rules (the code must be a country on the map, no country twice, a property name used once and not `country` or `infoLink`, a number in at least one row for each property), so only the code checks them. A test makes both agree on everything the file can express, but a future rule must be added in both places. | Low |
 | C26 | **The data is compared by content on every render** (turned into text to see whether it changed). That is cheap for normal data (up to 500 rows) but not free; very large data on a map that re-renders a lot (hover, focus) would cost a little each time. | Low |
 | C27 | **Using names was refused on purpose, so rows with country names are all rejected.** People who only have names must convert them to codes first. There is no helper for that. | Low |
-| C28 | **The size grew again:** our code is now 18.1 kB compressed (from 14.7) and the download 98.6 kB in 62 files. The package checker also complains about the JSON schema file entry (no types), which is harmless but noisy. | Low |
-| C29 | **The README screenshots only show after the files are pushed to GitHub.** They are linked by their full GitHub address (so the npm page can show them too, because `docs/` is not in the download), and the files are not committed yet, so today the images are broken everywhere except in a local file view. | Medium |
-| C30 | **The screenshots are made by hand and will go out of date.** They come from the demo app in headless Chrome, cropped with a throw-away page. There is no script to make them again, so a later change to the look leaves the README showing the old one. | Low |
-| C31 | **The README now hides some limits on purpose** (it should read well, and has no inner workings). The technical ones live here: the library's margin and tooltip changes (C6, C10), the drawing order and Tab order change, the focus ring and old Safari (C15), and the library's own hover style (C3). Check that nothing a user needs is missing from "Good to know". | Low |
+| C28 | **The size grew again:** our code is now 19.9 kB compressed (from 18.1) and the download 96.6 kB in 62 files. The package checker also complains about the JSON schema file entry (no types), which is harmless but noisy. | Low |
+| C29 | **The README screenshots only show after the files are pushed to GitHub.** They are linked by their full GitHub address (so the npm page can show them too, because `docs/` is not in the download), and the files are not pushed yet, so today the images are broken everywhere except in a local file view. | Medium |
+| C30 | **The screenshots are made by hand and will go out of date.** They come from the demo app in headless Chrome, cropped with a throw-away page. There is no script to make them again, so a later change to the look leaves the README showing the old one. The three data screenshots were retaken for the new format; the others were not affected. | Low |
+| C31 | **The README hides some technical limits on purpose** (it should read well, and has no inner workings). The technical ones live here: the library's margin and tooltip changes (C6, C10), the drawing order and Tab order change, the focus ring and old Safari (C15), and the library's own hover style (C3). Check that nothing a user needs is missing from "Good to know". | Low |
+| C32 | **One huge number makes the rest of the map pale.** The scale is a straight line from the lowest to the highest number. With China or India in the data, most countries look almost the same. There is no log scale and no fixed minimum or maximum yet. | Medium |
+| C33 | **The colour scale was only looked at with blue and orange.** The light end is 25% of the colour, chosen by eye. A grey or very light base colour would give a light end that looks like the grey of "No data", and nothing warns the user. Colour-blind safety depends on the colour the data author picks. | Medium |
+| C34 | **The map starts colourful only until the visitor chooses.** This works when the data arrives late too, but `useWorldMapModes` always starts in Black and White, so people with separate controls must pass `defaultColorMode: 'Colorful'` (this is in the README). A hover tooltip still shows only the country name, not the value. | Low |
+| C35 | **The data map was checked with automatic tests and Chrome screenshots only.** Real mouse use of the dropdown, keyboard use of the dropdown, a screen reader reading the legend sentence, and a very narrow phone (the legend becomes a strip under the map) have not been tried (see C1, C18). | Medium |
 
 ## 7. Risks
 

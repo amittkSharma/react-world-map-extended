@@ -7,9 +7,18 @@ export type LegendPosition = Corner
 /** Below this map width the legend would cover too much of the map, so it goes under it instead. */
 export const LEGEND_INLINE_BELOW = 520
 
+/** A colour scale from light to dark, with the numbers at its two ends. */
+export interface LegendGradient {
+  from: string
+  to: string
+  min: string
+  max: string
+}
+
 interface MapLegendProps {
   title: string
-  items: LegendItem[]
+  items?: LegendItem[]
+  gradient?: LegendGradient
   position: LegendPosition
   /** The map's measured <svg> box (see useMapBox), or null before it is known. */
   box: CornerBox | null
@@ -39,7 +48,7 @@ const look: CSSProperties = {
  * never takes clicks; on a small map it becomes a wrapping strip under the map, so it cannot hide
  * the countries.
  */
-export const MapLegend = ({ title, items, position, box }: MapLegendProps) => {
+export const MapLegend = ({ title, items = [], gradient, position, box }: MapLegendProps) => {
   const inline = box !== null && box.width < LEGEND_INLINE_BELOW
 
   return (
@@ -69,6 +78,31 @@ export const MapLegend = ({ title, items, position, box }: MapLegendProps) => {
       }
     >
       <div style={{ marginBottom: inline ? 0 : 4, fontWeight: 600 }}>{title}</div>
+      {gradient && (
+        <div
+          role="img"
+          aria-label={`${title}: from ${gradient.min} to ${gradient.max}, light to dark`}
+          style={{ minWidth: 140, marginBottom: inline || items.length === 0 ? 0 : 6 }}
+        >
+          <div
+            aria-hidden="true"
+            style={{
+              height: 10,
+              borderRadius: 2,
+              border: '1px solid rgba(0, 0, 0, 0.35)',
+              background: `linear-gradient(to right, ${gradient.from}, ${gradient.to})`,
+            }}
+          />
+          <div
+            aria-hidden="true"
+            style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 2 }}
+          >
+            <span>{gradient.min}</span>
+            <span>{gradient.max}</span>
+          </div>
+        </div>
+      )}
+      {items.length > 0 && (
       <ul
         aria-label="Map legend"
         style={{
@@ -85,6 +119,7 @@ export const MapLegend = ({ title, items, position, box }: MapLegendProps) => {
           </li>
         ))}
       </ul>
+      )}
     </div>
   )
 }

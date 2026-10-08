@@ -3,7 +3,7 @@
 A world map for React that people actually want to click.
 
 Click a country and a tidy card tells you about it. Select up to five countries and compare them in a list.
-Bring your own numbers (a simple list of country codes and values) and the map shows *your* data instead.
+Bring your own numbers (a simple JSON file of country codes and values) and the map turns into a shaded data map.
 
 ![A colourful world map with a legend](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/hero.png)
 
@@ -16,7 +16,7 @@ Built on [`react-svg-worldmap`](https://github.com/ianwilliams/react-svg-worldma
 - 🖱️ **Click a country** and see its capital, region, languages, currency and calling code.
 - 🎨 **Two looks:** black and white, or colourful (by continent, by region, or your own colours).
 - 🧮 **Select several countries** (up to 5) with Shift+click, and compare them in a list.
-- 📊 **Show your own data** from a JSON file. Countries without data turn grey.
+- 📊 **Colour the map with your own numbers** from a JSON file: darker means higher, with a legend and a dropdown to switch between your properties.
 - 🪟 **A details card** you can put below, above, beside or on top of the map.
 - ⌨️ **Keyboard friendly:** Tab to a country, Enter to select it, Escape to clear.
 - 🎛️ **Use the controls anywhere:** the radio buttons also work as a separate component.
@@ -78,7 +78,7 @@ Every setting is optional. Add only what you need.
 | `onColorModeChange` | Called when the visitor switches the colour mode. | none |
 | `palette` | The colour scheme in colourful mode: `'default'` (one colour per country), `'continent'`, `'region'` or `'monochrome'`. | `'default'` |
 | `colors` | Your own colours, for colourful mode. Either `{ FR: '#336', DE: '#933' }` (two-letter codes in capitals) or a function that returns a colour per country. Beats `palette`. | none |
-| `showLegend` | Shows a small legend that explains the colours. It appears for the `continent` and `region` palettes (and for "No data" when you show your own data). On a small map it moves below the map. | `true` |
+| `showLegend` | Shows a small legend that explains the colours. With the built-in data it appears for the `continent` and `region` palettes. With your own data it is the colour scale (see *Showing your own data*). On a small map it moves below the map. | `true` |
 | `legendPosition` | Which corner holds the legend: `'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`. | `'bottom-left'` |
 
 ### Selecting countries
@@ -105,7 +105,7 @@ On touch screens there is no Shift key, so a small **Select multiple** switch ap
 | `onSelectionChange` | Called with the new list of codes whenever the visitor changes the selection. | none |
 | `showMultiSelectToggle` | The "Select multiple" switch: `true`, `false` or `'auto'` (only on touch screens). | `'auto'` |
 | `highlightSelected` | Draws a red outline around selected countries. | `true` |
-| `dimOthers` | Fades the other countries so the selected ones stand out. `true` fades them to 35%, a number between 0 and 1 sets the strength, `false` turns it off. | `true` |
+| `dimOthers` | Fades the other countries so the selected ones stand out. `true` fades them to 35%, a number between 0 and 1 sets the strength, `false` turns it off. | `true`, but `false` while your own data colours the map (fading would change the shades) |
 | `deselectOn` | When does a click clear a single selected country? `'outside'` (clicking empty map or anywhere else on the page), `'background'` (only inside the component) or `'never'`. A selection of two or more is never cleared by a stray click. | `'outside'` |
 
 Control the selection yourself like this:
@@ -167,44 +167,66 @@ button brings it back, and clicking a country opens it again. Hiding never clear
 
 ### Showing your own data
 
-Give the map a list of rows. Each row has a `country` code and the values you want to show.
+Give the map a JSON file (or an object) with two lists: the **properties** you want to show, each with its own colour,
+and a row of numbers for each **country**.
 
 ```tsx
-const data = [
-  { country: 'FR', 'Population (millions)': 68.2, 'Literacy rate (%)': 99, Landlocked: false },
-  { country: 'BRA', 'Population (millions)': 214.3, 'Literacy rate (%)': 94, Landlocked: false },
-  { country: 'CH', 'Population (millions)': 8.7, Landlocked: true },
-]
+const data = {
+  properties: [
+    { name: 'Literacy rate (%)', color: '#1a73e8' },
+    { name: 'Population (millions)', color: '#d55e00' },
+  ],
+  countries: [
+    { country: 'FR', 'Literacy rate (%)': 99, 'Population (millions)': 68.2 },
+    { country: 'BRA', 'Literacy rate (%)': 94, 'Population (millions)': 214.3 },
+    { country: 'CH', 'Literacy rate (%)': 99, 'Population (millions)': null },
+  ],
+}
 
 <ExtendedWorldMap showDetails countryData={data} onDataIssues={(issues) => console.table(issues)} />
 ```
 
 A JSON file works as it is: `import data from './data.json'` and pass it in.
 
-![The card showing custom data, other countries in grey](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/custom-data.png)
+![The map coloured by literacy rate, with a legend and the card](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/custom-data.png)
 
-The card shows your values, and **the labels are exactly your property names**: write `'Literacy rate (%)'` and that
-is what people read. Countries with no data turn grey, and the legend says "No data".
+**What the map does with it**
+
+- Each country is shaded by its number for the chosen property: the **highest** number gets the property's colour, the
+  **lowest** a light tint of it, the rest sit in between.
+- A country with no number for that property (no row, or `null`) is **grey**.
+- A **legend** shows the property's name, the lowest and highest numbers, and "No data".
+- With **two or more properties** a "Show on map" dropdown appears. Pick another one and the map, the legend and the
+  card update straight away. With one property there is no dropdown.
+- The card lists your properties, **labelled exactly as you named them**, with the chosen one first. `null` shows as "—".
+- The map starts **colourful** (switch to Black and White and the colours and legend go away).
+- The other countries are **not faded** when you select one, so the shades keep their meaning. Set `dimOthers` to bring it back.
+
+![The same map showing the population property](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/custom-data-property.png)
 
 | Setting | What it does | Default |
 |---|---|---|
-| `countryData` | The list of rows (rules below). | none |
-| `detailsSource` | What the card shows. `'custom'`: only your data. `'both'`: your data first, then the built-in facts. `'default'`: ignore your data. | `'custom'` once you pass data |
+| `countryData` | Your data (rules below). | none |
+| `dataProperty` / `defaultDataProperty` | Which property colours the map. Use `dataProperty` to control it yourself, `defaultDataProperty` for a starting value. An unknown name means the first property. | the first property |
+| `onDataPropertyChange` | Called with the property's name when the visitor picks another one. | none |
+| `detailsSource` | What the card shows. `'custom'`: only your data. `'both'`: your data first, then the built-in facts. `'default'`: ignore your data (the map is then the normal map). | `'custom'` once you pass data |
 | `onDataIssues` | Called once with a list of mistakes found in your data (which row, which property, what is wrong). Without it, mistakes are printed as a console warning. | none |
-| `greyOutCountriesWithoutData` | Paints countries without data grey. | `true` |
+| `greyOutCountriesWithoutData` | Paints countries without a number grey and adds "No data" to the legend. | `true` |
 
 **The rules for your data**
 
 | Part | Rule |
 |---|---|
-| The list | At most 500 rows. |
-| `country` | **Required.** A two-letter (`FR`) or three-letter (`FRA`) country code, in any case. **Country names are not accepted** (they differ between languages). Each country may appear once; if it appears twice, the first row wins. |
-| Other properties | At least one and at most 50 per row. The property name is the label. |
-| Values | Text (up to 2000 characters), a number, `true` / `false`, or `null` (shown as "—"). No nested objects or lists. Values are shown just as you wrote them. |
-| `infoLink` | Optional. Not shown as a value: if it is an `http` or `https` address, it becomes the "More information" link. |
+| The data | An object with `properties` and `countries`. |
+| `properties` | A list of 1 to 50 entries `{ name, color }`. `name` is the label (not empty, used once, not `country` or `infoLink`). `color` is a hex colour: `#336` or `#3366aa`. |
+| `countries` | A list of at most 500 rows. |
+| `country` in a row | **Required.** A two-letter (`FR`) or three-letter (`FRA`) country code, in any case. **Country names are not accepted** (they differ between languages). Each country may appear once; if it appears twice, the first row wins. |
+| A property's value in a row | A number, or `null` for "no value". Text, true/false, lists and objects are not accepted. |
+| Other things in a row | Properties you did not list are ignored. `infoLink` is optional: when it is an `http` or `https` address it becomes the "More information" link. |
+| What is left out | A property needs a number in at least one row, and a row needs a number for at least one property. |
 
-**If there are mistakes,** the map keeps working. The bad rows or values are left out, and you are told what was
-wrong. You do not need to wrap your list in `useMemo`.
+**If there are mistakes,** the map keeps working. The bad parts are left out, and you are told what was wrong. If nothing
+usable is left, the data is ignored and the normal map stays. You do not need to wrap your data in `useMemo`.
 
 ![Mistakes in the data, reported to your code](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/invalid-data.png)
 
@@ -214,6 +236,7 @@ Things to know:
   Cyprus and Somalia.
 - When only your data is shown, the "Information on click" radio buttons are hidden, because they describe the
   built-in facts.
+- `onCountryClick` gets your values (merged over the built-in facts for `'both'`).
 - Editors can check your JSON file with the published schema: `react-world-map-extended/country-data.schema.json`.
 
 ### Controls anywhere
@@ -230,7 +253,12 @@ const modes = useWorldMapModes({ defaultColorMode: 'Colorful' })
 <ExtendedWorldMap showControls={false} {...modes} />
 ```
 
-`useWorldMapModes` remembers the visitor's choices and hands the same ones to both components, so they stay in sync.
+`useWorldMapModes` remembers the visitor's choices (colour mode, information mode and the data property) and hands the
+same ones to both components, so they stay in sync. It starts in Black and White, so pass `defaultColorMode: 'Colorful'`
+when your own data colours the map.
+
+With your own data and two or more properties, tell the controls their names to get the dropdown:
+`<WorldMapControls {...modes} properties={data.properties.map((p) => p.name)} />`.
 
 **`<WorldMapControls>` settings**
 
@@ -240,6 +268,8 @@ const modes = useWorldMapModes({ defaultColorMode: 'Colorful' })
 | `infoMode`, `onInfoModeChange` | The chosen amount of information and what happens when it changes. | – |
 | `orientation` | `'horizontal'` or `'vertical'` (stacked, good for sidebars). | `'horizontal'` |
 | `showInfoModes` | Set to `false` to hide the "Information on click" group (useful with your own data). | `true` |
+| `properties` | The names of your data's properties. With two or more, a "Show on map" dropdown appears. | none |
+| `dataProperty`, `onDataPropertyChange` | The chosen property and what happens when it changes. | the first property |
 | `className`, `style` | Style the controls. | – |
 
 Clicking the controls never clears the map's selection.
@@ -261,23 +291,23 @@ Clicking the controls never clears the map's selection.
 
 | Name | What it does |
 |---|---|
-| `useWorldMapModes(options?)` | Remembers colour mode and information mode, ready to spread onto the map and the controls. |
+| `useWorldMapModes(options?)` | Remembers colour mode, information mode and the data property, ready to spread onto the map and the controls. Options: `defaultColorMode`, `defaultInfoMode`, `defaultDataProperty`. |
 
 **Helpers**
 
 | Name | What it does |
 |---|---|
-| `validateCountryData(data)` | Checks your data without drawing anything. Returns `{ rows, issues }`: the valid rows and a list of what was wrong. Handy in a test. |
+| `validateCountryData(data)` | Checks your data without drawing anything. Returns `{ properties, rows, issues }`: the usable properties (with their lowest and highest number), the valid rows and a list of what was wrong. Handy in a test. |
 | `resolveCountryCode(text)` | Turns `'fra'`, `'FR'` or `' FRA '` into `'FR'`, or `undefined` if it is not a country. |
 | `getCountryDetail(code, infoMode, getInfoLink?)` | Looks up the built-in facts of one country. |
 | `getWikipediaUrl(code, name)` | The default "More information" link, in case you want to reuse it. |
-| `COUNTRY_DATA_LIMITS` | The size limits for your data (500 rows, 50 properties, 2000 characters). |
+| `COUNTRY_DATA_LIMITS` | The size limits for your data (500 rows, 50 properties, 2000 characters for a link). |
 | `MAX_SELECTED_COUNTRIES` | The most countries that can be selected (5). |
 | `MapColorOptions`, `MapDataOptions` | Named values for the colour and information modes. |
 
 **Types:** `MapColorMode`, `MapInfoMode`, `MapPalette`, `CountryColors`, `LegendPosition`, `CountryDetail`,
-`InfoLinkResolver`, `DetailsOptions`, `DetailsPosition`, `DetailsSource`, `HeadingLevel`, `CountryDataRow`,
-`CountryDataValues`, `CountryDataIssue`, `CountryClickInfo`, `CountryClickContext`, `CountrySelection`,
+`InfoLinkResolver`, `DetailsOptions`, `DetailsPosition`, `DetailsSource`, `HeadingLevel`, `CountryData`,
+`CountryDataProperty`, `CountryDataRow`, `CountryDataValues`, `CountryDataIssue`, `ValidatedCountryData`, `ValidatedProperty`, `CountryClickInfo`, `CountryClickContext`, `CountrySelection`,
 `CountryDetailsProps`, `CountryDetailsListProps`, `WorldMapControlsProps`, `UseWorldMapModesOptions`, `WorldMapModes`.
 
 ## Make it match your site
@@ -307,8 +337,12 @@ Need more? `styleOverrides` takes a style object (or a function that returns one
 
 ## Good to know
 
-- **Own data is shown as a plain list** of label and value pairs. There is no grouping, units or number formatting
-  yet, and your data cannot colour the map yet.
+- **Own data is numbers only.** The card lists them as plain label and value pairs: no grouping, units or number
+  formatting (put the unit in the property's name, like `Literacy rate (%)`).
+- **One very large number** (say one country with a huge population) makes the other countries pale, because the
+  scale is a straight line from the lowest to the highest number. There is no log scale or fixed minimum and
+  maximum yet.
+- **One colour per property.** Data that goes both ways (profit and loss) and text categories cannot be coloured yet.
 - **At most 5 countries** can be selected, and that number cannot be changed yet.
 - **Screen readers** announce selections made by clicking, but not selections you set from your own code.
 - **Overlay card:** it covers the map, so close it (Hide or Escape) before adding another country.

@@ -15,6 +15,12 @@ export interface WorldMapControlsProps {
   /** Show the "Information on click" group. Default `true`. It describes the built-in facts, so
    * `<ExtendedWorldMap>` hides it while only your own data (`detailsSource="custom"`) is shown. */
   showInfoModes?: boolean
+  /** The names of the properties of your own data. With two or more, a "Show on map" dropdown lets the
+   * visitor choose which one colours the map. With none or one, there is no dropdown. */
+  properties?: readonly string[]
+  /** The property that colours the map now (the first one when not given). */
+  dataProperty?: string
+  onDataPropertyChange?: (name: string) => void
   className?: string
   /** Merged over the bar's own style (a row of two radio groups), last. */
   style?: CSSProperties
@@ -39,6 +45,9 @@ export const WorldMapControls = ({
   onInfoModeChange,
   orientation = 'horizontal',
   showInfoModes = true,
+  properties = [],
+  dataProperty,
+  onDataPropertyChange,
   className,
   style,
 }: WorldMapControlsProps) => {
@@ -65,6 +74,22 @@ export const WorldMapControls = ({
         onChange={onColorModeChange}
         direction={direction}
       />
+      {properties.length > 1 && (
+        <fieldset>
+          <legend>Show on map</legend>
+          <select
+            aria-label="Show on map"
+            value={dataProperty !== undefined && properties.includes(dataProperty) ? dataProperty : properties[0]}
+            onChange={(event) => onDataPropertyChange?.(event.target.value)}
+          >
+            {properties.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </fieldset>
+      )}
       {showInfoModes && (
         <UserOptions
           legend="Information on click"

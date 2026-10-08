@@ -32,199 +32,326 @@ describe('resolveCountryCode', () => {
   })
 })
 
+const PROPS = [
+  { name: 'Literacy rate (%)', color: '#1a73e8' },
+  { name: 'Population', color: '#d55e00' },
+]
+const ONE = [{ name: 'Population', color: '#d55e00' }]
+
 describe('validateCountryData', () => {
-  it('accepts alpha-2 and alpha-3 rows and keeps the property names and order as written', () => {
-    const { rows, issues } = validateCountryData([
-      { country: 'fr', 'Literacy rate (%)': 99, capital_city: 'Paris', hasCoast: true },
-      { country: 'DEU', Population: 83000000, note: null },
-    ])
+  it('accepts alpha-2 and alpha-3 rows and keeps the properties and their order as listed', () => {
+    const { rows, properties, issues } = validateCountryData({
+      properties: PROPS,
+      countries: [
+        { country: 'fr', Population: 68.2, 'Literacy rate (%)': 99 },
+        { country: 'DEU', Population: 83200000 },
+      ],
+    })
     expect(issues).toEqual([])
     expect([...rows.keys()]).toEqual(['FR', 'DE'])
-    expect(rows.get('FR')).toEqual({ 'Literacy rate (%)': 99, capital_city: 'Paris', hasCoast: true })
-    expect(Object.keys(rows.get('FR') ?? {})).toEqual(['Literacy rate (%)', 'capital_city', 'hasCoast'])
-    expect(rows.get('DE')).toEqual({ Population: 83000000, note: null })
+    expect(Object.keys(rows.get('FR') ?? {})).toEqual(['Literacy rate (%)', 'Population']) // as listed
+    expect(rows.get('FR')).toEqual({ 'Literacy rate (%)': 99, Population: 68.2 })
+    expect(rows.get('DE')).toEqual({ Population: 83200000 })
+    expect(properties).toEqual([
+      { name: 'Literacy rate (%)', color: '#1a73e8', min: 99, max: 99 },
+      { name: 'Population', color: '#d55e00', min: 68.2, max: 83200000 },
+    ])
   })
 
-  it('leaves `country` out of the values', () => {
-    const { rows } = validateCountryData([{ country: 'FR', a: 1 }])
-    expect(rows.get('FR')).not.toHaveProperty('country')
+  it('leaves `country` out of the values, and ignores properties that are not listed', () => {
+    const { rows, issues } = validateCountryData({
+      properties: PROPS,
+      countries: [{ country: 'FR', Population: 1, 'Literacy rate (%)': 9, capital: 'Paris', extra: { a: 1 } }],
+    })
+    expect(issues).toEqual([])
+    expect(rows.get('FR')).toEqual({ Population: 1, 'Literacy rate (%)': 9 }) // listed order is kept
+  })
+
+  it('keeps null as "no value" for a property', () => {
+    const { rows, issues } = validateCountryData({
+      properties: PROPS,
+      countries: [
+        { country: 'FR', Population: 1, 'Literacy rate (%)': null },
+        { country: 'DE', 'Literacy rate (%)': 5 },
+      ],
+    })
+    expect(issues).toEqual([])
+    expect(rows.get('FR')).toEqual({ 'Literacy rate (%)': null, Population: 1 })
   })
 
   it.each([
-    ['an object', { country: 'FR', a: 1 }],
+    ['an array', [{ country: 'FR', a: 1 }]],
     ['a string', 'FR'],
     ['null', null],
     ['undefined', undefined],
     ['a number', 42],
-  ])('says so when the data is %s instead of an array', (_name, input) => {
-    const { rows, issues } = validateCountryData(input)
+  ])('says so when the data is %s instead of an object', (_name, input) => {
+    const { rows, properties, issues } = validateCountryData(input)
     expect(rows.size).toBe(0)
-    expect(issues).toEqual([{ row: null, message: 'The data must be an array of objects.' }])
-  })
-
-  it('accepts an empty array (no countries have data)', () => {
-    expect(validateCountryData([])).toEqual({ rows: new Map(), issues: [] })
-  })
-
-  it('leaves out rows that are not objects, and keeps the others', () => {
-    const { rows, issues } = validateCountryData([42, null, ['FR'], { country: 'FR', a: 1 }])
-    expect([...rows.keys()]).toEqual(['FR'])
-    expect(issues.map((issue) => issue.row)).toEqual([0, 1, 2])
-    expect(issues.every((issue) => issue.message === 'Each row must be an object.')).toBe(true)
-  })
-
-  it('needs a country', () => {
-    const { rows, issues } = validateCountryData([{ a: 1 }])
-    expect(rows.size).toBe(0)
+    expect(properties).toEqual([])
     expect(issues).toEqual([
-      { row: 0, property: 'country', message: expect.stringContaining('Missing "country"') },
+      { row: null, message: 'The data must be an object with "properties" and "countries".' },
     ])
   })
 
-  it('does not accept names, only codes, and says so', () => {
-    const { rows, issues } = validateCountryData([{ country: 'France', a: 1 }])
-    expect(rows.size).toBe(0)
-    expect(issues[0]).toMatchObject({ row: 0, property: 'country' })
-    expect(issues[0].message).toContain('names are not accepted')
+  it('needs "properties" (a list with at least one entry) and "countries" (an array)', () => {
+    for (const data of [
+      { countries: [] },
+      { properties: [], countries: [] },
+      { properties: 'a', countries: [] },
+    ]) {
+      expect(validateCountryData(data).issues[0].message).toContain('"properties" must be a list')
+    }
+    const noCountries = validateCountryData({ properties: PROPS })
+    expect(noCountries.issues[noCountries.issues.length - 1].message).toBe('"countries" must be an array of objects.')
+    expect(noCountries.properties).toEqual([])
   })
 
-  it('rejects codes the map does not know', () => {
-    const { rows, issues } = validateCountryData([
-      { country: 'ZZ', a: 1 },
-      { country: 'QQQ', a: 1 },
-      { country: 7, a: 1 },
-    ])
-    expect(rows.size).toBe(0)
-    expect(issues).toHaveLength(3)
+  describe('the properties', () => {
+    const check = (properties: unknown) =>
+      validateCountryData({ properties, countries: [{ country: 'FR', Population: 1, A: 2 }] })
+
+    it('need a name that is not empty', () => {
+      for (const bad of [{ color: '#336' }, { name: '', color: '#336' }, { name: '  ', color: '#336' }, { name: 5, color: '#336' }]) {
+        const { issues } = check([bad, { name: 'Population', color: '#336' }])
+        expect(issues[0]).toMatchObject({ row: null, message: expect.stringContaining('properties[0] needs a "name"') })
+      }
+    })
+
+    it('need a hex colour (#rgb or #rrggbb, any case), and nothing else', () => {
+      expect(check([{ name: 'Population', color: '#AbC' }]).issues).toEqual([])
+      expect(check([{ name: 'Population', color: ' #3366aa ' }]).properties[0].color).toBe('#3366aa')
+      for (const color of ['blue', '336', '#33', '#3366a', '#33666aa', 'rgb(0,0,0)', '', undefined, 7]) {
+        const result = check([{ name: 'Population', color }, { name: 'A', color: '#336' }])
+        expect(result.issues[0]).toMatchObject({ property: 'Population', message: expect.stringContaining('hex colour') })
+        expect(result.properties.map(({ name }) => name)).toEqual(['A']) // the other one still works
+      }
+    })
+
+    it('are not objects: reported and left out', () => {
+      const { issues, properties } = check(['Population', null, { name: 'A', color: '#336' }])
+      expect(issues.map(({ message }) => message)).toEqual([
+        'properties[0] must be an object { name, color }.',
+        'properties[1] must be an object { name, color }.',
+      ])
+      expect(properties.map(({ name }) => name)).toEqual(['A'])
+    })
+
+    it('use the first entry of a name that is listed twice', () => {
+      const { issues, properties } = check([
+        { name: 'A', color: '#111' },
+        { name: 'A', color: '#222' },
+      ])
+      expect(issues[0].message).toContain('listed more than once')
+      expect(properties).toMatchObject([{ name: 'A', color: '#111' }])
+    })
+
+    it('cannot be named like a field of the row', () => {
+      for (const name of ['country', 'infoLink']) {
+        expect(check([{ name, color: '#336' }, { name: 'A', color: '#336' }]).issues[0].message).toContain('field of the row')
+      }
+    })
+
+    it('are left out when no row has a number for them', () => {
+      const { issues, properties, rows } = validateCountryData({
+        properties: [...PROPS, { name: 'Empty', color: '#336' }],
+        countries: [{ country: 'FR', Population: 1, 'Literacy rate (%)': null, Empty: null }],
+      })
+      expect(properties.map(({ name }) => name)).toEqual(['Population'])
+      expect(issues.map(({ property, message }) => [property, message])).toEqual([
+        ['Literacy rate (%)', 'No row has a number for "Literacy rate (%)"; the property is left out.'],
+        ['Empty', 'No row has a number for "Empty"; the property is left out.'],
+      ])
+      expect(rows.get('FR')).toEqual({ Population: 1 }) // their nulls are gone too
+    })
+
+    it('make the whole data unusable when none is left', () => {
+      const { properties, rows, issues } = validateCountryData({ properties: PROPS, countries: [] })
+      expect(properties).toEqual([])
+      expect(rows.size).toBe(0)
+      expect(issues).toHaveLength(2)
+    })
+
+    it('take a risky name as plain text', () => {
+      const name = '__proto__'
+      const { rows, properties, issues } = validateCountryData({
+        properties: JSON.parse('[{"name":"__proto__","color":"#336"}]'),
+        countries: JSON.parse('[{"country":"FR","__proto__":5}]'),
+      })
+      expect(issues).toEqual([])
+      expect(properties[0].name).toBe(name)
+      expect(Object.keys(rows.get('FR') ?? {})).toEqual([name])
+      expect(Object.getPrototypeOf(rows.get('FR'))).toBe(Object.prototype)
+    })
+
+    it('are limited in number', () => {
+      const many = Array.from({ length: COUNTRY_DATA_LIMITS.properties + 3 }, (_, i) => ({ name: `p${i}`, color: '#336' }))
+      const row = Object.fromEntries(many.map(({ name }) => [name, 1]))
+      const { properties, issues } = validateCountryData({ properties: many, countries: [{ country: 'FR', ...row }] })
+      expect(properties).toHaveLength(COUNTRY_DATA_LIMITS.properties)
+      expect(issues[0].message).toContain(`only the first ${COUNTRY_DATA_LIMITS.properties} are used`)
+    })
   })
 
-  it('uses the first row of a country that appears twice, whichever code form it uses', () => {
-    const { rows, issues } = validateCountryData([
-      { country: 'FR', a: 1 },
-      { country: 'FRA', a: 2 },
-      { country: 'fr', a: 3 },
-    ])
-    expect(rows.get('FR')).toEqual({ a: 1 })
-    expect(issues.map((issue) => issue.row)).toEqual([1, 2])
-    expect(issues[0].message).toContain('more than once')
+  describe('the rows', () => {
+    const rowsOf = (countries: unknown[]) => validateCountryData({ properties: ONE, countries })
+
+    it('leave out rows that are not objects, and keep the others', () => {
+      const { rows, issues } = rowsOf(['nope', null, 5, { country: 'FR', Population: 1 }])
+      expect([...rows.keys()]).toEqual(['FR'])
+      expect(issues.map(({ row, message }) => [row, message])).toEqual([
+        [0, 'Each row must be an object.'],
+        [1, 'Each row must be an object.'],
+        [2, 'Each row must be an object.'],
+      ])
+    })
+
+    it('need a country', () => {
+      expect(rowsOf([{ Population: 1 }, { country: 'FR', Population: 1 }]).issues).toEqual([
+        { row: 0, property: 'country', message: 'Missing "country" (an ISO alpha-2 or alpha-3 code).' },
+      ])
+    })
+
+    it('do not accept names, only codes, and say so', () => {
+      const { rows, issues } = rowsOf([{ country: 'France', Population: 1 }])
+      expect(rows.size).toBe(0)
+      expect(issues[0]).toMatchObject({ row: 0, property: 'country', message: expect.stringContaining('names are not accepted') })
+    })
+
+    it('reject codes the map does not know', () => {
+      for (const country of ['ZZ', 'ZZZ', '', 'F', 'FRAN', 42, null]) {
+        const { rows, issues } = rowsOf([{ country, Population: 1 }])
+        expect(rows.size).toBe(0)
+        expect(issues[0]).toMatchObject({ row: 0, property: 'country' })
+      }
+    })
+
+    it('use the first row of a country that appears twice, whichever code form it uses', () => {
+      const { rows, issues } = rowsOf([
+        { country: 'FR', Population: 1 },
+        { country: 'fra', Population: 2 },
+      ])
+      expect(rows.get('FR')).toEqual({ Population: 1 })
+      expect(issues).toEqual([{ row: 1, property: 'country', message: 'FR appears more than once; the first row is used.' }])
+    })
+
+    it('need a number for at least one listed property', () => {
+      for (const row of [{ country: 'FR' }, { country: 'FR', Population: null }, { country: 'FR', other: 5 }]) {
+        const { rows, issues } = rowsOf([row, { country: 'DE', Population: 1 }])
+        expect([...rows.keys()]).toEqual(['DE'])
+        expect(issues[0]).toEqual({ row: 0, message: 'FR has no number for any listed property.' })
+      }
+    })
+
+    it('accept finite numbers and null for a listed property, and nothing else', () => {
+      const bad = [
+        ['text', 'a'],
+        ['text that looks like a number', '12'],
+        ['a boolean', true],
+        ['an array', [1]],
+        ['an object', { a: 1 }],
+        ['a non-finite number', Number.POSITIVE_INFINITY],
+        ['a non-finite number', Number.NaN],
+      ] as const
+      for (const [kind, value] of bad) {
+        const { rows, issues } = rowsOf([
+          { country: 'FR', Population: value },
+          { country: 'DE', Population: 1 },
+        ])
+        expect(issues, kind).toEqual([
+          { row: 0, property: 'Population', message: expect.stringContaining('must be a finite number or null') },
+          { row: 0, message: 'FR has no number for any listed property.' },
+        ])
+        expect([...rows.keys()]).toEqual(['DE'])
+      }
+      expect(rowsOf([{ country: 'FR', Population: -3.5 }]).rows.get('FR')).toEqual({ Population: -3.5 })
+      expect(rowsOf([{ country: 'FR', Population: 0 }]).rows.get('FR')).toEqual({ Population: 0 })
+    })
+
+    it('keep a row whose other value is bad', () => {
+      const { rows, issues } = validateCountryData({
+        properties: PROPS,
+        countries: [
+          { country: 'FR', Population: 1, 'Literacy rate (%)': 'x' },
+          { country: 'DE', 'Literacy rate (%)': 5 },
+        ],
+      })
+      expect(rows.get('FR')).toEqual({ Population: 1 })
+      expect(issues[0]).toMatchObject({ row: 0, property: 'Literacy rate (%)' })
+    })
+
+    it('treat undefined as "not there"', () => {
+      const { rows, issues } = rowsOf([{ country: 'FR', Population: 1, Other: undefined }])
+      expect(issues).toEqual([])
+      expect(rows.get('FR')).toEqual({ Population: 1 })
+    })
+
+    it('keep infoLink when it is text, and report it when it is not', () => {
+      const ok = rowsOf([{ country: 'FR', Population: 1, infoLink: 'https://example.org' }])
+      expect(ok.rows.get('FR')).toEqual({ Population: 1, infoLink: 'https://example.org' })
+      const bad = rowsOf([{ country: 'FR', Population: 1, infoLink: 5 }])
+      expect(bad.issues).toEqual([{ row: 0, property: 'infoLink', message: expect.stringContaining('"infoLink" must be text') }])
+      expect(bad.rows.get('FR')).toEqual({ Population: 1 })
+    })
+
+    it('are limited in number', () => {
+      const countries = Array.from({ length: COUNTRY_DATA_LIMITS.rows + 5 }, () => ({ country: 'FR', Population: 1 }))
+      const { issues } = rowsOf(countries)
+      expect(issues[0].message).toContain(`only the first ${COUNTRY_DATA_LIMITS.rows} are used`)
+    })
   })
 
-  it('needs at least one usable value besides the country', () => {
-    const { rows, issues } = validateCountryData([{ country: 'FR' }, { country: 'DE', x: { deep: 1 } }])
-    expect(rows.size).toBe(0)
-    expect(issues.some((issue) => issue.row === 0 && issue.message.includes('no usable values'))).toBe(true)
-    expect(issues.some((issue) => issue.row === 1 && issue.message.includes('no usable values'))).toBe(true)
-  })
-
-  it('accepts text, finite numbers, true / false and null, and nothing else', () => {
-    const { rows, issues } = validateCountryData([
-      {
-        country: 'FR',
-        text: 'a',
-        empty: '',
-        int: 3,
-        float: 1.5,
-        zero: 0,
-        negative: -2,
-        yes: true,
-        no: false,
-        none: null,
-        obj: { a: 1 },
-        list: [1, 2],
-        nan: Number.NaN,
-        inf: Number.POSITIVE_INFINITY,
-        undef: undefined,
-        fn: () => 1,
-      },
-    ])
-    expect(Object.keys(rows.get('FR') ?? {})).toEqual([
-      'text',
-      'empty',
-      'int',
-      'float',
-      'zero',
-      'negative',
-      'yes',
-      'no',
-      'none',
-    ])
-    expect(issues.map((issue) => issue.property).sort()).toEqual(['fn', 'inf', 'list', 'nan', 'obj'].sort()) // `undef` is just "not there"
-    expect(issues.find((issue) => issue.property === 'list')?.message).toContain('an array')
-    expect(issues.find((issue) => issue.property === 'obj')?.message).toContain('object')
-  })
-
-  it('keeps a row when only some of its values are bad', () => {
-    const { rows, issues } = validateCountryData([{ country: 'FR', good: 1, bad: { x: 1 } }])
-    expect(rows.get('FR')).toEqual({ good: 1 })
-    expect(issues).toHaveLength(1)
-  })
-
-  it('leaves out a property with an empty name', () => {
-    const { rows, issues } = validateCountryData([{ country: 'FR', '': 1, ' ': 2, ok: 3 }])
-    expect(rows.get('FR')).toEqual({ ok: 3 })
-    expect(issues).toHaveLength(2)
-  })
-
-  it('treats risky property names as plain text labels', () => {
-    const data = JSON.parse('[{"country":"FR","__proto__":"x","constructor":"y","toString":"z"}]')
-    const { rows, issues } = validateCountryData(data)
-    expect(issues).toEqual([])
-    expect(Object.keys(rows.get('FR') ?? {}).sort()).toEqual(['__proto__', 'constructor', 'toString'].sort())
-    expect(({} as Record<string, unknown>).polluted).toBeUndefined()
-  })
-
-  it('enforces the limits: rows, properties per row, text length', () => {
-    const limits = COUNTRY_DATA_LIMITS
-    const many = Array.from({ length: limits.rows + 5 }, () => ({ country: 'FR', a: 1 }))
-    expect(validateCountryData(many).issues[0].row).toBeNull()
-
-    const wide = { country: 'FR', ...Object.fromEntries(Array.from({ length: limits.properties + 3 }, (_, i) => [`p${i}`, i])) }
-    const wideResult = validateCountryData([wide])
-    expect(Object.keys(wideResult.rows.get('FR') ?? {})).toHaveLength(limits.properties)
-    expect(wideResult.issues[0].message).toContain(`More than ${limits.properties} properties`)
-
-    const long = validateCountryData([{ country: 'FR', short: 'ok', long: 'x'.repeat(limits.textLength + 1) }])
-    expect(long.rows.get('FR')).toEqual({ short: 'ok' })
-    expect(long.issues[0].property).toBe('long')
-  })
-
-  it('reports where a problem is (row index and property)', () => {
-    const { issues } = validateCountryData([{ country: 'FR', a: 1 }, { country: 'DE', b: [1] }, { country: 'IT', c: 1 }])
-    expect(issues).toEqual([{ row: 1, property: 'b', message: expect.any(String) }, { row: 1, message: expect.stringContaining('no usable values') }])
+  it('works out the lowest and highest number of each property', () => {
+    const { properties } = validateCountryData({
+      properties: [{ name: 'P', color: '#336' }],
+      countries: [
+        { country: 'FR', P: 5 },
+        { country: 'DE', P: -2 },
+        { country: 'JP', P: null },
+        { country: 'BR', P: 40.5 },
+      ],
+    })
+    expect(properties).toEqual([{ name: 'P', color: '#336', min: -2, max: 40.5 }])
   })
 
   it('never mutates its input', () => {
-    const input = [{ country: 'fr', a: 1 }]
-    const copy = JSON.parse(JSON.stringify(input))
-    validateCountryData(input)
-    expect(input).toEqual(copy)
+    const data = {
+      properties: [...PROPS, { name: 'Empty', color: '#336' }],
+      countries: [{ country: 'fr', Population: 1, Empty: null }, { country: 'FR', Population: 2 }, 'x'],
+    }
+    const before = JSON.stringify(data)
+    validateCountryData(data)
+    expect(JSON.stringify(data)).toBe(before)
   })
 })
 
-// The published JSON Schema and the validator must agree on everything the schema can express.
 describe('the JSON Schema file', () => {
   const validate = new Ajv2020({ strict: false }).compile(schema)
+  const make = (countries: unknown, properties: unknown = ONE) => ({ properties, countries })
 
   it.each([
-    [[{ country: 'FR', a: 1 }]],
-    [[{ country: 'FRA', 'Literacy rate (%)': 99.5, ok: true, nothing: null, text: 'x' }]],
-    [[{ country: ' de ', a: 'b', infoLink: 'https://example.org' }]],
-    [[]],
+    [make([{ country: 'FR', Population: 1 }])],
+    [make([{ country: 'FRA', Population: 99.5, Other: null }])],
+    [make([{ country: ' de ', Population: 1, infoLink: 'https://example.org' }])],
+    [make([{ country: 'FR', Population: 1, ignored: 'text' }])],
+    [make([{ country: 'FR', Population: 1 }], [{ name: 'Population', color: '#AbC' }])],
   ])('accepts %j, as the validator does', (data) => {
     expect(validate(data)).toBe(true)
     expect(validateCountryData(data).issues).toEqual([])
   })
 
   it.each([
-    [{ country: 'FR', a: 1 }],
-    [[{ a: 1 }]],
-    [[{ country: 'FR' }]],
-    [[{ country: 'France', a: 1 }]],
-    [[{ country: 'FR', a: { b: 1 } }]],
-    [[{ country: 'FR', a: [1] }]],
-    [[{ country: 'FR', '': 1 }]],
-    [[{ country: 'FR', a: 'x'.repeat(2001) }]],
-    [['FR']],
+    [[{ country: 'FR', Population: 1 }]], // an array, not an object
+    [{ countries: [{ country: 'FR', Population: 1 }] }],
+    [{ properties: PROPS }],
+    [make([], [])],
+    [make([{ country: 'FR', Population: 1 }], [{ name: 'Population' }])],
+    [make([{ country: 'FR', Population: 1 }], [{ name: 'Population', color: 'blue' }])],
+    [make([{ country: 'FR', Population: 1 }], [{ name: '', color: '#336' }])],
+    [make([{ Population: 1 }])],
+    [make([{ country: 'France', Population: 1 }])],
+    [make(['FR'])],
+    [make([{ country: 'FR', Population: 1, infoLink: 5 }])],
   ])('rejects %j, and the validator reports it', (data) => {
     expect(validate(data)).toBe(false)
     expect(validateCountryData(data).issues.length).toBeGreaterThan(0)

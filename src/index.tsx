@@ -12,7 +12,8 @@ import WorldMap from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
 import { countryCodes, countryNames } from './countries'
-import type { CountryDataIssue, CountryDataRow, CountryDataValues } from './countryData'
+import type { CountryData, CountryDataIssue, CountryDataValues } from './countryData'
+import { formatNumber, scaleColor, shade } from './colorScale'
 import { CountryDetails, type DetailsSource, ShowDetailsButton } from './CountryDetails'
 import { CountryDetailsList } from './CountryDetailsList'
 import { MapColorOptions, type MapColorMode, MapDataOptions, type MapInfoMode } from './constants'
@@ -47,11 +48,14 @@ export { CountryDetails } from './CountryDetails'
 export type { DetailsSource } from './CountryDetails'
 export { COUNTRY_DATA_LIMITS, resolveCountryCode, validateCountryData } from './countryData'
 export type {
+  CountryData,
   CountryDataIssue,
+  CountryDataProperty,
   CountryDataRow,
   CountryDataValue,
   CountryDataValues,
   ValidatedCountryData,
+  ValidatedProperty,
 } from './countryData'
 export { CountryDetailsList } from './CountryDetailsList'
 export type { CountryDetailsListProps, CountrySelection } from './CountryDetailsList'
@@ -181,20 +185,26 @@ export interface ExtendedWorldMapProps {
   /** Shows a switch on the map for devices without a Shift key: while it is on, a plain click adds or
    * removes a country. `'auto'` (default) shows it on touch screens only. */
   showMultiSelectToggle?: boolean | 'auto'
-  /** Your own values to show in the details: rows of `{ country: 'FR', 'Any label': value, ... }` where
-   * `country` is an ISO 3166-1 alpha-2 or alpha-3 code (not a name) and a value is text, a number,
-   * true / false or null. The property names are shown as the labels. The data is validated
-   * (`validateCountryData`, `schema/country-data.schema.json`): bad rows are left out and reported to
-   * `onDataIssues`. Pass the same array between renders. */
-  countryData?: readonly CountryDataRow[]
+  /** Your own data: `{ properties: [{ name, color }], countries: [{ country: 'FR', [name]: number }] }`.
+   * Each property gets its own colour scale (the highest number has its colour, the lowest a light tint
+   * of it) and is shown in the details, labelled with its name. `country` is an ISO 3166-1 alpha-2 or
+   * alpha-3 code (not a name). With two or more properties a dropdown lets the visitor choose which one
+   * colours the map. The data is validated (`validateCountryData`, `schema/country-data.schema.json`):
+   * bad parts are left out and reported to `onDataIssues`. */
+  countryData?: CountryData
+  /** The property of `countryData` that colours the map. Controlled when set; otherwise use
+   * `defaultDataProperty` (default: the first property). An unknown name means the first one. */
+  dataProperty?: string
+  defaultDataProperty?: string
+  onDataPropertyChange?: (name: string) => void
   /** What the details show. `'custom'`: only your data; `'both'`: your data, then the built-in facts;
    * `'default'`: the built-in facts only. Default: `'custom'` when `countryData` is given, else `'default'`. */
   detailsSource?: DetailsSource
   /** Called with what was wrong in `countryData` (once per array). Without it the problems are
    * printed as a console warning. */
   onDataIssues?: (issues: CountryDataIssue[]) => void
-  /** With your own data shown, paint countries that have none grey (`--rwme-no-data-fill`) and add
-   * "No data" to the legend. Default `true`. */
+  /** With your own data shown, paint countries without a value for the chosen property grey
+   * (`--rwme-no-data-fill`) and add "No data" to the legend. Default `true`. */
   greyOutCountriesWithoutData?: boolean
   mapFrame?: boolean
   /** Where `infoLink` (a field of the country details) points. Default: the country's English Wikipedia
@@ -217,9 +227,10 @@ export interface ExtendedWorldMapProps {
   palette?: MapPalette
   /** Colours for 'Colorful' mode, by ISO alpha-2 code (upper case) or per country; wins over `palette`. */
   colors?: CountryColors | ((context: CountryContext<string>) => string | undefined)
-  /** Show a legend over a corner of the map saying what the colours mean. Default `true`; it appears
-   * only for the `continent` and `region` palettes, in Colorful mode, without custom `colors`
-   * (the other schemes have nothing to explain). */
+  /** Show a legend over a corner of the map saying what the colours mean. Default `true`. With the
+   * built-in data it appears only for the `continent` and `region` palettes, in Colorful mode, without
+   * custom `colors`. With your own data it is the colour scale of the chosen property, in Colorful mode;
+   * the built-in legend is never shown next to it. */
   showLegend?: boolean
   /** Which corner of the map the legend sits in. Default `'bottom-left'`. */
   legendPosition?: LegendPosition
@@ -235,8 +246,9 @@ export interface ExtendedWorldMapProps {
    * accident): use Escape, "Clear all" or the × of each country.
    * Not active while the `overlay` card is open (close it with Hide or Escape). */
   deselectOn?: 'outside' | 'background' | 'never'
-  /** While a country is selected, fade all the others so it stands out. `true` (default) uses
-   * opacity 0.35, a number sets the opacity (0–1), `false` turns it off. Themeable with
+  /** While a country is selected, fade all the others so it stands out. `true` uses opacity 0.35, a
+   * number sets the opacity (0–1), `false` turns it off. Default `true`, but `false` while your own data
+   * colours the map (fading changes the shades, which carry the meaning). Themeable with
    * `--rwme-dimmed-opacity`. */
   dimOthers?: boolean | number
   /** Show a card with the clicked country's details. Default `false`; see `detailsOptions`. */
@@ -264,6 +276,9 @@ export const ExtendedWorldMap = ({
   onSelectionChange,
   showMultiSelectToggle = 'auto',
   countryData,
+  dataProperty,
+  defaultDataProperty,
+  onDataPropertyChange,
   detailsSource,
   onDataIssues,
   greyOutCountriesWithoutData = true,
@@ -272,7 +287,7 @@ export const ExtendedWorldMap = ({
   interaction = true,
   showControls = true,
   colorMode,
-  defaultColorMode = MapColorOptions.BLACK_AND_WHITE,
+  defaultColorMode,
   onColorModeChange,
   infoMode,
   defaultInfoMode = MapDataOptions.COUNTRY_NAME,
@@ -282,7 +297,7 @@ export const ExtendedWorldMap = ({
   showLegend = true,
   legendPosition = 'bottom-left',
   highlightSelected = true,
-  dimOthers = true,
+  dimOthers,
   deselectOn = 'outside',
   showDetails = false,
   detailsOptions,
@@ -290,10 +305,11 @@ export const ExtendedWorldMap = ({
   className,
   style,
 }: ExtendedWorldMapProps) => {
-  const [colorOption, setColorOption] = useControllableState<MapColorMode>(
+  // Until the visitor (or `colorMode`) chooses, the map is colourful when your own data colours it
+  const [colorChoice, setColorChoice] = useControllableState<MapColorMode | undefined>(
     colorMode,
     defaultColorMode,
-    onColorModeChange,
+    (mode) => mode && onColorModeChange?.(mode),
   )
   const [infoOption, setInfoOption] = useControllableState<MapInfoMode>(
     infoMode,
@@ -307,10 +323,22 @@ export const ExtendedWorldMap = ({
   })
   const selectedCodes = selection.codes
   const validatedData = useCountryData(countryData, onDataIssues)
-  // a `countryData` that is not even an array is ignored (and reported): the built-in facts stay
-  const customRows = Array.isArray(countryData) ? validatedData?.rows : undefined
+  // data without a usable property is ignored (and reported): the built-in facts stay
+  const customData = validatedData && validatedData.properties.length > 0 ? validatedData : undefined
+  const customRows = customData?.rows
   const source: DetailsSource = customRows ? (detailsSource ?? 'custom') : 'default'
   const showsOwnData = source !== 'default'
+  const ownProperties = showsOwnData && customData ? customData.properties : []
+  const [chosenProperty, setChosenProperty] = useControllableState<string | undefined>(
+    dataProperty,
+    defaultDataProperty,
+    (name) => name !== undefined && onDataPropertyChange?.(name),
+  )
+  // the property that colours the map: the chosen one, or the first
+  const activeProperty = ownProperties.find(({ name }) => name === chosenProperty) ?? ownProperties[0]
+  const colorOption =
+    colorChoice ?? (activeProperty ? MapColorOptions.COLORFUL : MapColorOptions.BLACK_AND_WHITE)
+  const setColorOption = setColorChoice
   const selectedNames = selectedCodes.map((code) => countryNames.get(code) ?? code)
   const hasSelection = selectedCodes.length > 0
   // pointing at a country's entry in the details list lights it on the map, and the reverse
@@ -398,18 +426,27 @@ export const ExtendedWorldMap = ({
 
   const paletteColors = getPaletteColors(palette)
 
+  // the number of your own data for the chosen property; a country without one has no data
+  const numberOf = (code: string): number | undefined => {
+    const value = activeProperty ? customRows?.get(code)?.[activeProperty.name] : undefined
+    return typeof value === 'number' ? value : undefined
+  }
+
   const getFill = (context: CountryContext<string>) => {
     const code = context.countryCode.toUpperCase() as keyof CountryColors
+    const value = activeProperty ? numberOf(code) : undefined
+    if (activeProperty && value !== undefined) return scaleColor(activeProperty, value)
     const custom = typeof colors === 'function' ? colors(context) : colors?.[code]
     return custom ?? paletteColors[code] ?? WHITE
   }
 
+  const dimming = dimOthers ?? !activeProperty
   const dimmedOpacity =
-    dimOthers === false
+    dimming === false
       ? undefined
-      : dimOthers === true
+      : dimming === true
         ? DEFAULT_DIMMED_OPACITY
-        : Math.min(1, Math.max(0, dimOthers))
+        : Math.min(1, Math.max(0, dimming))
   const spotlight = highlightSelected && hasSelection && dimmedOpacity !== undefined
 
   const getStyle = (context: CountryContext<string>): CSSProperties => {
@@ -419,7 +456,7 @@ export const ExtendedWorldMap = ({
     const computed: CSSProperties = {
       ...baseStyle,
       ...(colorOption === MapColorOptions.COLORFUL && { fill: getFill(context) }),
-      ...(showsOwnData && greyOutCountriesWithoutData && !customRows?.has(code) && noDataStyle),
+      ...(showsOwnData && greyOutCountriesWithoutData && numberOf(code) === undefined && noDataStyle),
       ...(isSelected && selectedStyle),
       ...(isDimmed && dimmedStyle(dimmedOpacity)),
       ...(focusedCode === code && (isSelected ? focusOnSelectedStyle : focusStyle)),
@@ -432,17 +469,26 @@ export const ExtendedWorldMap = ({
     return { ...computed, ...overrides }
   }
 
+  // The built-in legend explains the built-in colours only: with your own data the legend is the colour
+  // scale of the chosen property, which comes first
   const paletteLegend =
     showLegend && colorOption === MapColorOptions.COLORFUL && !colors
       ? getPaletteLegend(palette)
       : undefined
-  const legend =
-    showLegend && showsOwnData && greyOutCountriesWithoutData
+  const scaleLegend =
+    showLegend && activeProperty && colorOption === MapColorOptions.COLORFUL
       ? {
-          title: paletteLegend?.title ?? 'Data',
-          items: [...(paletteLegend?.items ?? []), { label: 'No data', color: NO_DATA_FILL }],
+          title: activeProperty.name,
+          gradient: {
+            from: shade(activeProperty.color, 0),
+            to: shade(activeProperty.color, 1),
+            min: formatNumber(activeProperty.min),
+            max: formatNumber(activeProperty.max),
+          },
+          items: greyOutCountriesWithoutData ? [{ label: 'No data', color: NO_DATA_FILL }] : [],
         }
-      : paletteLegend
+      : undefined
+  const legend = scaleLegend ?? paletteLegend
   const toggleVisible =
     showMultiSelectToggle === true || (showMultiSelectToggle === 'auto' && coarsePointer)
   const box = useMapBox(
@@ -461,7 +507,12 @@ export const ExtendedWorldMap = ({
   const sideways = position === 'left' || position === 'right'
   const detailsFirst = position === 'top' || position === 'left'
   const selections = selectedCodes.map((code) => {
-    const custom = customRows?.get(code) ?? null
+    const own = customRows?.get(code)
+    // the property that colours the map comes first
+    const custom =
+      own && activeProperty && Object.keys(own).includes(activeProperty.name)
+        ? { [activeProperty.name]: own[activeProperty.name], ...own }
+        : (own ?? null)
     const detail = getCountryDetail(
       code,
       source === 'custom' ? MapDataOptions.COUNTRY_NAME : infoOption, // only the name and the link
@@ -554,6 +605,9 @@ export const ExtendedWorldMap = ({
       {showControls && (
         <WorldMapControls
           showInfoModes={source !== 'custom'}
+          properties={ownProperties.map(({ name }) => name)}
+          dataProperty={activeProperty?.name}
+          onDataPropertyChange={setChosenProperty}
           colorMode={colorOption}
           onColorModeChange={setColorOption}
           infoMode={infoOption}

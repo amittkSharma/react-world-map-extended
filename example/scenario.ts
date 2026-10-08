@@ -20,6 +20,7 @@ import {
  *   &palette=region              colour palette (default|continent|region|monochrome; the example starts with continent)
  *   &data=custom | both | invalid  show your own data (example/sample-data.json) instead of the built-in
  *                                facts / next to them / a data set with mistakes, to see them reported
+ *   &property=Population%20(millions)   which property of the sample data colours the map (default: the first)
  *   &controls=above|below|left|right   place the radio controls apart from the map, as a separate
  *                                <WorldMapControls> (default: built into the map)
  *   &boundaries=off              hide the dashed outlines that show which part is which component
@@ -52,6 +53,8 @@ export interface Scenario {
   palette: MapPalette
   /** `?data=`: which details the example shows */
   data: DataMode
+  /** `?property=`: the property of the data that colours the map */
+  property?: string
   /** `?controls=`: where the radio controls are drawn */
   controls: ControlsPlacement
   /** `?boundaries=off` hides the labelled outlines */
@@ -75,6 +78,7 @@ export const readScenario = (search: string = window.location.search): Scenario 
     info: pick(params.get('info'), infoModes) ?? MapDataOptions.COUNTRY_NAME,
     color: pick(params.get('color'), colorModes) ?? MapColorOptions.COLORFUL,
     data: pick(params.get('data'), dataModes) ?? 'default',
+    property: params.get('property') ?? undefined,
     controls: pick(params.get('controls'), controlsPlacements) ?? 'inside',
     boundaries: params.get('boundaries') !== 'off',
     palette: pick(params.get('palette'), palettes) ?? 'continent',

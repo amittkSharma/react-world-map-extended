@@ -12,7 +12,8 @@ import WorldMap from 'react-svg-worldmap'
 
 import type { CountryContext, SizeOption } from 'react-svg-worldmap'
 import { countryCodes, countryNames } from './countries'
-import { CountryDetails, ShowDetailsButton } from './CountryDetails'
+import type { CountryDataIssue, CountryDataRow, CountryDataValues } from './countryData'
+import { CountryDetails, type DetailsSource, ShowDetailsButton } from './CountryDetails'
 import { CountryDetailsList } from './CountryDetailsList'
 import { MapColorOptions, type MapColorMode, MapDataOptions, type MapInfoMode } from './constants'
 import { MapLegend, type LegendPosition } from './MapLegend'
@@ -28,6 +29,7 @@ import {
 import type { DetailsOptions, DetailsPosition } from './detailsOptions'
 import { trackInputModality, usedKeyboardLast } from './inputModality'
 import { useControllableState } from './useControllableState'
+import { useCountryData } from './useCountryData'
 import { useCountrySelection } from './useCountrySelection'
 import { LAYOUT_GAP, useMapBox } from './useMapBox'
 import { useInert, useModalDialog } from './useModalDialog'
@@ -42,6 +44,15 @@ export type { LegendPosition } from './MapLegend'
 export { getCountryDetail, getWikipediaUrl } from './rawData/getDefaultMapData'
 export type { CountryDetail, InfoLinkResolver } from './rawData/getDefaultMapData'
 export { CountryDetails } from './CountryDetails'
+export type { DetailsSource } from './CountryDetails'
+export { COUNTRY_DATA_LIMITS, resolveCountryCode, validateCountryData } from './countryData'
+export type {
+  CountryDataIssue,
+  CountryDataRow,
+  CountryDataValue,
+  CountryDataValues,
+  ValidatedCountryData,
+} from './countryData'
 export { CountryDetailsList } from './CountryDetailsList'
 export type { CountryDetailsListProps, CountrySelection } from './CountryDetailsList'
 export { MAX_SELECTED_COUNTRIES } from './selectionLimit'
@@ -104,6 +115,10 @@ const focusStyle: CSSProperties = {
 // dashed so the focus is visible too
 const focusOnSelectedStyle: CSSProperties = { strokeDasharray: '6 3', filter: FOCUS_GLOW }
 
+// Countries without data when only your own data is shown (themeable: `--rwme-no-data-fill`)
+const NO_DATA_FILL = 'var(--rwme-no-data-fill, #e5e7eb)'
+const noDataStyle: CSSProperties = { fill: NO_DATA_FILL, fillOpacity: 1 }
+
 // The country whose entry in the details list is being pointed at (or the reverse)
 const linkedStyle: CSSProperties = {
   strokeOpacity: 1,
@@ -142,6 +157,9 @@ const styledTooltipNames: ReadonlySet<string> = new Set(
   defaultMapData.flatMap(({ country }) => countryNames.get(country.toUpperCase()) ?? []),
 )
 
+/** What `onCountryClick` gets: the built-in facts, or your own values (or both merged, yours win). */
+export type CountryClickInfo = CountryDetail | CountryDataValues
+
 export type CountryClickContext = CountryContext<string> & { event: MouseEvent<SVGElement, Event> }
 
 export interface ExtendedWorldMapProps {
@@ -149,7 +167,7 @@ export interface ExtendedWorldMapProps {
   size?: SizeOption | 'responsive' | number
   /** Called on country click. `info` holds the fields of the current `infoMode`; it is
    * `undefined` for areas without an ISO code (Northern Cyprus, Somaliland). */
-  onCountryClick?: (info: CountryDetail | undefined, context: CountryClickContext) => void
+  onCountryClick?: (info: CountryClickInfo | undefined, context: CountryClickContext) => void
   tooltipText?: (countryContext: CountryContext<string>) => string
   /** The selected countries, as ISO 3166-1 alpha-2 codes (any case), in the order they were selected;
    * at most 5 (`MAX_SELECTED_COUNTRIES`), unknown codes and duplicates are ignored. Controlled when set
@@ -163,6 +181,21 @@ export interface ExtendedWorldMapProps {
   /** Shows a switch on the map for devices without a Shift key: while it is on, a plain click adds or
    * removes a country. `'auto'` (default) shows it on touch screens only. */
   showMultiSelectToggle?: boolean | 'auto'
+  /** Your own values to show in the details: rows of `{ country: 'FR', 'Any label': value, ... }` where
+   * `country` is an ISO 3166-1 alpha-2 or alpha-3 code (not a name) and a value is text, a number,
+   * true / false or null. The property names are shown as the labels. The data is validated
+   * (`validateCountryData`, `schema/country-data.schema.json`): bad rows are left out and reported to
+   * `onDataIssues`. Pass the same array between renders. */
+  countryData?: readonly CountryDataRow[]
+  /** What the details show. `'custom'`: only your data; `'both'`: your data, then the built-in facts;
+   * `'default'`: the built-in facts only. Default: `'custom'` when `countryData` is given, else `'default'`. */
+  detailsSource?: DetailsSource
+  /** Called with what was wrong in `countryData` (once per array). Without it the problems are
+   * printed as a console warning. */
+  onDataIssues?: (issues: CountryDataIssue[]) => void
+  /** With your own data shown, paint countries that have none grey (`--rwme-no-data-fill`) and add
+   * "No data" to the legend. Default `true`. */
+  greyOutCountriesWithoutData?: boolean
   mapFrame?: boolean
   /** Where `infoLink` (a field of the country details) points. Default: the country's English Wikipedia
    * page. Return `undefined` for no link. */
@@ -230,6 +263,10 @@ export const ExtendedWorldMap = ({
   defaultSelectedCountries,
   onSelectionChange,
   showMultiSelectToggle = 'auto',
+  countryData,
+  detailsSource,
+  onDataIssues,
+  greyOutCountriesWithoutData = true,
   mapFrame = false,
   getInfoLink,
   interaction = true,
@@ -269,6 +306,11 @@ export const ExtendedWorldMap = ({
     onSelectionChange,
   })
   const selectedCodes = selection.codes
+  const validatedData = useCountryData(countryData, onDataIssues)
+  // a `countryData` that is not even an array is ignored (and reported): the built-in facts stay
+  const customRows = Array.isArray(countryData) ? validatedData?.rows : undefined
+  const source: DetailsSource = customRows ? (detailsSource ?? 'custom') : 'default'
+  const showsOwnData = source !== 'default'
   const selectedNames = selectedCodes.map((code) => countryNames.get(code) ?? code)
   const hasSelection = selectedCodes.length > 0
   // pointing at a country's entry in the details list lights it on the map, and the reverse
@@ -377,6 +419,7 @@ export const ExtendedWorldMap = ({
     const computed: CSSProperties = {
       ...baseStyle,
       ...(colorOption === MapColorOptions.COLORFUL && { fill: getFill(context) }),
+      ...(showsOwnData && greyOutCountriesWithoutData && !customRows?.has(code) && noDataStyle),
       ...(isSelected && selectedStyle),
       ...(isDimmed && dimmedStyle(dimmedOpacity)),
       ...(focusedCode === code && (isSelected ? focusOnSelectedStyle : focusStyle)),
@@ -389,10 +432,17 @@ export const ExtendedWorldMap = ({
     return { ...computed, ...overrides }
   }
 
-  const legend =
+  const paletteLegend =
     showLegend && colorOption === MapColorOptions.COLORFUL && !colors
       ? getPaletteLegend(palette)
       : undefined
+  const legend =
+    showLegend && showsOwnData && greyOutCountriesWithoutData
+      ? {
+          title: paletteLegend?.title ?? 'Data',
+          items: [...(paletteLegend?.items ?? []), { label: 'No data', color: NO_DATA_FILL }],
+        }
+      : paletteLegend
   const toggleVisible =
     showMultiSelectToggle === true || (showMultiSelectToggle === 'auto' && coarsePointer)
   const box = useMapBox(
@@ -410,11 +460,26 @@ export const ExtendedWorldMap = ({
         : requestedPosition
   const sideways = position === 'left' || position === 'right'
   const detailsFirst = position === 'top' || position === 'left'
-  const selections = selectedCodes.map((code) => ({
-    code,
-    name: countryNames.get(code) ?? code,
-    detail: getCountryDetail(code, infoOption, getInfoLink),
-  }))
+  const selections = selectedCodes.map((code) => {
+    const custom = customRows?.get(code) ?? null
+    const detail = getCountryDetail(
+      code,
+      source === 'custom' ? MapDataOptions.COUNTRY_NAME : infoOption, // only the name and the link
+      getInfoLink,
+    )
+    // a link of your own wins over the default one, if it is a web address
+    const ownLink = typeof custom?.infoLink === 'string' ? custom.infoLink : undefined
+    return {
+      code,
+      name: countryNames.get(code) ?? code,
+      detail:
+        detail && ownLink && /^https?:\/\//i.test(ownLink.trim())
+          ? { ...detail, infoLink: ownLink }
+          : detail,
+      custom,
+      source,
+    }
+  })
   const cardProps = {
     headingLevel,
     fontFamily,
@@ -445,7 +510,7 @@ export const ExtendedWorldMap = ({
     ) : (
       <CountryDetails
         {...cardProps}
-        selection={selections[0] ? { name: selections[0].name, detail: selections[0].detail } : null}
+        selection={selections[0] ?? null}
       />
     )
   const selectionLabel =
@@ -488,6 +553,7 @@ export const ExtendedWorldMap = ({
     <div ref={rootRef} className={className} style={style}>
       {showControls && (
         <WorldMapControls
+          showInfoModes={source !== 'custom'}
           colorMode={colorOption}
           onColorModeChange={setColorOption}
           infoMode={infoOption}
@@ -549,7 +615,18 @@ export const ExtendedWorldMap = ({
                 const code = context.countryCode.toUpperCase()
                 const { shiftKey, metaKey, ctrlKey } = context.event
                 selection.click(code, multiMode || shiftKey || metaKey || ctrlKey)
-                onCountryClick?.(getCountryDetail(code, infoOption, getInfoLink), context)
+                const facts = getCountryDetail(code, infoOption, getInfoLink)
+                const own = customRows?.get(code)
+                onCountryClick?.(
+                  source === 'custom'
+                    ? own
+                    : source === 'both'
+                      ? facts || own
+                        ? { ...facts, ...own }
+                        : undefined
+                      : facts,
+                  context,
+                )
               }}
               tooltipTextFunction={(context) =>
                 tooltipText ? tooltipText(context) : context.countryName

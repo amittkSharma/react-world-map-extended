@@ -12,6 +12,9 @@ export interface WorldMapControlsProps {
   /** `'horizontal'` (default): the two groups side by side, each with its options in a row.
    * `'vertical'`: the groups stacked, each with its options in a column (for a sidebar). */
   orientation?: 'horizontal' | 'vertical'
+  /** Show the "Information on click" group. Default `true`. It describes the built-in facts, so
+   * `<ExtendedWorldMap>` hides it while only your own data (`detailsSource="custom"`) is shown. */
+  showInfoModes?: boolean
   className?: string
   /** Merged over the bar's own style (a row of two radio groups), last. */
   style?: CSSProperties
@@ -35,6 +38,7 @@ export const WorldMapControls = ({
   infoMode,
   onInfoModeChange,
   orientation = 'horizontal',
+  showInfoModes = true,
   className,
   style,
 }: WorldMapControlsProps) => {
@@ -61,14 +65,16 @@ export const WorldMapControls = ({
         onChange={onColorModeChange}
         direction={direction}
       />
-      <UserOptions
-        legend="Information on click"
-        name={`${groupId}-data`}
-        sources={mapDataOptions}
-        selectedValue={infoMode}
-        onChange={onInfoModeChange}
-        direction={direction}
-      />
+      {showInfoModes && (
+        <UserOptions
+          legend="Information on click"
+          name={`${groupId}-data`}
+          sources={mapDataOptions}
+          selectedValue={infoMode}
+          onChange={onInfoModeChange}
+          direction={direction}
+        />
+      )}
     </div>
   )
 }

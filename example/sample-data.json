@@ -1,0 +1,9 @@
+[
+  { "country": "FR", "Population (millions)": 68.2, "Literacy rate (%)": 99, "Landlocked": false, "Official languages": "French" },
+  { "country": "DEU", "Population (millions)": 83.2, "Literacy rate (%)": 99, "Landlocked": false, "Official languages": "German" },
+  { "country": "jp", "Population (millions)": 124.5, "Literacy rate (%)": 99, "Landlocked": false, "Official languages": "Japanese" },
+  { "country": "BRA", "Population (millions)": 214.3, "Literacy rate (%)": 94, "Landlocked": false, "Official languages": "Portuguese" },
+  { "country": "NG", "Population (millions)": 213.4, "Literacy rate (%)": 62, "Landlocked": false, "Official languages": "English", "Notes": null },
+  { "country": "IND", "Population (millions)": 1407.5, "Literacy rate (%)": 77, "Landlocked": false, "Official languages": "Hindi, English", "infoLink": "https://en.wikipedia.org/wiki/Demographics_of_India" },
+  { "country": "CH", "Population (millions)": 8.7, "Literacy rate (%)": 99, "Landlocked": true, "Official languages": "German, French, Italian, Romansh" }
+]

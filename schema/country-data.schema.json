@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/amittkSharma/react-world-map-extended/blob/main/schema/country-data.schema.json",
+  "title": "react-world-map-extended: country data",
+  "description": "Your own values to show in the map's details. An array of rows: a `country` (ISO 3166-1 alpha-2 or alpha-3 code) and the values. Not expressible here and checked by `validateCountryData`: the code must be a country on the map, and each country may appear only once (the first row is used).",
+  "type": "array",
+  "maxItems": 500,
+  "items": {
+    "type": "object",
+    "required": ["country"],
+    "minProperties": 2,
+    "maxProperties": 51,
+    "propertyNames": { "minLength": 1 },
+    "properties": {
+      "country": {
+        "type": "string",
+        "pattern": "^\\s*([A-Za-z]{2}|[A-Za-z]{3})\\s*$",
+        "description": "ISO 3166-1 alpha-2 (FR) or alpha-3 (FRA) code, any case. Names are not accepted."
+      },
+      "infoLink": {
+        "type": "string",
+        "description": "Optional. Shown as a link in the details when it is an http(s) URL."
+      }
+    },
+    "additionalProperties": {
+      "description": "A value to show. The property name is the label.",
+      "type": ["string", "number", "boolean", "null"],
+      "maxLength": 2000
+    }
+  }
+}

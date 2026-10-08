@@ -1,16 +1,22 @@
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
 import {
-  DetailsBody,
   type HeadingLevel,
+  SelectionBody,
+  type SelectionContent,
   detailsStyles,
+  hasContent,
   headingTag,
+  missingMessage,
 } from './CountryDetails'
-import type { CountryDetail } from './rawData/getDefaultMapData'
 import { MAX_SELECTED_COUNTRIES } from './selectionLimit'
 
 /** The nearest ancestor that scrolls, e.g. a side card; the page itself is left alone. */
 const scrollParent = (element: HTMLElement): HTMLElement | null => {
-  for (let parent = element.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+  for (
+    let parent = element.parentElement;
+    parent && parent !== document.body;
+    parent = parent.parentElement
+  ) {
     const { overflowY, overflow } = getComputedStyle(parent)
     const scrolls = [overflowY, overflow].some((value) => value === 'auto' || value === 'scroll')
     if (scrolls && parent.scrollHeight > parent.clientHeight) {
@@ -30,12 +36,9 @@ const showInCard = (element: HTMLElement) => {
   else if (item.bottom > view.bottom) scroller.scrollTop += item.bottom - view.bottom
 }
 
-export interface CountrySelection {
+export interface CountrySelection extends SelectionContent {
   /** ISO 3166-1 alpha-2 code, upper case. */
   code: string
-  name: string
-  /** `undefined` for areas without data (Northern Cyprus, Somaliland). */
-  detail: CountryDetail | undefined
 }
 
 export interface CountryDetailsListProps {
@@ -222,7 +225,8 @@ export const CountryDetailsList = ({
       </div>
 
       <ul style={itemStyles.list}>
-        {selections.map(({ code, name, detail }) => {
+        {selections.map((selection) => {
+          const { code, name, detail } = selection
           const isOpen = open.has(code)
           const buttonId = `${baseId}-${code}-button`
           const panelId = `${baseId}-${code}-panel`
@@ -274,15 +278,16 @@ export const CountryDetailsList = ({
                   </button>
                 )}
               </ItemTitle>
-              <section id={panelId} aria-labelledby={buttonId} hidden={!isOpen} style={itemStyles.panel}>
-                {detail ? (
-                  <DetailsBody
-                    name={detail.name ?? name}
-                    detail={detail}
-                    groupHeadingLevel={headingLevel + 2}
-                  />
+              <section
+                id={panelId}
+                aria-labelledby={buttonId}
+                hidden={!isOpen}
+                style={itemStyles.panel}
+              >
+                {hasContent(selection) ? (
+                  <SelectionBody content={selection} groupHeadingLevel={headingLevel + 2} />
                 ) : (
-                  <p style={detailsStyles.paragraph}>No details available for {name}.</p>
+                  <p style={detailsStyles.paragraph}>{missingMessage(selection)}</p>
                 )}
               </section>
             </li>

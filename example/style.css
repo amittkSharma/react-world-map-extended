@@ -110,3 +110,15 @@
   color: #a4570a;
   background: #fff0e0;
 }
+
+.demo-issues {
+  margin: 0 8px 8px;
+  padding: 8px 12px;
+  font: 13px sans-serif;
+  background: #fff8c5;
+  border-left: 4px solid #bf8700;
+}
+.demo-issues ul {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+}

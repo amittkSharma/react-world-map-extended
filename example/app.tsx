@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react'
 import {
+  type CountryDataIssue,
+  type CountryDataRow,
   type DetailsPosition,
   ExtendedWorldMap,
   WorldMapControls,
   useWorldMapModes,
 } from '../src'
+import sampleData from './sample-data.json'
 import {
   type ControlsPlacement,
+  type DataMode,
   controlsPlacements,
+  dataModes,
   detailsPositions,
   readScenario,
   runScenario,
@@ -15,6 +20,25 @@ import {
 import './style.css'
 
 const scenario = readScenario()
+// the same arrays on every render: the data is checked once per array
+const SAMPLE: CountryDataRow[] = sampleData
+const WITH_MISTAKES = [
+  { country: 'FR', 'Population (millions)': 68.2, Landlocked: false },
+  { country: 'France', Population: 'a name is not a code' },
+  { country: 'DE', cities: ['Berlin', 'Hamburg'], area: { km2: 357000 } },
+  { country: 'ZZ', Population: 1 },
+  { country: 'FR', Population: 'a second row for France' },
+  { country: 'JP' },
+  'not an object',
+] as unknown as CountryDataRow[]
+
+const dataLabels: Record<DataMode, string> = {
+  default: 'built-in facts',
+  custom: 'my data (sample-data.json)',
+  both: 'my data + built-in facts',
+  invalid: 'my data with mistakes',
+}
+
 const quickCountries = ['FR', 'DE', 'JP', 'BR', 'NG']
 
 const placementLabels: Record<ControlsPlacement, string> = {
@@ -27,6 +51,9 @@ const placementLabels: Record<ControlsPlacement, string> = {
 
 const toPosition = (value: string): DetailsPosition =>
   detailsPositions.find((position) => position === value) ?? 'bottom'
+
+const toDataMode = (value: string): DataMode =>
+  dataModes.find((mode) => mode === value) ?? 'default'
 
 const toPlacement = (value: string): ControlsPlacement =>
   controlsPlacements.find((placement) => placement === value) ?? 'inside'
@@ -43,6 +70,8 @@ export const ExampleApp = () => {
   const [position, setPosition] = useState(scenario.position)
   const [placement, setPlacement] = useState(scenario.controls)
   const [boundaries, setBoundaries] = useState(scenario.boundaries)
+  const [dataMode, setDataMode] = useState(scenario.data)
+  const [issues, setIssues] = useState<CountryDataIssue[]>([])
   const [countries, setCountries] = useState<string[]>([])
   // one state for the colour/information modes, shared by the map and (optionally) separate controls
   const modes = useWorldMapModes({
@@ -52,11 +81,18 @@ export const ExampleApp = () => {
 
   useEffect(() => runScenario(scenario), [])
 
+  const countryData =
+    dataMode === 'default' ? undefined : dataMode === 'invalid' ? WITH_MISTAKES : SAMPLE
+  const ownDataOnly = dataMode === 'custom' || dataMode === 'invalid'
   const apart = placement !== 'inside'
   const sideways = placement === 'left' || placement === 'right'
   const controls = apart && (
     <div className="demo-controls">
-      <WorldMapControls {...modes} orientation={sideways ? 'vertical' : 'horizontal'} />
+      <WorldMapControls
+        {...modes}
+        showInfoModes={!ownDataOnly}
+        orientation={sideways ? 'vertical' : 'horizontal'}
+      />
     </div>
   )
 
@@ -73,6 +109,22 @@ export const ExampleApp = () => {
             {controlsPlacements.map((value) => (
               <option key={value} value={value}>
                 {placementLabels[value]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="header-control">
+          Details:{' '}
+          <select
+            value={dataMode}
+            onChange={(event) => {
+              setIssues([])
+              setDataMode(toDataMode(event.target.value))
+            }}
+          >
+            {dataModes.map((value) => (
+              <option key={value} value={value}>
+                {dataLabels[value]}
               </option>
             ))}
           </select>
@@ -134,6 +186,20 @@ export const ExampleApp = () => {
         <pre>{apart ? snippets.apart : snippets.inside}</pre>
       </section>
 
+      {issues.length > 0 && (
+        <section className="demo-issues" aria-label="Problems found in the data">
+          <b>onDataIssues</b> reported {issues.length} problem(s); the valid rows are still used:
+          <ul>
+            {issues.map(({ row, property, message }) => (
+              <li key={`${row}-${property}-${message}`}>
+                {row === null ? 'data' : `row ${row}`}
+                {property ? ` (${property})` : ''}: {message}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <div className={`container${boundaries ? ' show-boundaries' : ''}`}>
         <div className={`demo-stage demo-stage-${placement}`}>
           {(placement === 'above' || placement === 'left') && controls}
@@ -143,6 +209,9 @@ export const ExampleApp = () => {
             size="xxl"
             mapFrame
             showControls={!apart}
+            countryData={countryData}
+            detailsSource={dataMode === 'both' ? 'both' : undefined}
+            onDataIssues={setIssues}
             showDetails
             // keeps the selection while you use controls outside the map component
             deselectOn="background"

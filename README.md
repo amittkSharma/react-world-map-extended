@@ -1,10 +1,25 @@
-# react-world-map-extended
+# 🌍 react-world-map-extended
 
-An interactive SVG world map for React, built on [`react-svg-worldmap`](https://github.com/ianwilliams/react-svg-worldmap).
-It adds a black-and-white / colourful switch and returns country details (capital, region, languages, currency)
-when a country is clicked.
+A world map for React that people actually want to click.
 
-> Status: pre-release (`0.0.0`), not yet published to npm.
+Click a country and a tidy card tells you about it. Select up to five countries and compare them in a list.
+Bring your own numbers (a simple list of country codes and values) and the map shows *your* data instead.
+
+![A colourful world map with a legend](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/hero.png)
+
+> **Status:** pre-release (`0.0.0`), not on npm yet. The API may still change before `0.1.0`.
+
+Built on [`react-svg-worldmap`](https://github.com/ianwilliams/react-svg-worldmap).
+
+## What you get
+
+- 🖱️ **Click a country** and see its capital, region, languages, currency and calling code.
+- 🎨 **Two looks:** black and white, or colourful (by continent, by region, or your own colours).
+- 🧮 **Select several countries** (up to 5) with Shift+click, and compare them in a list.
+- 📊 **Show your own data** from a JSON file. Countries without data turn grey.
+- 🪟 **A details card** you can put below, above, beside or on top of the map.
+- ⌨️ **Keyboard friendly:** Tab to a country, Enter to select it, Escape to clear.
+- 🎛️ **Use the controls anywhere:** the radio buttons also work as a separate component.
 
 ## Install
 
@@ -12,224 +27,306 @@ when a country is clicked.
 npm install react-world-map-extended
 ```
 
-Requires `react` 18 or 19 (and `react-dom`) as peer dependencies. Ships ESM, CommonJS and TypeScript types.
+You need `react` and `react-dom` (version 18 or 19). TypeScript types are included.
 
-## Usage
+## Your first map
 
 ```tsx
 import { ExtendedWorldMap } from 'react-world-map-extended'
 
-export const App = () => (
-  <ExtendedWorldMap
-    title="Countries"
-    size="xl"
-    mapFrame
-    showDetails
-    onCountryClick={(info, context) => console.log(context.countryName, info)}
-  />
-)
+export const App = () => <ExtendedWorldMap showDetails />
 ```
 
-By default two radio groups sit above the map: **map colours** (Black and White / Colorful) and
-**information on click** (Only Name, Capital, Region, Language, Currency, Complete). Clicking a country highlights
-it and calls `onCountryClick` with the fields of the chosen information mode, e.g.
-`{ name: 'France', capital: 'Paris', infoLink: 'https://en.wikipedia.org/wiki/France' }`.
+That's it: a map, two small groups of radio buttons ("Map colours" and "Information on click"), and a details card
+that fills in when you click a country.
 
-`infoLink` is just another field of the country details (present in every mode): a URL with more information about
-the country, by default its English Wikipedia page. It does not change the map itself. The details card shows it as a
-"More information" link that opens in a new tab; use `getInfoLink` to point it elsewhere. Only `http(s)` URLs are rendered.
+![The details card for France](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/details.png)
 
-## Props
-
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `title` | `string` | `'World Map'` | Map title. |
-| `size` | `'sm' \| 'md' \| 'lg' \| 'xl' \| 'xxl' \| 'responsive' \| number` | `'xxl'` | Map size (same as `react-svg-worldmap`). |
-| `onCountryClick` | `(info: CountryDetail \| undefined, context: CountryClickContext) => void` | – | Called on click. `info` is `undefined` for Northern Cyprus and Somaliland (no ISO code). `context` is the `react-svg-worldmap` context plus the click `event`. |
-| `selectedCountries` / `defaultSelectedCountries` / `onSelectionChange` | `string[]` / `string[]` / `(countryCodes: string[]) => void` | `[]` | The selected countries (ISO alpha-2 codes, any case), in the order they were selected, **at most 5**. Controlled with `selectedCountries` (`[]` = none), otherwise it starts at `defaultSelectedCountries` and follows the user. `onSelectionChange` gets the new list (upper-case codes) when the user changes it, never for a click the limit blocks. Unknown codes and duplicates are ignored; a longer array shows its first 5 and a message on the map, and is never written back. See *Selecting several countries*. |
-| `showMultiSelectToggle` | `boolean \| 'auto'` | `'auto'` | A small "Select multiple" switch on the map for devices without a Shift key: while it is on, a plain click adds or removes a country. `'auto'` shows it on touch screens only. |
-| `tooltipText` | `(ctx: CountryContext<string>) => string` | country name | Text of the styled tooltip shown on hover. |
-| `getInfoLink` | `(countryCode: string, countryName: string) => string \| undefined` | English Wikipedia page of the country | Where the `infoLink` detail points. Return `undefined` for no link. |
-| `mapFrame` | `boolean` | `false` | Draw a frame around the map. |
-| `interaction` | `boolean` | `true` | Enable hover/click interaction (`richInteraction`). |
-| `showControls` | `boolean` | `true` | Show the built-in radio groups (the same `<WorldMapControls>` you can use yourself, see below). |
-| `colorMode` / `defaultColorMode` / `onColorModeChange` | `'BlackAndWhite' \| 'Colorful'` | `'BlackAndWhite'` | Colour mode; controlled with `colorMode`, otherwise starts at `defaultColorMode`. |
-| `infoMode` / `defaultInfoMode` / `onInfoModeChange` | `'CountryName' \| 'CountryCapital' \| 'CountryRegionInfo' \| 'CountryLanguageInfo' \| 'CountryCurrencyInfo' \| 'CountryCompleteInfo'` | `'CountryName'` | Fields reported on click; same controlled/uncontrolled rules. |
-| `palette` | `'default' \| 'continent' \| 'region' \| 'monochrome'` | `'default'` | Built-in colours for Colorful mode. |
-| `colors` | `Record<ISO2, string> \| (ctx) => string \| undefined` | – | Colours for Colorful mode; wins over `palette`. Keys are upper-case ISO alpha-2 codes. |
-| `showLegend` | `boolean` | `true` | Draw a legend over a corner of the map saying what the colours mean. It appears only for the `continent` and `region` palettes, in Colorful mode, without custom `colors` (the other schemes have nothing to explain). It never takes clicks. On a map narrower than 520 px it becomes a wrapping strip under the map instead of covering it, and it steps aside while the `overlay` card is open. |
-| `legendPosition` | `'top-left' \| 'top-right' \| 'bottom-left' \| 'bottom-right'` | `'bottom-left'` | Which corner of the map the legend sits in. |
-| `highlightSelected` | `boolean` | `true` | Outline the selected country. Turning it off also turns off `dimOthers`. |
-| `deselectOn` | `'outside' \| 'background' \| 'never'` | `'outside'` | When a click clears the selection, restoring the original map: `'outside'` = a click on the map where there is no country, on the empty space around it, or anywhere outside the component; `'background'` = only the map or the space around it inside the component; `'never'`. Clicks on a country, the controls or the details card never clear it, and nothing clears while the `overlay` card is open. **With two or more countries selected, none of this clears them** (one stray click would throw the selection away). **Keyboard:** `Escape` with focus on the map or in the details card clears the selection, also a larger one (not with `'never'`; in the `overlay` card it closes the card instead). With a controlled `selectedCountries`, `onSelectionChange([])` is called and the parent decides. |
-| `dimOthers` | `boolean \| number` | `true` | While a country is selected, fade all the others so it stands out. `true` = opacity `0.35`, a number (0–1) sets it, `false` turns it off. Fill and border fade; faded countries stay hoverable and clickable. |
-| `showDetails` | `boolean` | `false` | Show the details card (see below). |
-| `detailsOptions` | `DetailsOptions` | – | Position, show/hide, headings and fonts of the card (see below). |
-| `styleOverrides` | `CSSProperties \| (ctx, { selected }) => CSSProperties` | – | Merged over each country's style, last. |
-| `className`, `style` | | – | Applied to the root `div`. |
-
-The enums `MapColorOptions` and `MapDataOptions`, the helper `getCountryDetail(isoCode, infoMode)` and the types
-`WorldMapControls` and `useWorldMapModes` (plus their types `WorldMapControlsProps`, `UseWorldMapModesOptions`, `WorldMapModes`), `CountryDetails` and `CountryDetailsList` (components), `MAX_SELECTED_COUNTRIES`, `CountrySelection`, `DetailsOptions`, `DetailsPosition`, `HeadingLevel`, `CountryDetail`, `CountryColors`, `MapPalette`, `MapColorMode`, `MapInfoMode` and `CountryClickContext` are exported too.
-
-### Details card
-
-`showDetails` renders a card for the clicked country. The country name is the heading; the details are grouped by
-category (**Geography**, **Currency**, **Language**, **Calling codes**) and only groups with data for the current
-information mode appear. The most important fact of each group (capital, currency code, language, dialling prefix)
-is set larger. The footer holds the `infoLink`. Three states are distinguished: a dashed neutral card before any
-click, the details card with an accent bar, and an amber warning card when a clicked area has no data. It is an
-`aria-live` status region, so screen readers announce changes (in the `overlay` position the dialog is the named container and the card inside is just a polite live area, so nothing is announced twice).
-
-Configure it with `detailsOptions`:
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `position` | `'bottom' \| 'top' \| 'left' \| 'right' \| 'overlay'` | `'bottom'` | Where the card sits relative to the map. |
-| `open` / `defaultOpen` / `onOpenChange` | `boolean` / `boolean` / `(open: boolean) => void` | `defaultOpen: true` | Show/hide. Controlled with `open`. |
-| `stackBelow` | `number` | `720` | Component width (px) below which `'left'` / `'right'` fall back to `'top'` / `'bottom'`, because a side card squeezes the map on a narrow screen. |
-| `headingLevel` | `1 \| 2 \| 3 \| 4 \| 5 \| 6` | `3` | Level of the country-name heading; category headings use the next level (max `h6`). |
-| `fontFamily` | `string` | inherited | CSS `font-family` of the card and its buttons. |
-| `fontStyle` | `string` | inherited | CSS `font-style` of the card and its buttons. |
-| `className`, `style` | | – | Applied to the card (`style` last). |
+Want to react to clicks in your own code?
 
 ```tsx
 <ExtendedWorldMap
   showDetails
-  detailsOptions={{ position: 'right', headingLevel: 2, fontFamily: 'Georgia, serif', fontStyle: 'normal' }}
+  onCountryClick={(info, context) => console.log(context.countryName, info)}
 />
+// Clicking France with "Capital" selected logs: France { name: 'France', capital: 'Paris', infoLink: '…' }
 ```
 
-**Show / hide.** The card has a **Hide** button. While hidden and a country is selected, a **Show details: <country>**
-button brings it back, and clicking a country reopens it. Control it yourself with `open` + `onOpenChange`.
+---
 
-**Positions.** `top`/`bottom` place the card above/below the map, **exactly as wide as the map** and starting at its
-left edge. `left`/`right` place it beside the map, **exactly as tall as the map** (the card scrolls if its content is
-longer) and starting at the map's top edge; its width is `--rwme-panel-width` (default `20rem`) and it sits flush
-against the map. In all four, **other countries stay clickable** and update the card. On a narrow component (under `stackBelow`, 720 px by default, measured on the component, not the viewport) `left` and `right` automatically move above and below the map. The alignment is measured from
-the map's real `<svg>`, so it holds whatever margins the host page adds. (Beside the map, `size="responsive"` has no
-fixed width to hug, so a card on the right may sit apart from a map narrower than the available room.)
+## Everything you can set
 
-**Overlay.** The card itself is the layer: it covers the map exactly (same width and height) with a **translucent**
-background (`--rwme-overlay-bg`, default `rgba(255, 255, 255, 0.82)`, plus a light blur) so the map shows through.
-While it is open **no country can be clicked**: the map is `inert` (no pointer, keyboard or screen-reader access)
-and clicks are ignored. Close it with **Hide** or **Escape**; focus moves into the dialog, Tab stays inside it, and
-focus returns to the clicked country afterwards. Nothing opens until a country is selected.
+Every setting is optional. Add only what you need.
 
-The card is also exported as `CountryDetails` (props: `selection`, `headingLevel`, `fontFamily`, `fontStyle`,
-`className`, `style`, `onClose`, and `inDialog` when you put it inside your own named dialog) so you can render it in your own layout, fed from `onCountryClick`. Theme it with
-`--rwme-panel-bg`, `--rwme-panel-text`, `--rwme-panel-muted`, `--rwme-panel-border`, `--rwme-panel-accent`,
-`--rwme-panel-warning`, `--rwme-panel-warning-bg` and `--rwme-panel-highlight` (the entry being pointed at in the list).
+### The basics
 
-### Selecting several countries
+| Setting | What it does | Default |
+|---|---|---|
+| `title` | The map's title. | `'World Map'` |
+| `size` | How big the map is: `'sm'`, `'md'`, `'lg'`, `'xl'`, `'xxl'`, `'responsive'` (fills the space it is in) or a number of pixels. | `'xxl'` |
+| `mapFrame` | Draws a thin frame around the map. | `false` |
+| `interaction` | Turn off to make the map look-only (no hover, no clicks). | `true` |
+| `tooltipText` | Choose the text of the hover tooltip: `(ctx) => string`. | the country name |
+| `className`, `style` | Style the outer box of the whole component. | none |
+| `onCountryClick` | Called on every click. It gets the country's details (or your own data) and some click information. For Northern Cyprus and Somaliland, which have no country code, the details are `undefined`. | none |
 
-Up to **5** countries can be selected at once (`MAX_SELECTED_COUNTRIES`; not configurable yet).
+### Colours
+
+| Setting | What it does | Default |
+|---|---|---|
+| `colorMode` / `defaultColorMode` | `'BlackAndWhite'` or `'Colorful'`. Use `colorMode` if you control it yourself, `defaultColorMode` if you only want a starting value. | `'BlackAndWhite'` |
+| `onColorModeChange` | Called when the visitor switches the colour mode. | none |
+| `palette` | The colour scheme in colourful mode: `'default'` (one colour per country), `'continent'`, `'region'` or `'monochrome'`. | `'default'` |
+| `colors` | Your own colours, for colourful mode. Either `{ FR: '#336', DE: '#933' }` (two-letter codes in capitals) or a function that returns a colour per country. Beats `palette`. | none |
+| `showLegend` | Shows a small legend that explains the colours. It appears for the `continent` and `region` palettes (and for "No data" when you show your own data). On a small map it moves below the map. | `true` |
+| `legendPosition` | Which corner holds the legend: `'top-left'`, `'top-right'`, `'bottom-left'`, `'bottom-right'`. | `'bottom-left'` |
+
+### Selecting countries
+
+A click selects one country. **Shift+click** (or Cmd/Ctrl+click) adds more, up to **5**.
+
+![Three selected countries in a list](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/multi.png)
 
 | You do | What happens |
 |---|---|
-| Click a country | It becomes the only selected country (a plain click replaces the selection). |
-| **Shift**+click, **Cmd**+click or **Ctrl**+click | It is added to the selection, or removed if it was already selected. With the keyboard: **Shift+Enter** on a focused country. (On a Mac, Ctrl+click opens a context menu, use Cmd or Shift.) |
-| Click a country that is already part of a selection of two or more | The selection stays as it is; that country **pops up in the details** (its entry opens). |
-| Try to add a sixth | It is not added, and a small message appears over the top-right corner of the map. |
-| **Escape**, **Clear all**, or the × of one entry | Clears everything / removes that country. |
-| Click empty map, or outside, with two or more selected | Nothing: a larger selection is not thrown away by a stray click. |
+| Click a country | It becomes the only selected country. |
+| Shift+click, Cmd+click or Ctrl+click | Adds the country, or removes it if it was already selected. |
+| Shift+Enter on a country you reached with Tab | The same, for keyboard users. |
+| Click a country that is already one of several selected | Nothing changes, but that country opens in the details list. |
+| Try to add a sixth | It is refused and a small message appears on the map. |
+| Press Escape, or use **Clear all**, or the × next to a country | Clears everything, or removes that one country. |
 
-On touch screens, where there is no Shift key, a **Select multiple** switch appears on the map (see `showMultiSelectToggle`).
+On touch screens there is no Shift key, so a small **Select multiple** switch appears on the map.
 
-**The details card** looks as before for one country. With two or more it becomes a list: one entry per country, its
-name as the header, opening to that country's details. A newly added country opens and the older ones close; you can still open several by hand.
-Pointing at an entry lights its country on the map, and pointing at a selected country lights its entry. Each entry has
-a × to remove it, and the header shows "n of 5" and a **Clear all** button. The list is also exported as
-`CountryDetailsList` (props `selections`, `reveal`, `highlightCode`, `onLink`, `onRemove`, `onClear`, `onClose`, plus the
-usual `headingLevel`, `fontFamily`, `fontStyle`, `className`, `style`, `inDialog`).
+| Setting | What it does | Default |
+|---|---|---|
+| `selectedCountries` | The selected countries, as two-letter codes (`['FR', 'DE']`), in the order they were picked. Use it to control the selection from your own code. `[]` means none. | none |
+| `defaultSelectedCountries` | The same, but only as a starting value; the visitor stays in charge. | `[]` |
+| `onSelectionChange` | Called with the new list of codes whenever the visitor changes the selection. | none |
+| `showMultiSelectToggle` | The "Select multiple" switch: `true`, `false` or `'auto'` (only on touch screens). | `'auto'` |
+| `highlightSelected` | Draws a red outline around selected countries. | `true` |
+| `dimOthers` | Fades the other countries so the selected ones stand out. `true` fades them to 35%, a number between 0 and 1 sets the strength, `false` turns it off. | `true` |
+| `deselectOn` | When does a click clear a single selected country? `'outside'` (clicking empty map or anywhere else on the page), `'background'` (only inside the component) or `'never'`. A selection of two or more is never cleared by a stray click. | `'outside'` |
 
-**The message** is a polite status region, closes itself after about 6 seconds (not while the pointer or focus is on
-it) and can be dismissed. Changes made by clicking are also announced to screen readers ("Germany added, 3 of 5 selected").
+Control the selection yourself like this:
 
 ```tsx
-const [countries, setCountries] = useState<string[]>(['FR', 'DE'])
+const [countries, setCountries] = useState(['FR', 'DE'])
 
 <ExtendedWorldMap showDetails selectedCountries={countries} onSelectionChange={setCountries} />
 ```
 
-A selection set this way highlights the countries and fills the details (and opens the overlay, in `overlay` position)
-without any click. **Hide** only hides the card; it does not clear the selection. To clear it, set `selectedCountries`
-to `[]`. `onCountryClick` still fires on every click, also for blocked ones.
+Unknown codes and duplicates are ignored. If you pass more than five, the first five are shown and a message
+explains it.
 
-### Your own controls
+### The details card
 
-The two radio groups are also available as a standalone component, `<WorldMapControls>`, so you can place them
-anywhere in your page. Keep the modes in your own state with `useWorldMapModes()`; its result has exactly the props
-both components take, so one spread wires them together:
+Turn it on with `showDetails`. The card groups facts into **Geography**, **Currency**, **Language** and
+**Calling codes**, and links to the country's Wikipedia page ("More information").
+
+| Setting | What it does | Default |
+|---|---|---|
+| `showDetails` | Shows the details card. | `false` |
+| `detailsOptions` | Fine tuning, explained below. | none |
+| `infoMode` / `defaultInfoMode` | How much to show: `'CountryName'`, `'CountryCapital'`, `'CountryRegionInfo'`, `'CountryLanguageInfo'`, `'CountryCurrencyInfo'` or `'CountryCompleteInfo'`. | `'CountryName'` |
+| `onInfoModeChange` | Called when the visitor picks another amount of information. | none |
+| `getInfoLink` | Choose where "More information" points: `(code, name) => url`. Return `undefined` for no link. Only `http` and `https` addresses are shown. | the country's English Wikipedia page |
+| `showControls` | Shows the two radio-button groups on the map. Turn off to place them yourself (see *Controls anywhere*). | `true` |
+
+**`detailsOptions`**
+
+| Option | What it does | Default |
+|---|---|---|
+| `position` | Where the card goes: `'bottom'`, `'top'`, `'left'`, `'right'` or `'overlay'`. | `'bottom'` |
+| `open` / `defaultOpen` | Shows or hides the card. Use `open` to control it, `defaultOpen` for a starting value. | `defaultOpen: true` |
+| `onOpenChange` | Called when the visitor hides or shows the card. | none |
+| `stackBelow` | Width in pixels below which `'left'` and `'right'` move to the top or bottom, because a side card needs room. | `720` |
+| `headingLevel` | The heading level of the country name (`1` to `6`), so the card fits your page's outline. | `3` |
+| `fontFamily` | Font of the card, for example `'Georgia, serif'`. | the page's font |
+| `fontStyle` | Font style of the card, for example `'italic'`. | the page's style |
+| `className`, `style` | Style the card itself. | none |
+
+```tsx
+<ExtendedWorldMap
+  showDetails
+  detailsOptions={{ position: 'right', headingLevel: 2, fontFamily: 'Georgia, serif' }}
+/>
+```
+
+![The details card beside the map](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/position-right.png)
+
+- **Bottom and top:** the card is as wide as the map.
+- **Left and right:** the card is as tall as the map and scrolls if the content is longer.
+- **Overlay:** the card covers the map with a see-through background. While it is open, no country can be clicked.
+  Close it with **Hide** or **Escape**.
+
+![The overlay card](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/overlay.png)
+
+**Hide and show.** The card has a **Hide** button. When it is hidden and a country is selected, a "Show details"
+button brings it back, and clicking a country opens it again. Hiding never clears the selection.
+
+### Showing your own data
+
+Give the map a list of rows. Each row has a `country` code and the values you want to show.
+
+```tsx
+const data = [
+  { country: 'FR', 'Population (millions)': 68.2, 'Literacy rate (%)': 99, Landlocked: false },
+  { country: 'BRA', 'Population (millions)': 214.3, 'Literacy rate (%)': 94, Landlocked: false },
+  { country: 'CH', 'Population (millions)': 8.7, Landlocked: true },
+]
+
+<ExtendedWorldMap showDetails countryData={data} onDataIssues={(issues) => console.table(issues)} />
+```
+
+A JSON file works as it is: `import data from './data.json'` and pass it in.
+
+![The card showing custom data, other countries in grey](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/custom-data.png)
+
+The card shows your values, and **the labels are exactly your property names**: write `'Literacy rate (%)'` and that
+is what people read. Countries with no data turn grey, and the legend says "No data".
+
+| Setting | What it does | Default |
+|---|---|---|
+| `countryData` | The list of rows (rules below). | none |
+| `detailsSource` | What the card shows. `'custom'`: only your data. `'both'`: your data first, then the built-in facts. `'default'`: ignore your data. | `'custom'` once you pass data |
+| `onDataIssues` | Called once with a list of mistakes found in your data (which row, which property, what is wrong). Without it, mistakes are printed as a console warning. | none |
+| `greyOutCountriesWithoutData` | Paints countries without data grey. | `true` |
+
+**The rules for your data**
+
+| Part | Rule |
+|---|---|
+| The list | At most 500 rows. |
+| `country` | **Required.** A two-letter (`FR`) or three-letter (`FRA`) country code, in any case. **Country names are not accepted** (they differ between languages). Each country may appear once; if it appears twice, the first row wins. |
+| Other properties | At least one and at most 50 per row. The property name is the label. |
+| Values | Text (up to 2000 characters), a number, `true` / `false`, or `null` (shown as "—"). No nested objects or lists. Values are shown just as you wrote them. |
+| `infoLink` | Optional. Not shown as a value: if it is an `http` or `https` address, it becomes the "More information" link. |
+
+**If there are mistakes,** the map keeps working. The bad rows or values are left out, and you are told what was
+wrong. You do not need to wrap your list in `useMemo`.
+
+![Mistakes in the data, reported to your code](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/invalid-data.png)
+
+Things to know:
+
+- Northern Cyprus and Somaliland have no country code, so they can never have data. The codes `CYP` and `SOM` mean
+  Cyprus and Somalia.
+- When only your data is shown, the "Information on click" radio buttons are hidden, because they describe the
+  built-in facts.
+- Editors can check your JSON file with the published schema: `react-world-map-extended/country-data.schema.json`.
+
+### Controls anywhere
+
+The two radio-button groups are also a component of their own, so you can put them in a sidebar, a toolbar, or
+anywhere else.
 
 ```tsx
 import { ExtendedWorldMap, WorldMapControls, useWorldMapModes } from 'react-world-map-extended'
 
-const modes = useWorldMapModes({ defaultColorMode: 'Colorful' }) // { colorMode, infoMode, onColorModeChange, onInfoModeChange }
+const modes = useWorldMapModes({ defaultColorMode: 'Colorful' })
 
-<aside><WorldMapControls {...modes} className="sidebar-controls" /></aside>
+<aside><WorldMapControls {...modes} orientation="vertical" /></aside>
 <ExtendedWorldMap showControls={false} {...modes} />
 ```
 
-`<WorldMapControls>` is always controlled (`colorMode`, `onColorModeChange`, `infoMode`, `onInfoModeChange`) and also takes
-`className`, `style` and `orientation` (`'horizontal'` by default; `'vertical'` stacks the groups and their options, for a
-sidebar). Clicking it never clears the map's selection, even though it sits outside the map. Prefer
-your own markup? Skip it and drive the map with `colorMode` / `infoMode` and their `on…Change` callbacks directly:
+`useWorldMapModes` remembers the visitor's choices and hands the same ones to both components, so they stay in sync.
 
-```tsx
-const [colorMode, setColorMode] = useState<MapColorMode>('Colorful')
-<ExtendedWorldMap showControls={false} colorMode={colorMode} onColorModeChange={setColorMode} />
-```
+**`<WorldMapControls>` settings**
 
-### Styling
-
-Pass `className`/`style` for the wrapper, or theme the countries with CSS custom properties set on any ancestor
-(including the wrapper):
-
-| Property | Default | Applies to |
+| Setting | What it does | Default |
 |---|---|---|
-| `--rwme-fill` | `#ffffff` | country fill in Black and White mode |
-| `--rwme-stroke`, `--rwme-stroke-width` | `#000000`, `1.2` | country border |
-| `--rwme-focus-stroke` | `#1a73e8` | the keyboard focus ring of a country |
-| `--rwme-linked-glow` | `#f59e0b` | the glow on a country whose details entry is being pointed at |
-| `--rwme-selected-stroke`, `--rwme-selected-stroke-width` | `#d62828`, `2.5` | border of the selected country |
-| `--rwme-legend-bg`, `--rwme-legend-text`, `--rwme-legend-border` | translucent white, `#1f2328`, `#d0d7de` | the legend box |
-| `--rwme-dimmed-opacity` | `0.35` (or the `dimOthers` number) | opacity of the other countries while one is selected |
+| `colorMode`, `onColorModeChange` | The chosen colour mode and what happens when it changes. | – |
+| `infoMode`, `onInfoModeChange` | The chosen amount of information and what happens when it changes. | – |
+| `orientation` | `'horizontal'` or `'vertical'` (stacked, good for sidebars). | `'horizontal'` |
+| `showInfoModes` | Set to `false` to hide the "Information on click" group (useful with your own data). | `true` |
+| `className`, `style` | Style the controls. | – |
+
+Clicking the controls never clears the map's selection.
+
+---
+
+## Other things the package gives you
+
+**Components**
+
+| Name | What it is |
+|---|---|
+| `ExtendedWorldMap` | The map. |
+| `WorldMapControls` | The radio buttons, to place yourself. |
+| `CountryDetails` | The details card for one country, to place in your own layout. It takes `selection` (the country's `name` and `detail`, or `null` for the empty hint), `headingLevel`, `fontFamily`, `fontStyle`, `className`, `style` and `onClose`. |
+| `CountryDetailsList` | The list for several countries. It takes `selections`, `onRemove`, `onClear`, `onClose` and the same look settings as the card. |
+
+**Hooks**
+
+| Name | What it does |
+|---|---|
+| `useWorldMapModes(options?)` | Remembers colour mode and information mode, ready to spread onto the map and the controls. |
+
+**Helpers**
+
+| Name | What it does |
+|---|---|
+| `validateCountryData(data)` | Checks your data without drawing anything. Returns `{ rows, issues }`: the valid rows and a list of what was wrong. Handy in a test. |
+| `resolveCountryCode(text)` | Turns `'fra'`, `'FR'` or `' FRA '` into `'FR'`, or `undefined` if it is not a country. |
+| `getCountryDetail(code, infoMode, getInfoLink?)` | Looks up the built-in facts of one country. |
+| `getWikipediaUrl(code, name)` | The default "More information" link, in case you want to reuse it. |
+| `COUNTRY_DATA_LIMITS` | The size limits for your data (500 rows, 50 properties, 2000 characters). |
+| `MAX_SELECTED_COUNTRIES` | The most countries that can be selected (5). |
+| `MapColorOptions`, `MapDataOptions` | Named values for the colour and information modes. |
+
+**Types:** `MapColorMode`, `MapInfoMode`, `MapPalette`, `CountryColors`, `LegendPosition`, `CountryDetail`,
+`InfoLinkResolver`, `DetailsOptions`, `DetailsPosition`, `DetailsSource`, `HeadingLevel`, `CountryDataRow`,
+`CountryDataValues`, `CountryDataIssue`, `CountryClickInfo`, `CountryClickContext`, `CountrySelection`,
+`CountryDetailsProps`, `CountryDetailsListProps`, `WorldMapControlsProps`, `UseWorldMapModesOptions`, `WorldMapModes`.
+
+## Make it match your site
+
+Change colours with CSS variables. Set them on the map or on any parent element.
 
 ```tsx
 <ExtendedWorldMap style={{ '--rwme-stroke': '#336' } as React.CSSProperties} />
 ```
 
-For anything else use `styleOverrides`. Hover colours are controlled by `react-svg-worldmap` and are not themeable here.
+| Variable | What it changes | Default |
+|---|---|---|
+| `--rwme-fill` | Country colour in black and white mode | `#ffffff` |
+| `--rwme-stroke`, `--rwme-stroke-width` | Country borders | `#000000`, `1.2` |
+| `--rwme-selected-stroke`, `--rwme-selected-stroke-width` | Outline of selected countries | `#d62828`, `2.5` |
+| `--rwme-dimmed-opacity` | How faded the other countries are | `0.35` |
+| `--rwme-no-data-fill` | Countries without data | `#e5e7eb` |
+| `--rwme-focus-stroke` | Keyboard focus ring | `#1a73e8` |
+| `--rwme-linked-glow` | Glow on a country when you point at its entry in the list | `#f59e0b` |
+| `--rwme-legend-bg`, `--rwme-legend-text`, `--rwme-legend-border` | The legend box | light |
+| `--rwme-panel-bg`, `--rwme-panel-text`, `--rwme-panel-muted`, `--rwme-panel-border`, `--rwme-panel-accent` | The details card | light |
+| `--rwme-panel-warning`, `--rwme-panel-warning-bg`, `--rwme-panel-highlight` | The "no details" warning and the highlighted list entry | amber |
+| `--rwme-panel-width` | Width of a card on the left or right | `20rem` |
+| `--rwme-overlay-bg` | Background of the overlay card | see-through white |
 
-## Known limitations
+Need more? `styleOverrides` takes a style object (or a function that returns one per country) and is applied last.
 
-- In the `overlay` position every selection opens the card over the map, which blocks it; close the card (Hide or Escape) before adding the next country.
-- The limit of 5 is fixed for now. The switch for touch screens appears when the device reports a touch pointer at load; it does not react to a device changing mode afterwards.
-- Only changes made by clicking are announced to screen readers; a selection changed by your code (`selectedCountries`) is not.
-- Keyboard focus on a country is drawn by this package (a glow along its outline; its red outline turns dashed when it is also the selected one), not by the browser, whose own ring is a box around the whole country. Mouse clicks never show a ring. The library restyles a focused country's border over ours, so the glow does most of the work; it relies on CSS `filter`, which older Safari versions may ignore on SVG shapes.
-- With `top` / `bottom` the card appears and disappears next to the map, so the page below it moves; `left`, `right` and `overlay` do not shift the layout.
-- `react-svg-worldmap` gives every country a styled tooltip and also a native `<title>` that browsers show as a second, plain tooltip. This package removes the `<title>` (each country keeps its `aria-label`), so you get one tooltip. It relies on the library's markup; if you pass your own `data` in the future, countries without a value keep only the native one.
-- The legend only explains the `continent` and `region` palettes. Custom `colors`, the default per-country colours and `monochrome` have no legend (a legend for your own data comes with the planned data-driven map). Its swatches keep their full colours while `dimOthers` fades the map.
-- With the default `deselectOn="outside"`, a click on any element of your page outside the map (a dropdown, a button) clears the selection; if those elements should keep it, use `deselectOn="background"`.
-- `react-svg-worldmap` restyles a hovered country's border (width 2, a bit more opaque) over whatever this package sets, so hovering the selected country thins its outline slightly (2 instead of 2.5).
-- When `showDetails` is on, the component sets `margin: 0` on the `<figure>` that `react-svg-worldmap` renders (the browser's default 40px side margin is not accounted for by the library and pushed the map into a neighbouring card), and measures the map's `<svg>` to align the card.
-- Northern Cyprus and Somaliland have no ISO code in the map data: they stay white in colour mode (they do get the normal tooltip) and `onCountryClick` receives `undefined`.
-- Antarctica and the French Southern Territories are not drawn (not supported by `react-svg-worldmap`).
-- SVG has no z-index, so the selected country's `<path>` is moved to the end of the map's `<g>` (drawn on top) while it is selected, and put back afterwards. Keyboard focus is restored after each move. Tab order changes while a country is selected: it then comes last. If `react-svg-worldmap` re-creates its country elements (not observed), the highlight can be partly covered until the next click.
-- Only one country can be selected at a time.
-- Consumer-supplied data (choropleth) is not supported yet.
+## Good to know
 
-## Development
+- **Own data is shown as a plain list** of label and value pairs. There is no grouping, units or number formatting
+  yet, and your data cannot colour the map yet.
+- **At most 5 countries** can be selected, and that number cannot be changed yet.
+- **Screen readers** announce selections made by clicking, but not selections you set from your own code.
+- **Overlay card:** it covers the map, so close it (Hide or Escape) before adding another country.
+- **Hover outline:** hovering a selected country makes its outline a little thinner. That style comes from the map
+  library underneath.
+- **Missing areas:** Antarctica is not drawn. Northern Cyprus and Somaliland stay white in colourful mode and have no
+  details.
+- **Click-away:** with the default `deselectOn="outside"`, clicking something on your page outside the map clears a
+  single selected country. Use `deselectOn="background"` if that is not what you want.
+- **Browsers:** tested with automated tests and in Chrome. Real-device and screen-reader testing is still to do.
+
+## Developing this package
 
 ```sh
-npm run dev            # example app (the URL is printed, path /example)
-npm run build-package  # lint, typecheck, test, build
-npm run lint           # Biome; any warning fails
-npm run lint:fix       # apply Biome's safe fixes (unsafe ones: npx biome check --write --unsafe)
+npm run dev            # open the example app
+npm run build-package  # lint, type check, test, build
+npm run lint:fix       # tidy the code style
 ```
-
-The example app (`example/`, TypeScript) accepts query-string hooks for repeatable screenshots, documented at the top of
-`example/scenario.ts`, e.g. `/example?position=right&select=Germany&then=escape`. Its "Radio controls" dropdown shows the
-built-in radios versus a separate `<WorldMapControls>` placed around the map.
 
 ## License
 

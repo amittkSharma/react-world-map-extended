@@ -18,6 +18,8 @@ import {
  *   &info=CountryCompleteInfo    information mode
  *   &color=BlackAndWhite         colour mode
  *   &palette=region              colour palette (default|continent|region|monochrome; the example starts with continent)
+ *   &data=custom | both | invalid  show your own data (example/sample-data.json) instead of the built-in
+ *                                facts / next to them / a data set with mistakes, to see them reported
  *   &controls=above|below|left|right   place the radio controls apart from the map, as a separate
  *                                <WorldMapControls> (default: built into the map)
  *   &boundaries=off              hide the dashed outlines that show which part is which component
@@ -29,6 +31,9 @@ import {
  *
  * e.g. chrome --headless=new --screenshot=out.png "http://localhost:3000/example?select=Germany&then=escape"
  */
+export const dataModes = ['default', 'custom', 'both', 'invalid'] as const
+export type DataMode = (typeof dataModes)[number]
+
 export const detailsPositions: DetailsPosition[] = ['bottom', 'top', 'left', 'right', 'overlay']
 
 const infoModes = Object.values(MapDataOptions) as MapInfoMode[]
@@ -45,6 +50,8 @@ export interface Scenario {
   info: MapInfoMode
   color: MapColorMode
   palette: MapPalette
+  /** `?data=`: which details the example shows */
+  data: DataMode
   /** `?controls=`: where the radio controls are drawn */
   controls: ControlsPlacement
   /** `?boundaries=off` hides the labelled outlines */
@@ -67,6 +74,7 @@ export const readScenario = (search: string = window.location.search): Scenario 
     position: pick(params.get('position'), detailsPositions) ?? 'bottom',
     info: pick(params.get('info'), infoModes) ?? MapDataOptions.COUNTRY_NAME,
     color: pick(params.get('color'), colorModes) ?? MapColorOptions.COLORFUL,
+    data: pick(params.get('data'), dataModes) ?? 'default',
     controls: pick(params.get('controls'), controlsPlacements) ?? 'inside',
     boundaries: params.get('boundaries') !== 'off',
     palette: pick(params.get('palette'), palettes) ?? 'continent',

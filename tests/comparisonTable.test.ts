@@ -75,6 +75,16 @@ describe('sortRows', () => {
     expect(named[0].name).toBe('Spain')
   })
 
+  it('orders dialling prefixes by their number, not letter by letter', () => {
+    const prefixes = [
+      row('A', { v: '+44' }),
+      row('B', { v: '+1' }),
+      row('C', { v: '+380, +7' }),
+      row('D', { v: '+33' }),
+    ]
+    expect(sortRows(prefixes, 'v', 'asc').map((r) => r.code)).toEqual(['B', 'D', 'A', 'C'])
+  })
+
   it('compares text when a column mixes numbers and words', () => {
     const mixed = [row('A', { v: 'b' }), row('B', { v: 10 }), row('C', { v: 9 })]
     expect(sortRows(mixed, 'v', 'asc').map((r) => r.code)).toEqual(['C', 'B', 'A'])

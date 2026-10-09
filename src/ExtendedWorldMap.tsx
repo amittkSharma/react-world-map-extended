@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import WorldMap from 'react-svg-worldmap'
 import { CountryDetails } from './components/CountryDetails'
 import { CountryDetailsList } from './components/CountryDetailsList'
-import { CountryDetailsTable } from './components/CountryDetailsTable'
+import { CountryDetailsTable, type TableSort } from './components/CountryDetailsTable'
 import { DetailsSlot } from './components/DetailsSlot'
 import { MapLegend } from './components/MapLegend'
 import { MapToast } from './components/MapToast'
@@ -147,6 +147,8 @@ export const ExtendedWorldMap = ({
 
   const coarsePointer = useCoarsePointer()
   const [multiMode, setMultiMode] = useState(false)
+  // kept here, not in the table, so the order is still there when the table comes back
+  const [tableSort, setTableSort] = useState<TableSort | null>(null)
   // pointing at a country's entry in the details list lights it on the map, and the reverse
   const [linkedCode, setLinkedCode] = useState<string | null>(null)
   const { focusedCode, hoveredCode, handlers: pointerHandlers } = useCountryPointer(selectedCodes)
@@ -218,7 +220,7 @@ export const ExtendedWorldMap = ({
   const card = !several ? (
     <CountryDetails {...cardProps} selection={selections[0] ?? null} max={max} />
   ) : asTable ? (
-    <CountryDetailsTable {...manyProps} />
+    <CountryDetailsTable {...manyProps} sort={tableSort} onSortChange={setTableSort} />
   ) : (
     <CountryDetailsList {...manyProps} />
   )

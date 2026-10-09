@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { ExtendedWorldMap } from '../src'
+import { formatNumber } from '../src/lib/colorScale'
 import { country, shiftClick } from './helpers'
 
 const SIX = ['FR', 'DE', 'IT', 'ES', 'PL', 'PT']
@@ -90,6 +91,24 @@ describe('details table', () => {
     expect(rowNames()).toEqual(['France', 'Germany', 'Italy', 'Spain', 'Poland', 'Portugal'])
   })
 
+  it('keeps the sort when the table goes away and comes back', () => {
+    const element = (codes: string[]) => (
+      <ExtendedWorldMap showDetails selectedCountries={codes} maxSelected={10} tableFrom={3} />
+    )
+    const { rerender } = render(element(['FR', 'DE', 'IT']))
+    fireEvent.click(
+      within(screen.getByRole('columnheader', { name: /Country/ })).getByRole('button'),
+    )
+    fireEvent.click(
+      within(screen.getByRole('columnheader', { name: /Country/ })).getByRole('button'),
+    )
+    expect(rowNames()).toEqual(['Italy', 'Germany', 'France']) // descending by name
+    rerender(element(['FR', 'DE'])) // fewer than tableFrom: a list, no table
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    rerender(element(['FR', 'DE', 'IT']))
+    expect(rowNames()).toEqual(['Italy', 'Germany', 'France'])
+  })
+
   it('moves the switch with tableFrom', () => {
     render(<ExtendedWorldMap showDetails selectedCountries={['FR', 'DE']} tableFrom={2} />)
     expect(table()).toBeInTheDocument()
@@ -156,6 +175,28 @@ describe('details table', () => {
     expect(rows[0]).toHaveTextContent(/90.*highest in this column/)
     expect(rows[1]).toHaveTextContent(/40.*lowest in this column/)
     expect(rows[2]).not.toHaveTextContent('in this column')
+  })
+
+  it('writes large numbers with separators, as the legend does', () => {
+    const data = {
+      properties: [{ name: 'Population', color: '#0969da' }],
+      countries: [
+        { country: 'FR', Population: 83000000 },
+        { country: 'DE', Population: 1234.5678 },
+      ],
+    }
+    render(
+      <ExtendedWorldMap
+        showDetails
+        countryData={data}
+        detailsSource="custom"
+        selectedCountries={['FR', 'DE']}
+        tableFrom={2}
+      />,
+    )
+    expect(within(table()).getByText(new RegExp(`^${formatNumber(83000000)}`))).toBeInTheDocument()
+    expect(table()).toHaveTextContent(formatNumber(1234.5678))
+    expect(table()).not.toHaveTextContent('83000000')
   })
 
   it('lights the row of the country the pointer is over on the map', () => {

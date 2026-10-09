@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file. See [commit
 
 ## 0.1.0 (2026-10-08)
 
+### ⚠ BREAKING CHANGES
+
+* `selectedCountry` is now `selectedCountries`: a list of codes. `onSelectionChange` is called with a list too. Replace `selectedCountry="FR"` with `selectedCountries={['FR']}`.
+* `countryData` is now an object `{ properties, countries }` and no longer an array of rows. Each property is `{ name, color }` and each country row is `{ country, [name]: number }`.
+
 
 ### Features
 

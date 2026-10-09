@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { RevealRequest } from '../hooks/useAccordion'
 import type { CountrySelection } from '../lib/cardSelections'
 import { classNames } from '../lib/classNames'
@@ -31,6 +31,10 @@ export interface CountryDetailsTableProps extends CardAppearance {
   highlightCode?: string | null
   /** Called with the country whose row the pointer or keyboard focus is on, or null. */
   onLink?: (code: string | null) => void
+  /** How the rows are ordered now (`null`: the order they were selected in). Kept by the caller, so the
+   * order survives the table disappearing and coming back. */
+  sort: TableSort | null
+  onSortChange: (sort: TableSort | null) => void
   /** When given, every row gets a remove button. */
   onRemove?: (code: string) => void
   /** When given, a "Clear all" button is shown. */
@@ -41,20 +45,20 @@ export interface CountryDetailsTableProps extends CardAppearance {
   inDialog?: boolean
 }
 
-interface Sort {
+export interface TableSort {
   key: string
   direction: SortDirection
 }
 
 // ascending, then descending, then the order the countries were selected in
-const nextSort = (current: Sort | null, key: string): Sort | null =>
+const nextSort = (current: TableSort | null, key: string): TableSort | null =>
   current?.key !== key
     ? { key, direction: 'asc' }
     : current.direction === 'asc'
       ? { key, direction: 'desc' }
       : null
 
-const ariaSort = (sort: Sort | null, key: string) =>
+const ariaSort = (sort: TableSort | null, key: string) =>
   sort?.key !== key ? undefined : sort.direction === 'asc' ? 'ascending' : 'descending'
 
 /**
@@ -65,6 +69,8 @@ const ariaSort = (sort: Sort | null, key: string) =>
 export const CountryDetailsTable = ({
   selections,
   max = MAX_SELECTED_COUNTRIES,
+  sort,
+  onSortChange,
   reveal,
   highlightCode,
   onLink,
@@ -75,7 +81,6 @@ export const CountryDetailsTable = ({
   inDialog = false,
   ...shell
 }: CountryDetailsTableProps) => {
-  const [sort, setSort] = useState<Sort | null>(null)
   const rowRefs = useRef(new Map<string, HTMLElement>())
 
   const { columns, rows } = buildTable(selections)
@@ -88,7 +93,11 @@ export const CountryDetailsTable = ({
 
   const header = (key: string, label: string) => (
     <th key={key} scope="col" aria-sort={ariaSort(sort, key)} style={tableStyles.head}>
-      <button type="button" onClick={() => setSort(nextSort(sort, key))} style={tableStyles.sort}>
+      <button
+        type="button"
+        onClick={() => onSortChange(nextSort(sort, key))}
+        style={tableStyles.sort}
+      >
         {label}
         <span aria-hidden="true">
           {sort?.key === key ? (sort.direction === 'asc' ? ' ▲' : ' ▼') : ''}

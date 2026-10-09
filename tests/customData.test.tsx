@@ -878,7 +878,7 @@ describe('scales for skewed data', () => {
       <ExtendedWorldMap showDetails countryData={withScale({ scale: 'quantile', max: 500 })} />,
     )
     fireEvent.click(country(container, 'India'))
-    expect(values()).toEqual(['1400'])
+    expect(values()).toEqual([formatNumber(1400)]) // the real number (grouped), not a scaled one
   })
 
   it('each property has its own scale, and the legend follows the dropdown', () => {

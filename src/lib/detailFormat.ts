@@ -1,3 +1,4 @@
+import { formatNumber } from './colorScale'
 import type { CountryDataValue } from './countryData'
 import type { CountryDetail } from './countryDetail'
 import { continentNames } from './palettes'
@@ -28,4 +29,6 @@ export const formatValue = (field: Field, value: NonNullable<CountryDetail[Field
   return String(value)
 }
 
-export const displayValue = (value: CountryDataValue) => (value === null ? '—' : String(value))
+/** Your own value as text: numbers are grouped like in the legend (`83 000 000` is easier to read than `83000000`). */
+export const displayValue = (value: CountryDataValue) =>
+  value === null ? '—' : typeof value === 'number' ? formatNumber(value) : String(value)

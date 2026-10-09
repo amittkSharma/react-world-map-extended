@@ -380,13 +380,20 @@ Need more? `styleOverrides` takes a style object (or a function that returns one
 
 ## Good to know
 
-- **Own data is numbers only.** The card lists them as plain label and value pairs: no grouping, units or number
-  formatting (put the unit in the property's name, like `Literacy rate (%)`).
+- **Own data is numbers only.** The card lists them as plain label and value pairs, with the numbers grouped like in
+  the legend (`83,000,000`, in the visitor's locale). There are no units: put the unit in the property's name, like
+  `Literacy rate (%)`.
 - **Quantile classes** show only as many shades as there are different numbers, so a property with few different
   values may have fewer classes than you asked for.
 - **One colour per property.** Data that goes both ways (profit and loss) and text categories cannot be coloured yet.
 - **Many countries:** every selected country is a row, so a very large selection makes a long table (it scrolls
   inside the card). The highest/lowest marks ignore units and do not say whether higher is better.
+- **English only.** The labels, messages and screen-reader texts are in English and cannot be changed or translated yet.
+- **Several maps on one page** have not been tested much. Clicking the card or controls of one map does not clear
+  the selection of another.
+- **Tab order:** a selected country is drawn last (so it stays on top), which means the keyboard reaches it last.
+- **The map's own spacing:** the library draws 40 px of margin around the map. It is removed when a card or legend is
+  shown, so the layout can differ slightly without them or on very narrow screens.
 - **Screen readers** announce selections made by clicking, but not selections you set from your own code.
 - **Overlay card:** it covers the map, so close it (Hide or Escape) before adding another country.
 - **Hover outline:** hovering a selected country makes its outline a little thinner. That style comes from the map
@@ -395,7 +402,8 @@ Need more? `styleOverrides` takes a style object (or a function that returns one
   details.
 - **Click-away:** with the default `deselectOn="outside"`, clicking something on your page outside the map clears a
   single selected country. Use `deselectOn="background"` if that is not what you want.
-- **Browsers:** tested with automated tests and in Chrome. Real-device and screen-reader testing is still to do.
+- **Browsers:** tested with automated tests and in Chrome. Real-device and screen-reader testing is still to do. The
+  keyboard focus ring is mostly a glow, which older Safari versions may not show.
 
 ## Developing this package
 

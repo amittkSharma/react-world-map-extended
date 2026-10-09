@@ -5,6 +5,7 @@ import {
   MapDataOptions,
   type MapInfoMode,
   type MapPalette,
+  type ScaleKind,
 } from '../src'
 
 /**
@@ -21,6 +22,7 @@ import {
  *   &data=custom | both | invalid  show your own data (example/sample-data.json) instead of the built-in
  *                                facts / next to them / a data set with mistakes, to see them reported
  *   &property=Population%20(millions)   which property of the sample data colours the map (default: the first)
+ *   &scale=linear | quantile | log   force one scale on every property of the sample data (default: as the file says)
  *   &controls=above|below|left|right   place the radio controls apart from the map, as a separate
  *                                <WorldMapControls> (default: built into the map)
  *   &boundaries=off              hide the dashed outlines that show which part is which component
@@ -40,6 +42,7 @@ export const detailsPositions: DetailsPosition[] = ['bottom', 'top', 'left', 'ri
 const infoModes = Object.values(MapDataOptions) as MapInfoMode[]
 const colorModes = Object.values(MapColorOptions) as MapColorMode[]
 const palettes: MapPalette[] = ['default', 'continent', 'region', 'monochrome']
+const scales: ScaleKind[] = ['linear', 'quantile', 'log']
 const followUps = ['background', 'escape', 'focusclick', 'keyboard', 'reveal'] as const
 
 /** `inside`: part of `<ExtendedWorldMap>`; the others: a separate `<WorldMapControls>` placed apart. */
@@ -55,6 +58,8 @@ export interface Scenario {
   data: DataMode
   /** `?property=`: the property of the data that colours the map */
   property?: string
+  /** `?scale=`: a scale for every property of the sample data */
+  scale?: ScaleKind
   /** `?controls=`: where the radio controls are drawn */
   controls: ControlsPlacement
   /** `?boundaries=off` hides the labelled outlines */
@@ -79,6 +84,7 @@ export const readScenario = (search: string = window.location.search): Scenario 
     color: pick(params.get('color'), colorModes) ?? MapColorOptions.COLORFUL,
     data: pick(params.get('data'), dataModes) ?? 'default',
     property: params.get('property') ?? undefined,
+    scale: pick(params.get('scale'), scales),
     controls: pick(params.get('controls'), controlsPlacements) ?? 'inside',
     boundaries: params.get('boundaries') !== 'off',
     palette: pick(params.get('palette'), palettes) ?? 'continent',

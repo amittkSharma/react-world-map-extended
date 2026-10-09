@@ -28,8 +28,18 @@ describe('shade', () => {
   })
 })
 
+const linear = (min: number, max: number) => ({
+  color: '#1a73e8',
+  kind: 'linear' as const,
+  min,
+  max,
+  clampedLow: false,
+  clampedHigh: false,
+  breaks: [],
+})
+
 describe('scaleColor', () => {
-  const scale = { color: '#1a73e8', min: 50, max: 150 }
+  const scale = linear(50, 150)
 
   it('puts the lowest value at the light end and the highest at the colour', () => {
     expect(scaleColor(scale, 50)).toBe(shade('#1a73e8', 0))
@@ -38,11 +48,11 @@ describe('scaleColor', () => {
   })
 
   it('works with negative numbers', () => {
-    expect(scaleColor({ color: '#1a73e8', min: -10, max: 10 }, 0)).toBe(shade('#1a73e8', 0.5))
+    expect(scaleColor(linear(-10, 10), 0)).toBe(shade('#1a73e8', 0.5))
   })
 
   it('uses the middle when all values are the same', () => {
-    expect(scaleColor({ color: '#1a73e8', min: 7, max: 7 }, 7)).toBe(shade('#1a73e8', 0.5))
+    expect(scaleColor(linear(7, 7), 7)).toBe(shade('#1a73e8', 0.5))
   })
 })
 

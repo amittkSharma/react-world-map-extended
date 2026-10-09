@@ -64,9 +64,9 @@ describe('validateCountryData', () => {
     expect(Object.keys(rows.get('FR') ?? {})).toEqual(['Literacy rate (%)', 'Population']) // as listed
     expect(rows.get('FR')).toEqual({ 'Literacy rate (%)': 99, Population: 68.2 })
     expect(rows.get('DE')).toEqual({ Population: 83200000 })
-    expect(properties).toEqual([
-      { name: 'Literacy rate (%)', color: '#1a73e8', min: 99, max: 99 },
-      { name: 'Population', color: '#d55e00', min: 68.2, max: 83200000 },
+    expect(properties).toMatchObject([
+      { name: 'Literacy rate (%)', color: '#1a73e8', kind: 'linear', min: 99, max: 99 },
+      { name: 'Population', color: '#d55e00', kind: 'linear', min: 68.2, max: 83200000 },
     ])
   })
 
@@ -402,7 +402,100 @@ describe('validateCountryData', () => {
         { country: 'BR', P: 40.5 },
       ],
     })
-    expect(properties).toEqual([{ name: 'P', color: '#336', min: -2, max: 40.5 }])
+    expect(properties).toMatchObject([{ name: 'P', color: '#336', min: -2, max: 40.5 }])
+  })
+
+  describe('the scale options of a property', () => {
+    const countries = [
+      { country: 'FR', P: 1 },
+      { country: 'DE', P: 2 },
+      { country: 'JP', P: 3 },
+      { country: 'BR', P: 1000 },
+    ]
+    const check = (...extra: Array<Record<string, unknown>>) =>
+      validateCountryData({
+        properties: [
+          { name: 'Q', color: '#336', ...extra[0] },
+          { name: 'P', color: '#933', ...extra[1] },
+        ],
+        countries: countries.map((row) => ({ ...row, Q: row.P })),
+      })
+
+    it('give the property its scale', () => {
+      const { properties, issues } = check(
+        { scale: 'quantile', classes: 3 },
+        { scale: 'log', min: 1 },
+      )
+      expect(issues).toEqual([])
+      expect(properties[0]).toMatchObject({ name: 'Q', kind: 'quantile', min: 1, max: 1000 })
+      expect(properties[0].breaks.length).toBeGreaterThan(0)
+      expect(properties[1]).toMatchObject({ name: 'P', kind: 'log', min: 1, breaks: [] })
+    })
+
+    it('are per property: the other one stays linear', () => {
+      const { properties } = check({ scale: 'quantile' })
+      expect(properties.map(({ kind }) => kind)).toEqual(['quantile', 'linear'])
+    })
+
+    it('that cannot be used are reported with the property and where it is, and the property stays', () => {
+      const { properties, issues } = check({ scale: 'cubic', classes: 12 }, { min: 'low' })
+      expect(issues).toEqual([
+        {
+          row: null,
+          property: 'Q',
+          message:
+            'properties[0]: "scale" must be "linear", "quantile" or "log"; "linear" is used.',
+        },
+        {
+          row: null,
+          property: 'Q',
+          message: expect.stringContaining('properties[0]: "classes" must be a whole number'),
+        },
+        {
+          row: null,
+          property: 'P',
+          message: 'properties[1]: "min" must be a number; it is ignored.',
+        },
+      ])
+      expect(properties.map(({ name, kind }) => [name, kind])).toEqual([
+        ['Q', 'linear'],
+        ['P', 'linear'],
+      ])
+    })
+
+    it('are checked against the numbers: a log scale needs numbers above zero', () => {
+      const { properties, issues } = validateCountryData({
+        properties: [{ name: 'P', color: '#336', scale: 'log' }],
+        countries: [
+          { country: 'FR', P: 0 },
+          { country: 'DE', P: 5 },
+        ],
+      })
+      expect(properties[0].kind).toBe('linear')
+      expect(issues).toEqual([
+        {
+          row: null,
+          property: 'P',
+          message: expect.stringContaining('properties[0]: A "log" scale needs numbers above zero'),
+        },
+      ])
+    })
+
+    it('are not checked for a property that is left out anyway', () => {
+      const { issues } = validateCountryData({
+        properties: [
+          { name: 'Empty', color: '#336', scale: 'cubic' },
+          { name: 'P', color: '#933' },
+        ],
+        countries: [{ country: 'FR', P: 1 }],
+      })
+      expect(issues).toEqual([
+        expect.objectContaining({
+          property: 'Empty',
+          message: expect.stringContaining('No row has a number'),
+        }),
+      ])
+    })
   })
 
   it('never mutates its input', () => {
@@ -430,6 +523,21 @@ describe('the JSON Schema file', () => {
     [make([{ country: ' de ', Population: 1, infoLink: 'https://example.org' }])],
     [make([{ country: 'FR', Population: 1, ignored: 'text' }])],
     [make([{ country: 'FR', Population: 1 }], [{ name: 'Population', color: '#AbC' }])],
+    [
+      make(
+        [
+          { country: 'FR', Population: 1 },
+          { country: 'DE', Population: 9 },
+        ],
+        [{ name: 'Population', color: '#336', scale: 'quantile', classes: 3, min: 0, max: 100 }],
+      ),
+    ],
+    [
+      make(
+        [{ country: 'FR', Population: 1 }],
+        [{ name: 'Population', color: '#336', scale: 'log' }],
+      ),
+    ],
   ])('accepts %j, as the validator does', (data) => {
     expect(validate(data)).toBe(true)
     expect(validateCountryData(data).issues).toEqual([])
@@ -447,6 +555,17 @@ describe('the JSON Schema file', () => {
     [make([{ country: 'France', Population: 1 }])],
     [make(['FR'])],
     [make([{ country: 'FR', Population: 1, infoLink: 5 }])],
+    ...[
+      { scale: 'cubic' },
+      { scale: 3 },
+      { classes: 1 },
+      { classes: 10 },
+      { classes: 2.5 },
+      { min: 'low' },
+      { max: null },
+    ].map((option): [unknown] => [
+      make([{ country: 'FR', Population: 1 }], [{ name: 'Population', color: '#336', ...option }]),
+    ]),
   ])('rejects %j, and the validator reports it', (data) => {
     expect(validate(data)).toBe(false)
     expect(validateCountryData(data).issues.length).toBeGreaterThan(0)

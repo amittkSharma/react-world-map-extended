@@ -1,7 +1,7 @@
 {
   "properties": [
     { "name": "Literacy rate (%)", "color": "#1a73e8" },
-    { "name": "Population (millions)", "color": "#d55e00" },
+    { "name": "Population (millions)", "color": "#d55e00", "scale": "quantile" },
     { "name": "Internet users (%)", "color": "#009e73" }
   ],
   "countries": [

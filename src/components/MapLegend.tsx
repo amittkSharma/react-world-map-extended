@@ -37,7 +37,7 @@ const look: CSSProperties = {
  * never takes clicks; on a small map it becomes a wrapping strip under the map, so it cannot hide
  * the countries.
  */
-export const MapLegend = ({ title, items = [], gradient, position, box }: MapLegendProps) => {
+export const MapLegend = ({ title, note, items = [], gradient, position, box }: MapLegendProps) => {
   const inline = box !== null && box.width < LEGEND_INLINE_BELOW
 
   return (
@@ -67,6 +67,11 @@ export const MapLegend = ({ title, items = [], gradient, position, box }: MapLeg
       }
     >
       <div style={{ marginBottom: inline ? 0 : 4, fontWeight: 600 }}>{title}</div>
+      {note && (
+        <div style={{ marginBottom: inline ? 0 : 4, color: 'var(--rwme-panel-muted, #59636e)' }}>
+          {note}
+        </div>
+      )}
       {gradient && (
         <div
           role="img"

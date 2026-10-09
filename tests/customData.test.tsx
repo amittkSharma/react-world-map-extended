@@ -760,3 +760,159 @@ describe('<WorldMapControls showInfoModes={false}>', () => {
     expect(screen.queryByRole('group', { name: 'Information on click' })).not.toBeInTheDocument()
   })
 })
+
+describe('scales for skewed data', () => {
+  const COLOR = '#d55e00'
+  // one very large number (India): on a linear scale it leaves everyone else almost white
+  const withScale = (options: Record<string, unknown>): CountryData => ({
+    properties: [{ name: 'Population', color: COLOR, ...options }],
+    countries: [
+      { country: 'FR', Population: 60 },
+      { country: 'DE', Population: 80 },
+      { country: 'JP', Population: 120 },
+      { country: 'BR', Population: 200 },
+      { country: 'NG', Population: 210 },
+      { country: 'IN', Population: 1400 },
+    ],
+  })
+  const entries = () => screen.getAllByRole('listitem').map((item) => item.textContent)
+
+  it('a linear scale leaves the countries below the outlier almost alike', () => {
+    const { container } = render(<ExtendedWorldMap countryData={withScale({})} />)
+    expect(fill(container, 'India')).toBe(normal(COLOR))
+    expect(fill(container, 'Brazil')).not.toBe(normal(shade(COLOR, 0.5))) // 200 of 60–1400
+    expect(fill(container, 'Brazil')).not.toBe(fill(container, 'India'))
+  })
+
+  it('a quantile scale spreads the shades over the classes, outlier or not', () => {
+    const { container } = render(
+      <ExtendedWorldMap countryData={withScale({ scale: 'quantile', classes: 3 })} />,
+    )
+    expect(fill(container, 'France')).toBe(normal(shade(COLOR, 0)))
+    expect(fill(container, 'Germany')).toBe(normal(shade(COLOR, 0)))
+    expect(fill(container, 'Japan')).toBe(normal(shade(COLOR, 0.5)))
+    expect(fill(container, 'Brazil')).toBe(normal(shade(COLOR, 0.5)))
+    expect(fill(container, 'Nigeria')).toBe(normal(COLOR))
+    expect(fill(container, 'India')).toBe(normal(COLOR))
+  })
+
+  it('a log scale spaces the numbers by their powers', () => {
+    const data: CountryData = {
+      properties: [{ name: 'P', color: COLOR, scale: 'log' }],
+      countries: [
+        { country: 'FR', P: 1 },
+        { country: 'DE', P: 10 },
+        { country: 'IT', P: 100 },
+      ],
+    }
+    const { container } = render(<ExtendedWorldMap countryData={data} />)
+    expect(fill(container, 'France')).toBe(normal(shade(COLOR, 0)))
+    expect(fill(container, 'Germany')).toBe(normal(shade(COLOR, 0.5)))
+    expect(fill(container, 'Italy')).toBe(normal(COLOR))
+  })
+
+  it('min and max show the numbers beyond them at the ends of the scale', () => {
+    const { container } = render(
+      <ExtendedWorldMap countryData={withScale({ min: 100, max: 200 })} />,
+    )
+    expect(fill(container, 'France')).toBe(normal(shade(COLOR, 0))) // 60, below min
+    expect(fill(container, 'Brazil')).toBe(normal(COLOR)) // 200
+    expect(fill(container, 'India')).toBe(normal(COLOR)) // 1400, above max
+    expect(fill(container, 'Japan')).toBe(normal(shade(COLOR, 0.2))) // 120
+  })
+
+  it('a quantile legend lists the classes with their ranges, then "No data"', () => {
+    render(<ExtendedWorldMap countryData={withScale({ scale: 'quantile', classes: 3 })} />)
+    const box = legend() as HTMLElement
+    expect(box).toHaveTextContent('Population')
+    expect(box).toHaveTextContent('Classes with equal numbers of countries')
+    expect(entries()).toEqual([
+      `${formatNumber(60)} – ${formatNumber(120)}`,
+      `${formatNumber(120)} – ${formatNumber(210)}`,
+      `${formatNumber(210)} – ${formatNumber(1400)}`,
+      'No data',
+    ])
+    expect(within(box).queryByRole('img')).toBeNull() // no gradient bar
+    // each swatch has the shade its countries have on the map
+    const swatches = within(box)
+      .getAllByRole('listitem')
+      .map((item) => normal((item.firstElementChild as HTMLElement).style.background))
+    expect(swatches.slice(0, 3)).toEqual([
+      normal(shade(COLOR, 0)),
+      normal(shade(COLOR, 0.5)),
+      normal(COLOR),
+    ])
+  })
+
+  it('a log legend is a bar that says it is logarithmic', () => {
+    render(<ExtendedWorldMap countryData={withScale({ scale: 'log' })} />)
+    const box = legend() as HTMLElement
+    expect(box).toHaveTextContent('Logarithmic scale')
+    expect(within(box).getByRole('img')).toBeInTheDocument()
+  })
+
+  it('a legend says which ends are cut off by min and max', () => {
+    const first = render(<ExtendedWorldMap countryData={withScale({ min: 100, max: 500 })} />)
+    expect(within(legend() as HTMLElement).getByRole('img')).toHaveAttribute(
+      'aria-label',
+      `Population: from ≤ ${formatNumber(100)} to ≥ ${formatNumber(500)}, light to dark`,
+    )
+    first.unmount()
+
+    render(
+      <ExtendedWorldMap countryData={withScale({ scale: 'quantile', classes: 3, max: 500 })} />,
+    )
+    expect(entries()[entries().length - 2]).toBe(`≥ ${formatNumber(210)}`)
+  })
+
+  it('a legend does not say it when no number is cut off', () => {
+    render(<ExtendedWorldMap countryData={withScale({ min: 0, max: 5000 })} />)
+    expect(within(legend() as HTMLElement).getByRole('img')).toHaveAttribute(
+      'aria-label',
+      `Population: from ${formatNumber(0)} to ${formatNumber(5000)}, light to dark`,
+    )
+  })
+
+  it('shows the real numbers in the card, whatever the scale does with them', () => {
+    const { container } = render(
+      <ExtendedWorldMap showDetails countryData={withScale({ scale: 'quantile', max: 500 })} />,
+    )
+    fireEvent.click(country(container, 'India'))
+    expect(values()).toEqual(['1400'])
+  })
+
+  it('each property has its own scale, and the legend follows the dropdown', () => {
+    const data: CountryData = {
+      properties: [
+        { name: 'A', color: '#1a73e8' },
+        { name: 'B', color: '#d55e00', scale: 'quantile', classes: 2 },
+      ],
+      countries: [
+        { country: 'FR', A: 1, B: 1 },
+        { country: 'DE', A: 2, B: 2 },
+        { country: 'IT', A: 3, B: 1000 },
+      ],
+    }
+    render(<ExtendedWorldMap countryData={data} />)
+    expect(within(legend() as HTMLElement).getByRole('img')).toBeInTheDocument()
+    fireEvent.change(dropdown() as HTMLSelectElement, { target: { value: 'B' } })
+    expect(legend()).toHaveTextContent('Classes with equal numbers of countries')
+    expect(within(legend() as HTMLElement).queryByRole('img')).toBeNull()
+    fireEvent.change(dropdown() as HTMLSelectElement, { target: { value: 'A' } })
+    expect(within(legend() as HTMLElement).getByRole('img')).toBeInTheDocument()
+  })
+
+  it('reports an option it cannot use, and keeps the map working with a linear scale', () => {
+    const onDataIssues = vi.fn()
+    const { container } = render(
+      <ExtendedWorldMap countryData={withScale({ scale: 'cubic' })} onDataIssues={onDataIssues} />,
+    )
+    expect(onDataIssues).toHaveBeenCalledWith([
+      expect.objectContaining({
+        property: 'Population',
+        message: expect.stringContaining('"scale" must be'),
+      }),
+    ])
+    expect(fill(container, 'India')).toBe(normal(COLOR))
+  })
+})

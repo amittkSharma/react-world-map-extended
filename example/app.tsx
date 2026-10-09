@@ -21,7 +21,12 @@ import './style.css'
 
 const scenario = readScenario()
 // the same arrays on every render: the data is checked once per array
-const SAMPLE: CountryData = sampleData
+const SAMPLE: CountryData = scenario.scale
+  ? {
+      ...sampleData,
+      properties: sampleData.properties.map((property) => ({ ...property, scale: scenario.scale })),
+    }
+  : sampleData
 const WITH_MISTAKES = {
   properties: [
     { name: 'Literacy rate (%)', color: '#1a73e8' },

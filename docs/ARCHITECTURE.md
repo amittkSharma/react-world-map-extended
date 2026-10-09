@@ -80,7 +80,8 @@ src/
 
   lib/
     countryData.ts          schema and validator of the user's data
-    colorScale.ts           number -> shade of a colour; number formatting
+    scale.ts                the scales (linear, quantile, log): options check, breaks, number -> position 0..1
+    colorScale.ts           position -> shade of a colour; number formatting
     cardSelections.ts       what each card shows, and what `onCountryClick` reports
     countryStyle.ts         the style of every country on the map
     mapLegend.ts            what the legend says
@@ -166,7 +167,8 @@ validateCountryData          lib/countryData.ts: properties, rows, issues; nothi
 useOwnData                   rows, source ('custom' | 'both' | 'default'), properties, chosen property
    │
    ├─► createCountryStyle    numberFor(code) -> scaleColor(property, number) -> fill; no number -> grey
-   ├─► buildMapLegend        gradient (name, lowest, highest) + "No data"
+   │                          (the number is placed on the property's scale by lib/scale.ts)
+   ├─► buildMapLegend        linear / log: gradient (name, ends, note); quantile: the classes; + "No data"
    ├─► WorldMapControls      "Show on map" dropdown when there are two or more properties
    └─► buildSelections       values in the cards, the chosen property first
 ```
@@ -175,6 +177,10 @@ Rules that shape the code:
 
 - Data is matched by ISO alpha-2 or alpha-3 code only, never by name (names differ between languages).
 - The colour belongs to the property, not to the country row, so the dropdown can recolour the map.
+- Each property has its own scale (`linear`, `quantile`, `log`, optionally cut at `min` / `max`). `buildScale` checks the options
+  against the property's numbers once, when the data is validated; the result (`Scale`) is plain data that the style and the
+  legend both read, so the map and its legend can never disagree. An option that cannot be used is reported and replaced by
+  the default.
 - Invalid parts are left out and reported. If no property is usable, the data is ignored and the built-in facts stay.
 - With own data, the built-in legend never shows and other countries are not faded by default (the shades carry meaning).
 - The same schema exists twice: `schema/country-data.schema.json` (for editors) and `validateCountryData` (for the

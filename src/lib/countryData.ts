@@ -1,16 +1,30 @@
 import { alpha3ToAlpha2 } from '../data/alpha3'
 import { countryColors } from '../data/defaultMapData'
+import { buildScale, type Scale, type ScaleKind, type ScaleOptions } from './scale'
 
 /** What a value in your data can be. Numbers are what colour the map; `null` means "no value". */
 export type CountryDataValue = string | number | boolean | null
 
-/** One property to show and to colour the map by: its name (the label) and the colour of its scale. */
+/** One property to show and to colour the map by: its name (the label), the colour of its scale, and
+ * how numbers become shades. */
 export interface CountryDataProperty {
   /** The property's name in the rows. It is the label in the details and in the dropdown. */
   name: string
   /** The colour of the scale as a hex value (`#336` or `#3366aa`): the highest value gets this colour,
    * the lowest a light tint of it. */
   color: string
+  /** `'linear'` (default): proportional. `'quantile'`: classes with the same number of countries, the
+   * answer to a few very large numbers that make all others look alike. `'log'`: for numbers that span
+   * orders of magnitude (all above zero). */
+  // `string` is accepted so that a JSON file imported by TypeScript fits (it types "quantile" as
+  // `string`); a name that is not a scale is reported when the data is checked
+  scale?: ScaleKind | (string & Record<never, never>)
+  /** Quantile only: the number of classes, from 2 to 9. Default 5. */
+  classes?: number
+  /** Numbers below `min` get the lightest shade, numbers above `max` the darkest. Default: the lowest and
+   * highest number of the property. */
+  min?: number
+  max?: number
 }
 
 /** One row: a `country` (ISO 3166-1 alpha-2 or alpha-3 code) and a number per listed property. */
@@ -36,10 +50,10 @@ export interface CountryDataIssue {
  * (plus `infoLink` when the row has one). */
 export type CountryDataValues = Record<string, CountryDataValue>
 
-/** A usable property, with the lowest and highest number it has in the rows. */
-export interface ValidatedProperty extends CountryDataProperty {
-  min: number
-  max: number
+/** A usable property with its scale worked out from the numbers it has in the rows. */
+export interface ValidatedProperty extends Scale {
+  name: string
+  color: string
 }
 
 export interface ValidatedCountryData {
@@ -82,7 +96,16 @@ export const resolveCountryCode = (input: unknown): string | undefined => {
   return undefined
 }
 
-const validateProperties = (input: unknown, issues: CountryDataIssue[]): CountryDataProperty[] => {
+/** A property that passed the checks of its name and colour; its scale options are checked later. */
+interface ListedProperty {
+  name: string
+  color: string
+  /** Where it is in `properties`, for messages. */
+  where: string
+  options: ScaleOptions
+}
+
+const validateProperties = (input: unknown, issues: CountryDataIssue[]): ListedProperty[] => {
   const limits = COUNTRY_DATA_LIMITS
   if (!Array.isArray(input) || input.length === 0) {
     issues.push({
@@ -98,14 +121,14 @@ const validateProperties = (input: unknown, issues: CountryDataIssue[]): Country
     })
   }
 
-  const properties: CountryDataProperty[] = []
+  const properties: ListedProperty[] = []
   input.slice(0, limits.properties).forEach((entry, index) => {
     const where = `properties[${index}]`
     if (!isPlainObject(entry)) {
       issues.push({ row: null, message: `${where} must be an object { name, color }.` })
       return
     }
-    const { name, color } = entry
+    const { name, color, scale, classes, min, max } = entry
     if (typeof name !== 'string' || name.trim() === '') {
       issues.push({ row: null, message: `${where} needs a "name" (text, not empty).` })
       return
@@ -134,7 +157,7 @@ const validateProperties = (input: unknown, issues: CountryDataIssue[]): Country
       })
       return
     }
-    properties.push({ name, color: color.trim() })
+    properties.push({ name, color: color.trim(), where, options: { scale, classes, min, max } })
   })
   return properties
 }
@@ -144,7 +167,8 @@ const validateProperties = (input: unknown, issues: CountryDataIssue[]): Country
  * wrong (invalid parts are left out, valid ones are kept). The schema:
  * - the data is an object with `properties` and `countries`;
  * - `properties` is a list of 1 to 50 `{ name, color }`: a name (not empty, once, not `country` or
- *   `infoLink`) and a hex colour;
+ *   `infoLink`) and a hex colour, and optionally `scale` (`linear`, `quantile` or `log`), `classes`
+ *   (2 to 9, quantile only), `min` and `max`; options that cannot be used are reported and ignored;
  * - `countries` is a list of at most 500 objects, each with a `country`: an ISO 3166-1 alpha-2 or
  *   alpha-3 code the map knows (names are not accepted), at most once (the first row wins);
  * - a row's value for a listed property is a finite number, or `null` (no value); other properties of
@@ -256,7 +280,17 @@ export const validateCountryData = (input: unknown): ValidatedCountryData => {
       })
       for (const values of rows.values()) delete values[property.name]
     } else {
-      usable.push({ ...property, min: Math.min(...numbers), max: Math.max(...numbers) })
+      const report = (message: string) =>
+        issues.push({
+          row: null,
+          property: property.name,
+          message: `${property.where}: ${message}`,
+        })
+      usable.push({
+        name: property.name,
+        color: property.color,
+        ...buildScale(numbers, property.options, report),
+      })
     }
   }
   if (usable.length === 0) return { properties: [], rows: new Map(), issues }

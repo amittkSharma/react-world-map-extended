@@ -31,5 +31,6 @@ export { COUNTRY_DATA_LIMITS, resolveCountryCode, validateCountryData } from './
 export type { CountryDetail, InfoLinkResolver } from './lib/countryDetail'
 export { getCountryDetail, getWikipediaUrl } from './lib/countryDetail'
 export type { CountryColors, MapPalette } from './lib/palettes'
+export type { ScaleKind } from './lib/scale'
 export { MAX_SELECTED_COUNTRIES } from './lib/selectionLimit'
 export type { HeadingLevel } from './types'

@@ -1,3 +1,5 @@
+import { type Scale, scalePosition } from './scale'
+
 // The lowest value is not white: a light tint of the colour that stays clearly apart from both the
 // white of a map without colour and the grey of a country without data
 const LOWEST_STRENGTH = 0.25
@@ -21,11 +23,9 @@ export const shade = (color: string, position: number): string => {
   return toHex(toRgb(color).map((channel) => 255 + (channel - 255) * strength))
 }
 
-/** The colour of `value` on the scale from `min` to `max` (all the same value: the middle). */
-export const scaleColor = (
-  { color, min, max }: { color: string; min: number; max: number },
-  value: number,
-): string => shade(color, max === min ? 0.5 : (value - min) / (max - min))
+/** The colour of `value` on a property's scale. */
+export const scaleColor = ({ color, ...scale }: { color: string } & Scale, value: number): string =>
+  shade(color, scalePosition(scale, value))
 
 /** A number the way the visitor's language writes it (`83,000,000`), without long decimals. */
 export const formatNumber = (value: number): string =>

@@ -1,6 +1,6 @@
 # react-world-map-extended: what is left to do
 
-Last updated 2026-10-09, after the data-driven colour map (properties, colour scale, dropdown, legend).
+Last updated 2026-10-09, after the scale options for skewed data (quantile, log, min and max).
 
 Finished features are not listed here. To see what the package can do, read the README. This file only keeps three things: where we stand, what is still open, and what could go wrong.
 
@@ -81,7 +81,8 @@ Automatic real-browser tests in the GitHub build. Tests cover at least 80% of th
 - paints countries without a number grey;
 - shows a legend with the property name, both ends of the scale and "No data";
 - shows a "Show on map" dropdown when there are two or more properties, and recolours straight away when it changes (it can also be controlled from outside);
-- shows your properties in the details card, labelled exactly as named, the chosen one first.
+- shows your properties in the details card, labelled exactly as named, the chosen one first;
+- handles skewed numbers: each property can use a `linear`, `quantile` or `log` scale and can cut the ends with `min` and `max`. The legend follows the scale (a bar, or the list of classes).
 
 The data is checked against a schema. Mistakes are reported and the valid parts still work. Details are in the README.
 
@@ -93,15 +94,15 @@ The data is checked against a schema. Mistakes are reported and the valid parts 
 - The map starts colourful when your data is given. Fading the other countries is off by default with your data, because fading changes the shades.
 - Only numbers (or `null`) are values. Text categories are not supported.
 - The lowest value is a light tint (25% of the colour), not white, so it stays apart from the grey of "no data".
+- Skewed data is solved per property, with an option, not automatically. `linear` stays the default because it is predictable. A bad option is reported and the property falls back to linear.
 - A bad property, row or value is left out and reported. It never stops the map. If nothing usable is left, the normal map stays.
 
 **What could come next**
 
-1. **Outliers.** One huge number makes the others pale. Options: `min` and `max`, or a log scale, inside each property entry. Files stay valid.
-2. **Value in the tooltip** (for example "France: 99"). Today it shows only the country name.
-3. **Text categories and data that goes both ways** (two colours).
-4. **A file picker for visitors** (read in their own browser, never sent anywhere). CSV or only JSON?
-5. **Colours that colour-blind people can tell apart.** One colour from light to dark is a good start, but the colour is chosen by the data author.
+1. **Value in the tooltip** (for example "France: 99"). Today it shows only the country name.
+2. **Text categories and data that goes both ways** (two colours).
+3. **A file picker for visitors** (read in their own browser, never sent anywhere). CSV or only JSON?
+4. **Colours that colour-blind people can tell apart.** One colour from light to dark is a good start, but the colour is chosen by the data author.
 
 ## 6. Open problems
 
@@ -141,10 +142,12 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 | C29 | **The README screenshots only show after the files are pushed to GitHub.** They are linked by their full GitHub address (so the npm page can show them too, because `docs/` is not in the download), and the files are not pushed yet, so today the images are broken everywhere except in a local file view. | Medium |
 | C30 | **The screenshots are made by hand and will go out of date.** They come from the demo app in headless Chrome, cropped with a throw-away page. There is no script to make them again, so a later change to the look leaves the README showing the old one. The three data screenshots were retaken for the new format; the others were not affected. | Low |
 | C31 | **The README hides some technical limits on purpose** (it should read well, and has no inner workings). The technical ones live here: the library's margin and tooltip changes (C6, C10), the drawing order and Tab order change, the focus ring and old Safari (C15), and the library's own hover style (C3). Check that nothing a user needs is missing from "Good to know". | Low |
-| C32 | **One huge number makes the rest of the map pale.** The scale is a straight line from the lowest to the highest number. With China or India in the data, most countries look almost the same. There is no log scale and no fixed minimum or maximum yet. | Medium |
 | C33 | **The colour scale was only looked at with blue and orange.** The light end is 25% of the colour, chosen by eye. A grey or very light base colour would give a light end that looks like the grey of "No data", and nothing warns the user. Colour-blind safety depends on the colour the data author picks. | Medium |
 | C34 | **The map starts colourful only until the visitor chooses.** This works when the data arrives late too, but `useWorldMapModes` always starts in Black and White, so people with separate controls must pass `defaultColorMode: 'Colorful'` (this is in the README). A hover tooltip still shows only the country name, not the value. | Low |
 | C35 | **The data map was checked with automatic tests and Chrome screenshots only.** Real mouse use of the dropdown, keyboard use of the dropdown, a screen reader reading the legend sentence, and a very narrow phone (the legend becomes a strip under the map) have not been tried (see C1, C18). | Medium |
+| C36 | **Nothing warns about skewed data.** A linear scale on skewed numbers still gives a pale map, and the only help is the README. We did not add an automatic hint, because the problem list (`onDataIssues`) is for mistakes and valid data would start to print warnings. | Low |
+| C37 | **A number on the border of two quantile classes belongs to the higher class, but the legend writes both ends of a range** ("83.2 – 124.5", then "124.5 – 214.3"). It is written in the README only. Classes also have no names, and with few different numbers there are fewer classes than asked for. | Low |
+| C38 | **The scales were checked with automatic tests and Chrome screenshots on one sample file.** Real data with many countries, ties, negative numbers and very small classes has not been tried by a person. The log scale and the "≤ / ≥" legend marks have no screenshot. | Medium |
 
 ## 7. Risks
 

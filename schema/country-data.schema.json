@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/amittkSharma/react-world-map-extended/blob/main/schema/country-data.schema.json",
   "title": "react-world-map-extended: country data",
-  "description": "Your own data for the map: the properties to show (each with the colour of its scale) and a row of numbers per country. Not expressible here and checked by `validateCountryData`: a property name may appear only once and may not be `country` or `infoLink`; the country code must be a country on the map and may appear only once (the first row is used); each listed property needs a number in at least one row, and each row a number for at least one listed property.",
+  "description": "Your own data for the map: the properties to show (each with the colour of its scale) and a row of numbers per country. Not expressible here and checked by `validateCountryData`: a property name may appear only once and may not be `country` or `infoLink`; `min` must be less than `max` (and than the highest number, `max` above the lowest); a `log` scale needs numbers above zero; the country code must be a country on the map and may appear only once (the first row is used); each listed property needs a number in at least one row, and each row a number for at least one listed property.",
   "type": "object",
   "required": ["properties", "countries"],
   "properties": {
@@ -23,6 +23,26 @@
             "type": "string",
             "pattern": "^\\s*#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\\s*$",
             "description": "Hex colour of the scale: the highest number gets it, the lowest a light tint of it."
+          },
+          "scale": {
+            "enum": ["linear", "quantile", "log"],
+            "default": "linear",
+            "description": "How numbers become shades. quantile: classes with the same number of countries (for skewed data). log: for numbers that span orders of magnitude (all above zero)."
+          },
+          "classes": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 9,
+            "default": 5,
+            "description": "Quantile scale only: the number of classes."
+          },
+          "min": {
+            "type": "number",
+            "description": "Numbers below it get the lightest shade. Default: the lowest number of the property."
+          },
+          "max": {
+            "type": "number",
+            "description": "Numbers above it get the darkest shade. Default: the highest number of the property."
           }
         }
       }

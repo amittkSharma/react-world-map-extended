@@ -16,7 +16,7 @@ Built on [`react-svg-worldmap`](https://github.com/ianwilliams/react-svg-worldma
 - 🖱️ **Click a country** and see its capital, region, languages, currency and calling code.
 - 🎨 **Two looks:** black and white, or colourful (by continent, by region, or your own colours).
 - 🧮 **Select several countries** (up to 5) with Shift+click, and compare them in a list.
-- 📊 **Colour the map with your own numbers** from a JSON file: darker means higher, with a legend and a dropdown to switch between your properties.
+- 📊 **Colour the map with your own numbers** from a JSON file: darker means higher, with a legend, a dropdown to switch between your properties, and linear, quantile or log scales for skewed data.
 - 🪟 **A details card** you can put below, above, beside or on top of the map.
 - ⌨️ **Keyboard friendly:** Tab to a country, Enter to select it, Escape to clear.
 - 🎛️ **Use the controls anywhere:** the radio buttons also work as a separate component.
@@ -193,7 +193,8 @@ A JSON file works as it is: `import data from './data.json'` and pass it in.
 **What the map does with it**
 
 - Each country is shaded by its number for the chosen property: the **highest** number gets the property's colour, the
-  **lowest** a light tint of it, the rest sit in between.
+  **lowest** a light tint of it, the rest sit in between. If a few very large numbers make everything else look alike,
+  choose another `scale` (see *Skewed data*).
 - A country with no number for that property (no row, or `null`) is **grey**.
 - A **legend** shows the property's name, the lowest and highest numbers, and "No data".
 - With **two or more properties** a "Show on map" dropdown appears. Pick another one and the map, the legend and the
@@ -218,12 +219,40 @@ A JSON file works as it is: `import data from './data.json'` and pass it in.
 | Part | Rule |
 |---|---|
 | The data | An object with `properties` and `countries`. |
-| `properties` | A list of 1 to 50 entries `{ name, color }`. `name` is the label (not empty, used once, not `country` or `infoLink`). `color` is a hex colour: `#336` or `#3366aa`. |
+| `properties` | A list of 1 to 50 entries `{ name, color }`. `name` is the label (not empty, used once, not `country` or `infoLink`). `color` is a hex colour: `#336` or `#3366aa`. Each entry may also have `scale`, `classes`, `min` and `max` (see *Skewed data*). |
 | `countries` | A list of at most 500 rows. |
 | `country` in a row | **Required.** A two-letter (`FR`) or three-letter (`FRA`) country code, in any case. **Country names are not accepted** (they differ between languages). Each country may appear once; if it appears twice, the first row wins. |
 | A property's value in a row | A number, or `null` for "no value". Text, true/false, lists and objects are not accepted. |
 | Other things in a row | Properties you did not list are ignored. `infoLink` is optional: when it is an `http` or `https` address it becomes the "More information" link. |
 | What is left out | A property needs a number in at least one row, and a row needs a number for at least one property. |
+
+### Skewed data
+
+One very large number (say India's population) uses up the whole colour range, so most countries look alike. Give the
+property a `scale` to fix that. Each property has its own, so one file can use all three.
+
+```json
+{ "name": "Population (millions)", "color": "#d55e00", "scale": "quantile", "classes": 5 }
+{ "name": "GDP (bn)", "color": "#1a73e8", "scale": "log" }
+{ "name": "Literacy rate (%)", "color": "#009e73", "min": 50, "max": 100 }
+```
+
+| Option | What it does |
+|---|---|
+| `scale: 'linear'` | The default. Shades are proportional to the number. |
+| `scale: 'quantile'` | Splits the countries into classes with the same number of countries each, and gives each class a shade. Best for skewed data. The legend lists the classes with their ranges. |
+| `scale: 'log'` | Shades by the logarithm of the number. For numbers that span orders of magnitude, such as population or GDP. All numbers must be above zero (or set `min` above zero). The legend says "Logarithmic scale". |
+| `classes` | Quantile only: how many classes, from 2 to 9. Default 5. |
+| `min`, `max` | Numbers below `min` get the lightest shade, numbers above `max` the darkest. The legend marks the ends as "≤" and "≥". The card still shows the real numbers. Works with every scale. |
+
+| Linear (default) | Quantile |
+|---|---|
+| ![Population on a linear scale: India stands out, everyone else is pale](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/scale-linear.png) | ![The same population on a quantile scale: every class has its own shade](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/scale-quantile.png) |
+
+Options that cannot be used (an unknown scale, `classes` out of range, `min` not below `max`, a log scale with a zero) are
+reported to `onDataIssues` and replaced by the default: the property keeps working as a linear one.
+
+A number that sits exactly on the border between two quantile classes belongs to the higher class.
 
 **If there are mistakes,** the map keeps working. The bad parts are left out, and you are told what was wrong. If nothing
 usable is left, the data is ignored and the normal map stays. You do not need to wrap your data in `useMemo`.
@@ -307,7 +336,7 @@ Clicking the controls never clears the map's selection.
 
 **Types:** `MapColorMode`, `MapInfoMode`, `MapPalette`, `CountryColors`, `LegendPosition`, `CountryDetail`,
 `InfoLinkResolver`, `DetailsOptions`, `DetailsPosition`, `DetailsSource`, `HeadingLevel`, `CountryData`,
-`CountryDataProperty`, `CountryDataRow`, `CountryDataValues`, `CountryDataIssue`, `ValidatedCountryData`, `ValidatedProperty`, `CountryClickInfo`, `CountryClickContext`, `CountrySelection`,
+`CountryDataProperty`, `ScaleKind`, `CountryDataRow`, `CountryDataValues`, `CountryDataIssue`, `ValidatedCountryData`, `ValidatedProperty`, `CountryClickInfo`, `CountryClickContext`, `CountrySelection`,
 `CountryDetailsProps`, `CountryDetailsListProps`, `WorldMapControlsProps`, `UseWorldMapModesOptions`, `WorldMapModes`.
 
 ## Make it match your site
@@ -339,9 +368,8 @@ Need more? `styleOverrides` takes a style object (or a function that returns one
 
 - **Own data is numbers only.** The card lists them as plain label and value pairs: no grouping, units or number
   formatting (put the unit in the property's name, like `Literacy rate (%)`).
-- **One very large number** (say one country with a huge population) makes the other countries pale, because the
-  scale is a straight line from the lowest to the highest number. There is no log scale or fixed minimum and
-  maximum yet.
+- **Quantile classes** show only as many shades as there are different numbers, so a property with few different
+  values may have fewer classes than you asked for.
 - **One colour per property.** Data that goes both ways (profit and loss) and text categories cannot be coloured yet.
 - **At most 5 countries** can be selected, and that number cannot be changed yet.
 - **Screen readers** announce selections made by clicking, but not selections you set from your own code.

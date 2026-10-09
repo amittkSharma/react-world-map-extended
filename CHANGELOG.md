@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.1.1](https://github.com/amittkSharma/react-world-map-extended/compare/v0.1.0...v0.1.1) (2026-10-09)
+
+
+### Features
+
+* remove the 5 countries hard limit. comparison feature for more then 5 countries via table ([212907d](https://github.com/amittkSharma/react-world-map-extended/commit/212907d58b82c9cff828ca4ef63aed2ad4b25543))
+* add scale option for skewed data ([2c717b6](https://github.com/amittkSharma/react-world-map-extended/commit/2c717b6513604bb045a0da85abd28189f4e7892f))
+
+
+### Bug Fixes
+
+* the low priority findings and bugs ([bae3617](https://github.com/amittkSharma/react-world-map-extended/commit/bae36179552b08131a4927d82c7dc5d16a408801))
+
 ## 0.1.0 (2026-10-08)
 
 ### ⚠ BREAKING CHANGES

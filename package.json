@@ -1,6 +1,6 @@
 {
   "name": "react-world-map-extended",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An interactive React world map: colour countries with your own data, select several and compare their details.",
   "author": "Amitt K Sharma",
   "license": "MIT",

@@ -51,6 +51,8 @@ const dataLabels: Record<DataMode, string> = {
 }
 
 const quickCountries = ['FR', 'DE', 'JP', 'BR', 'NG']
+const manyCountries = ['FR', 'DE', 'JP', 'BR', 'NG', 'IT', 'ES', 'CA']
+const limits = ['5', '10', 'unlimited']
 
 const placementLabels: Record<ControlsPlacement, string> = {
   inside: 'built into the map',
@@ -84,6 +86,7 @@ export const ExampleApp = () => {
   const [dataMode, setDataMode] = useState(scenario.data)
   const [issues, setIssues] = useState<CountryDataIssue[]>([])
   const [countries, setCountries] = useState<string[]>([])
+  const [limit, setLimit] = useState('5')
   // one state for the colour/information modes, shared by the map and (optionally) separate controls
   const modes = useWorldMapModes({
     defaultColorMode: scenario.color,
@@ -183,6 +186,25 @@ export const ExampleApp = () => {
             ))}
           </select>
         </label>
+        <label className="header-control">
+          Max selected:{' '}
+          <select value={limit} onChange={(event) => setLimit(event.target.value)}>
+            {limits.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => {
+            setLimit('unlimited')
+            setCountries(manyCountries)
+          }}
+        >
+          Select 8 countries
+        </button>
       </header>
 
       <section className="demo-info">
@@ -237,6 +259,7 @@ export const ExampleApp = () => {
             deselectOn="background"
             selectedCountries={countries}
             onSelectionChange={setCountries}
+            maxSelected={limit === 'unlimited' ? Infinity : Number(limit)}
             showMultiSelectToggle={scenario.multiToggle || 'auto'}
             detailsOptions={{ position }}
             palette={scenario.palette}

@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { countryNames } from '../lib/countries'
-import { MAX_SELECTED_COUNTRIES as MAX } from '../lib/selectionLimit'
+import { MAX_SELECTED_COUNTRIES, selectionCount } from '../lib/selectionLimit'
 import { useControllableState } from './useControllableState'
 
-const LIMIT_MESSAGE = `You can select up to ${MAX} countries. Deselect one to add another.`
-
-/** Upper-cases codes, drops unknown ones and duplicates, keeps the first `MAX` and counts the rest. */
-const normalizeCodes = (input: readonly string[]) => {
+/** Upper-cases codes, drops unknown ones and duplicates, keeps the first `max` and counts the rest. */
+const normalizeCodes = (input: readonly string[], max: number) => {
   const unique: string[] = []
   for (const raw of input) {
     const code = raw.toUpperCase()
     if (countryNames.has(code) && !unique.includes(code)) unique.push(code)
   }
-  return { codes: unique.slice(0, MAX), overflow: Math.max(0, unique.length - MAX) }
+  return { codes: unique.slice(0, max), overflow: Math.max(0, unique.length - max) }
 }
 
 const same = (a: readonly string[], b: readonly string[]) =>
@@ -20,10 +18,16 @@ const same = (a: readonly string[], b: readonly string[]) =>
 
 const nameOf = (code: string) => countryNames.get(code) ?? code
 
-const removedMessage = (code: string, remaining: number) =>
-  `${nameOf(code)} removed, ${remaining === 0 ? 'nothing selected' : `${remaining} of ${MAX} selected`}`
+/** "3 of 5 selected" with a limit, "3 selected" without one. */
+const status = (count: number, max: number) =>
+  `${selectionCount(count, max)}${Number.isFinite(max) ? ' selected' : ''}`
+
+const removedMessage = (code: string, remaining: number, max: number) =>
+  `${nameOf(code)} removed, ${remaining === 0 ? 'nothing selected' : status(remaining, max)}`
 
 interface Options {
+  /** The most countries that can be selected (`Infinity` for no limit). Default 5. */
+  max?: number
   /** Controlled when set (an empty array = nothing selected). */
   selectedCountries?: readonly string[]
   defaultSelectedCountries?: readonly string[]
@@ -31,21 +35,22 @@ interface Options {
 }
 
 /**
- * The selected countries (at most `MAX`, in the order they were selected) and everything that changes
+ * The selected countries (at most `max`, in the order they were selected) and everything that changes
  * them: a click (replace / add / remove / pop up), removing one, clearing all. Also owns the messages
  * that go with it: a toast when the limit is hit or a controlled array is too long, and a line for
  * screen readers. A blocked click never reaches `onSelectionChange`, and a controlled array is never
  * written back.
  */
 export const useCountrySelection = ({
+  max = MAX_SELECTED_COUNTRIES,
   selectedCountries,
   defaultSelectedCountries,
   onSelectionChange,
 }: Options) => {
-  const controlled = selectedCountries ? normalizeCodes(selectedCountries) : undefined
+  const controlled = selectedCountries ? normalizeCodes(selectedCountries, max) : undefined
   const [codes, setCodes] = useControllableState<string[]>(
     controlled?.codes,
-    normalizeCodes(defaultSelectedCountries ?? []).codes,
+    normalizeCodes(defaultSelectedCountries ?? [], max).codes,
     onSelectionChange,
   )
   const codesRef = useRef(codes)
@@ -59,10 +64,10 @@ export const useCountrySelection = ({
   const showToast = useCallback((text: string) => setToast({ id: ++counter.current, text }), [])
   const dismissToast = useCallback(() => setToast(null), [])
 
-  // a controlled array that is too long: the first `MAX` are used and the user is told
+  // a controlled array that is too long: the first `max` are used and the user is told
   const tooLong =
     controlled && controlled.overflow > 0
-      ? `Only the first ${MAX} of ${controlled.codes.length + controlled.overflow} selected countries are shown.`
+      ? `Only the first ${max} of ${controlled.codes.length + controlled.overflow} selected countries are shown.`
       : ''
   useEffect(() => {
     if (tooLong) showToast(tooLong)
@@ -85,7 +90,7 @@ export const useCountrySelection = ({
 
   const removeFrom = (current: string[], code: string) => {
     const next = current.filter((candidate) => candidate !== code)
-    commit(next, removedMessage(code, next.length))
+    commit(next, removedMessage(code, next.length, max))
   }
 
   /**
@@ -99,13 +104,10 @@ export const useCountrySelection = ({
     if (toggle) {
       if (included) {
         removeFrom(current, code)
-      } else if (current.length >= MAX) {
-        showToast(LIMIT_MESSAGE) // the toast is a status region: it is read out by itself
+      } else if (current.length >= max) {
+        showToast(`You can select up to ${max} countries. Deselect one to add another.`) // the toast is a status region: it is read out by itself
       } else {
-        commit(
-          [...current, code],
-          `${nameOf(code)} added, ${current.length + 1} of ${MAX} selected`,
-        )
+        commit([...current, code], `${nameOf(code)} added, ${status(current.length + 1, max)}`)
         revealCode(code)
       }
     } else if (included) {
@@ -123,5 +125,5 @@ export const useCountrySelection = ({
     commit([], 'Selection cleared')
   }
 
-  return { codes, max: MAX, click, remove, clear, reveal, announcement, toast, dismissToast }
+  return { codes, max, click, remove, clear, reveal, announcement, toast, dismissToast }
 }

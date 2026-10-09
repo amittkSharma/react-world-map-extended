@@ -134,3 +134,53 @@ export const listStyles = {
   },
   panel: { padding: '0 0.25rem 0.75rem 1.5rem' },
 } satisfies Record<string, CSSProperties>
+
+export const tableStyles = {
+  scroll: { margin: '0.75rem 0 0', overflowX: 'auto' },
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' },
+  head: {
+    padding: 0,
+    borderBottom: `2px solid ${BORDER}`,
+    background: 'var(--rwme-panel-bg, #ffffff)',
+    textAlign: 'left',
+    verticalAlign: 'bottom',
+  },
+  sort: {
+    width: '100%',
+    padding: '0.4rem 0.6rem',
+    border: 'none',
+    background: 'transparent',
+    color: MUTED,
+    font: 'inherit',
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textAlign: 'left',
+    textTransform: 'uppercase',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  },
+  row: { borderBottom: `1px solid ${BORDER}` },
+  cell: { padding: '0.5rem 0.6rem', verticalAlign: 'top' },
+  // the country stays in view when the table scrolls sideways
+  country: {
+    position: 'sticky',
+    left: 0,
+    padding: '0.5rem 0.6rem',
+    fontWeight: 600,
+    textAlign: 'left',
+    verticalAlign: 'top',
+    whiteSpace: 'nowrap',
+  },
+  // the last cell of every row, however many columns there are; it stays in view like the country
+  action: {
+    position: 'sticky',
+    right: 0,
+    padding: '0.25rem 0.4rem',
+    textAlign: 'right',
+    verticalAlign: 'top',
+    width: '1%',
+  },
+  remove: listStyles.remove,
+  mark: { marginLeft: '0.35rem', color: MUTED, fontSize: '0.75rem' },
+} satisfies Record<string, CSSProperties>

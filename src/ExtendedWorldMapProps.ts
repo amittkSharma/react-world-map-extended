@@ -38,14 +38,22 @@ export interface ExtendedWorldMapProps {
   onCountryClick?: (info: CountryClickInfo | undefined, context: CountryClickContext) => void
   tooltipText?: (countryContext: CountryContext<string>) => string
   /** The selected countries, as ISO 3166-1 alpha-2 codes (any case), in the order they were selected;
-   * at most 5 (`MAX_SELECTED_COUNTRIES`), unknown codes and duplicates are ignored. Controlled when set
+   * at most `maxSelected`, unknown codes and duplicates are ignored. Controlled when set
    * (`[]` = none); otherwise it starts at `defaultSelectedCountries` and follows the user. A longer
-   * array shows its first 5 and a message on the map; it is never changed on your behalf. */
+   * array shows its first `maxSelected` and a message on the map; it is never changed on your behalf. */
   selectedCountries?: string[]
   defaultSelectedCountries?: string[]
   /** Called with the new list (upper-case codes) when the user changes the selection. Not called for a
    * click that the limit blocks. */
   onSelectionChange?: (countryCodes: string[]) => void
+  /** The most countries that can be selected at once: a whole number from 1, or `Infinity` for no limit.
+   * Anything else means the default, 5 (`MAX_SELECTED_COUNTRIES`). A click that would go over it
+   * shows a message on the map. Lowering it never removes countries that are already selected. */
+  maxSelected?: number
+  /** From this many selected countries the details are a table you can sort, with the highest and
+   * lowest value of each numeric column marked, instead of a list you open entry by entry. A whole
+   * number from 2; default 6. Above `maxSelected` it never applies. */
+  tableFrom?: number
   /** Shows a switch on the map for devices without a Shift key: while it is on, a plain click adds or
    * removes a country. `'auto'` (default) shows it on touch screens only. */
   showMultiSelectToggle?: boolean | 'auto'

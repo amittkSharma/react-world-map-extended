@@ -1,12 +1,10 @@
 import type { SelectionContent } from '../lib/cardSelections'
-import type { CountryDataValue, CountryDataValues } from '../lib/countryData'
+import type { CountryDataValues } from '../lib/countryData'
 import type { CountryDetail } from '../lib/countryDetail'
+import { displayValue, type Field, formatValue, labels } from '../lib/detailFormat'
 import { headingTag } from '../lib/headings'
-import { continentNames } from '../lib/palettes'
 import { parseWebUrl } from '../lib/webUrl'
 import { detailsStyles as styles } from '../styles/detailsStyles'
-
-type Field = Exclude<keyof CountryDetail, 'infoLink'>
 
 // Information is grouped by category; `emphasis` marks the one fact that deserves most weight.
 const groups: Array<{ title: string; fields: Field[]; emphasis?: Field }> = [
@@ -15,31 +13,6 @@ const groups: Array<{ title: string; fields: Field[]; emphasis?: Field }> = [
   { title: 'Language', fields: ['language'], emphasis: 'language' },
   { title: 'Calling codes', fields: ['isdCodes'], emphasis: 'isdCodes' },
 ]
-
-const labels: Partial<Record<Field, string>> = {
-  capital: 'Capital',
-  region: 'Region',
-  continent: 'Continent',
-  currency: 'Code',
-  symbol: 'Symbol',
-  currencyName: 'Name',
-  language: 'Official language',
-  isdCodes: 'Dialling prefix',
-}
-
-const formatValue = (field: Field, value: NonNullable<CountryDetail[Field]>): string => {
-  if (field === 'continent' && typeof value === 'string') return continentNames[value] ?? value
-  if (Array.isArray(value)) {
-    return value.map((item) => (field === 'isdCodes' ? `+${item}` : item)).join(', ')
-  }
-  if (typeof value === 'object') {
-    const { official, code } = value
-    return [official, code && `(${code})`].filter(Boolean).join(' ')
-  }
-  return String(value)
-}
-
-const displayValue = (value: CountryDataValue) => (value === null ? '—' : String(value))
 
 interface BodyProps {
   /** Level of the headings of the categories. */

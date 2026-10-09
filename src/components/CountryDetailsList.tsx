@@ -2,17 +2,17 @@ import { useId } from 'react'
 import { type RevealRequest, useAccordion } from '../hooks/useAccordion'
 import type { CountrySelection } from '../lib/cardSelections'
 import { classNames } from '../lib/classNames'
-import { headingTag } from '../lib/headings'
-import { MAX_SELECTED_COUNTRIES } from '../lib/selectionLimit'
+import { MAX_SELECTED_COUNTRIES, selectionCount } from '../lib/selectionLimit'
 import { detailsStyles, listStyles } from '../styles/detailsStyles'
 import type { CardAppearance } from '../types'
 import { DetailsListItem } from './DetailsListItem'
 import { DetailsShell } from './DetailsShell'
+import { SelectionBar } from './SelectionBar'
 
 export interface CountryDetailsListProps extends CardAppearance {
   /** The selected countries, in the order they were selected. */
   selections: CountrySelection[]
-  /** The limit shown in the "n of max" counter. Default 5. */
+  /** The limit shown in the "n of max" counter (`Infinity`: "n selected"). Default 5. */
   max?: number
   /** Ask the list to open (and scroll to) one country, e.g. because it was clicked on the map.
    * Change `key` to ask again for the same country. */
@@ -54,7 +54,6 @@ export const CountryDetailsList = ({
     selections.map(({ code }) => code),
     reveal,
   )
-  const Title = headingTag(headingLevel)
 
   return (
     <DetailsShell
@@ -64,20 +63,11 @@ export const CountryDetailsList = ({
       look={detailsStyles.card}
       inDialog={inDialog}
     >
-      <div style={listStyles.bar}>
-        <Title className="rwme-details__title" style={{ ...detailsStyles.title, paddingRight: 0 }}>
-          Selected countries
-        </Title>
-        <span style={listStyles.count}>
-          {selections.length} of {max}
-        </span>
-        {onClear && (
-          <button type="button" onClick={onClear} style={listStyles.button}>
-            Clear all
-          </button>
-        )}
-      </div>
-
+      <SelectionBar
+        headingLevel={headingLevel}
+        count={selectionCount(selections.length, max)}
+        onClear={onClear}
+      />
       <ul style={listStyles.list}>
         {selections.map((selection) => (
           <DetailsListItem

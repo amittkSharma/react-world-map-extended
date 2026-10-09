@@ -9,6 +9,8 @@ import { SelectionBody } from './SelectionBody'
 export interface CountryDetailsProps extends CardAppearance {
   /** The country to show; `null` shows a hint to click a country. `detail` is `undefined` for areas without data. */
   selection: SelectionContent | null
+  /** The most countries that can be selected, named in the hint (`Infinity`: no number is named). Default 5. */
+  max?: number
   /** When given, a "Hide" button is shown and calls this. */
   onClose?: () => void
   /** Set when the card is the content of a dialog that already names and announces it: the card then
@@ -19,6 +21,7 @@ export interface CountryDetailsProps extends CardAppearance {
 /** Live region (screen readers announce updates) showing the selected country's details. */
 export const CountryDetails = ({
   selection,
+  max = MAX_SELECTED_COUNTRIES,
   headingLevel = 3,
   inDialog = false,
   ...shell
@@ -31,8 +34,8 @@ export const CountryDetails = ({
     <DetailsShell {...shell} label="Country details" look={look} inDialog={inDialog}>
       {!selection && (
         <p style={styles.paragraph}>
-          Click a country to see its details. Shift+click (or ⌘/Ctrl+click) to select up to{' '}
-          {MAX_SELECTED_COUNTRIES} countries.
+          Click a country to see its details. Shift+click (or ⌘/Ctrl+click) to select{' '}
+          {Number.isFinite(max) ? `up to ${max} countries` : 'several countries'}.
         </p>
       )}
       {selection && !content && <p style={styles.paragraph}>{missingMessage(selection)}</p>}

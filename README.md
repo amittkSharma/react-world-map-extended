@@ -2,7 +2,7 @@
 
 A world map for React that people actually want to click.
 
-Click a country and a tidy card tells you about it. Select up to five countries and compare them in a list.
+Click a country and a tidy card tells you about it. Select several countries and compare them in a list, or in a sortable table when there are many.
 Bring your own numbers (a simple JSON file of country codes and values) and the map turns into a shaded data map.
 
 ![A colourful world map with a legend](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/hero.png)
@@ -15,7 +15,7 @@ Built on [`react-svg-worldmap`](https://github.com/ianwilliams/react-svg-worldma
 
 - 🖱️ **Click a country** and see its capital, region, languages, currency and calling code.
 - 🎨 **Two looks:** black and white, or colourful (by continent, by region, or your own colours).
-- 🧮 **Select several countries** (up to 5) with Shift+click, and compare them in a list.
+- 🧮 **Select several countries** (up to 5 by default, you choose) with Shift+click, and compare them in a list or a sortable table.
 - 📊 **Colour the map with your own numbers** from a JSON file: darker means higher, with a legend, a dropdown to switch between your properties, and linear, quantile or log scales for skewed data.
 - 🪟 **A details card** you can put below, above, beside or on top of the map.
 - ⌨️ **Keyboard friendly:** Tab to a country, Enter to select it, Escape to clear.
@@ -83,7 +83,7 @@ Every setting is optional. Add only what you need.
 
 ### Selecting countries
 
-A click selects one country. **Shift+click** (or Cmd/Ctrl+click) adds more, up to **5**.
+A click selects one country. **Shift+click** (or Cmd/Ctrl+click) adds more, up to **5** unless you set `maxSelected`.
 
 ![Three selected countries in a list](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/multi.png)
 
@@ -103,6 +103,8 @@ On touch screens there is no Shift key, so a small **Select multiple** switch ap
 | `selectedCountries` | The selected countries, as two-letter codes (`['FR', 'DE']`), in the order they were picked. Use it to control the selection from your own code. `[]` means none. | none |
 | `defaultSelectedCountries` | The same, but only as a starting value; the visitor stays in charge. | `[]` |
 | `onSelectionChange` | Called with the new list of codes whenever the visitor changes the selection. | none |
+| `maxSelected` | The most countries that can be selected: a whole number from 1, or `Infinity` for no limit. Going over it shows a message on the map. Lowering it never removes countries that are already selected. | `5` |
+| `tableFrom` | From this many selected countries the details are a table instead of a list. A whole number from 2. | `6` |
 | `showMultiSelectToggle` | The "Select multiple" switch: `true`, `false` or `'auto'` (only on touch screens). | `'auto'` |
 | `highlightSelected` | Draws a red outline around selected countries. | `true` |
 | `dimOthers` | Fades the other countries so the selected ones stand out. `true` fades them to 35%, a number between 0 and 1 sets the strength, `false` turns it off. | `true`, but `false` while your own data colours the map (fading would change the shades) |
@@ -116,8 +118,19 @@ const [countries, setCountries] = useState(['FR', 'DE'])
 <ExtendedWorldMap showDetails selectedCountries={countries} onSelectionChange={setCountries} />
 ```
 
-Unknown codes and duplicates are ignored. If you pass more than five, the first five are shown and a message
+Unknown codes and duplicates are ignored. If you pass more than `maxSelected`, the first ones are shown and a message
 explains it.
+
+### Comparing many countries
+
+From `tableFrom` selected countries (6 by default) the card becomes a table: one row per country, one column per
+fact and per property of your own data. Click a column header to sort (ascending, descending, back to the order you
+selected in). In a numeric column the highest and lowest value are marked. Pointing at a country on the map lights
+its row, and the country column stays in view when the table scrolls sideways.
+
+```tsx
+<ExtendedWorldMap showDetails maxSelected={Infinity} tableFrom={4} />
+```
 
 ### The details card
 
@@ -331,7 +344,8 @@ Clicking the controls never clears the map's selection.
 | `getCountryDetail(code, infoMode, getInfoLink?)` | Looks up the built-in facts of one country. |
 | `getWikipediaUrl(code, name)` | The default "More information" link, in case you want to reuse it. |
 | `COUNTRY_DATA_LIMITS` | The size limits for your data (500 rows, 50 properties, 2000 characters for a link). |
-| `MAX_SELECTED_COUNTRIES` | The most countries that can be selected (5). |
+| `MAX_SELECTED_COUNTRIES` | The default for `maxSelected` (5). |
+| `TABLE_FROM` | The default for `tableFrom` (6). |
 | `MapColorOptions`, `MapDataOptions` | Named values for the colour and information modes. |
 
 **Types:** `MapColorMode`, `MapInfoMode`, `MapPalette`, `CountryColors`, `LegendPosition`, `CountryDetail`,
@@ -371,7 +385,8 @@ Need more? `styleOverrides` takes a style object (or a function that returns one
 - **Quantile classes** show only as many shades as there are different numbers, so a property with few different
   values may have fewer classes than you asked for.
 - **One colour per property.** Data that goes both ways (profit and loss) and text categories cannot be coloured yet.
-- **At most 5 countries** can be selected, and that number cannot be changed yet.
+- **Many countries:** every selected country is a row, so a very large selection makes a long table (it scrolls
+  inside the card). The highest/lowest marks ignore units and do not say whether higher is better.
 - **Screen readers** announce selections made by clicking, but not selections you set from your own code.
 - **Overlay card:** it covers the map, so close it (Hide or Escape) before adding another country.
 - **Hover outline:** hovering a selected country makes its outline a little thinner. That style comes from the map

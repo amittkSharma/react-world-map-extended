@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import WorldMap from 'react-svg-worldmap'
 import { CountryDetails } from './components/CountryDetails'
 import { CountryDetailsList } from './components/CountryDetailsList'
+import { CountryDetailsTable } from './components/CountryDetailsTable'
 import { DetailsSlot } from './components/DetailsSlot'
 import { MapLegend } from './components/MapLegend'
 import { MapToast } from './components/MapToast'
@@ -28,6 +29,7 @@ import { resolvePosition, slotStyle } from './lib/detailsLayout'
 import { trackInputModality } from './lib/inputModality'
 import { buildMapLegend } from './lib/mapLegend'
 import { getMapMaxWidth } from './lib/mapSize'
+import { MAX_SELECTED_COUNTRIES, resolveCount, TABLE_FROM } from './lib/selectionLimit'
 import { overlayCardStyle, visuallyHidden, WHITE } from './styles/mapStyles'
 
 export const ExtendedWorldMap = ({
@@ -38,6 +40,8 @@ export const ExtendedWorldMap = ({
   selectedCountries,
   defaultSelectedCountries,
   onSelectionChange,
+  maxSelected,
+  tableFrom,
   showMultiSelectToggle = 'auto',
   countryData,
   dataProperty,
@@ -69,7 +73,9 @@ export const ExtendedWorldMap = ({
   className,
   style,
 }: ExtendedWorldMapProps) => {
+  const max = resolveCount(maxSelected, MAX_SELECTED_COUNTRIES)
   const selection = useCountrySelection({
+    max,
     selectedCountries,
     defaultSelectedCountries,
     onSelectionChange,
@@ -198,18 +204,23 @@ export const ExtendedWorldMap = ({
     onClose: closeDetails,
     inDialog: isOverlay,
   }
-  const card = several ? (
-    <CountryDetailsList
-      {...cardProps}
-      selections={selections}
-      reveal={selection.reveal}
-      highlightCode={hoveredCode}
-      onLink={setLinkedCode}
-      onRemove={selection.remove}
-      onClear={selection.clear}
-    />
+  const manyProps = {
+    ...cardProps,
+    selections,
+    max,
+    reveal: selection.reveal,
+    highlightCode: hoveredCode,
+    onLink: setLinkedCode,
+    onRemove: selection.remove,
+    onClear: selection.clear,
+  }
+  const asTable = selections.length >= resolveCount(tableFrom, TABLE_FROM, 2)
+  const card = !several ? (
+    <CountryDetails {...cardProps} selection={selections[0] ?? null} max={max} />
+  ) : asTable ? (
+    <CountryDetailsTable {...manyProps} />
   ) : (
-    <CountryDetails {...cardProps} selection={selections[0] ?? null} />
+    <CountryDetailsList {...manyProps} />
   )
   const cardLabel = several ? `${selections.length} countries` : (selections[0]?.name ?? '')
 

@@ -91,7 +91,9 @@ src/
     countries.ts            names <-> ISO codes of the map, names that get the styled tooltip
     corner.ts  mapSize.ts  headings.ts  webUrl.ts  scrollIntoCard.ts  classNames.ts
     inputModality.ts        keyboard or pointer used last (page-wide)
-    selectionLimit.ts       MAX_SELECTED_COUNTRIES
+    selectionLimit.ts       default limit and table threshold, and cleaning of `maxSelected` / `tableFrom`
+    comparisonTable.ts      rows, columns, sorting and highest/lowest of the details table
+    detailFormat.ts         labels and text of the built-in facts, shared by the card and the table
 
   data/
     alpha3.ts               ISO alpha-3 -> alpha-2
@@ -145,12 +147,17 @@ mode, the open card and the data property.
 `useCountrySelection` is the only owner of "which countries are selected" and everything that changes it:
 
 - A plain click replaces the selection. Shift, Cmd or Ctrl (or the toggle on touch screens) adds or removes.
-- At most `MAX_SELECTED_COUNTRIES` (5). A blocked click shows a toast and never reaches `onSelectionChange`.
-- A controlled array is normalised (upper-case, known codes, no duplicates). If it is too long, the first five are used and
+- At most `maxSelected` (default `MAX_SELECTED_COUNTRIES`, 5; `Infinity` = no limit). A blocked click shows a toast and
+  never reaches `onSelectionChange`. Lowering the limit never removes selected countries.
+- A controlled array is normalised (upper-case, known codes, no duplicates). If it is too long, the first `maxSelected` are used and
   a toast says so. The array is never written back.
 - It keeps the latest value in a ref, because several clicks can arrive before the next render.
 - It also produces the text for screen readers ("Germany added, 2 of 5 selected") and the "reveal" request that tells the
-  list which entry to open.
+  list which entry to open (or the table which row to scroll to).
+
+From `tableFrom` selected countries (6) the card is `CountryDetailsTable` instead of `CountryDetailsList`; both sit in
+the same `DetailsShell` and share `SelectionBar`. The table's rules (columns, sort, extremes) are pure functions in
+`lib/comparisonTable.ts`.
 
 Clearing is in `useDeselect`: a click away clears a selection of one country (never a larger one), Escape clears any
 selection. The overlay dialog stops its own Escape so that Escape there only closes the card.

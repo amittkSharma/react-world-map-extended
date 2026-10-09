@@ -1,6 +1,6 @@
 # react-world-map-extended: what is left to do
 
-Last updated 2026-10-09, after the scale options for skewed data (quantile, log, min and max).
+Last updated 2026-10-09, after the configurable selection limit, the comparison table for many countries and the scale options for skewed data.
 
 Finished features are not listed here. To see what the package can do, read the README. This file only keeps three things: where we stand, what is still open, and what could go wrong.
 
@@ -10,12 +10,12 @@ The package is a React map of the world. It is built on top of a smaller library
 
 | What | State today |
 |---|---|
-| Automated checks | Lint (which also checks formatting and import order) has zero warnings. Type checks pass. 390 tests pass. |
-| Package size | Our own code is 86.4 kB (20.9 kB when compressed). The download is 63.4 kB in 8 files: the built code, one bundled set of types, the schema, README, licence and package.json. |
+| Automated checks | Lint (which also checks formatting and import order) has zero warnings. Type checks pass. 479 tests pass. |
+| Package size | Our own code was 86.4 kB (20.9 kB when compressed) before the table; the built ESM file is now 103.5 kB (24.9 kB compressed), measured the same simple way as the build output. The download size was not measured again. The download is 63.4 kB in 8 files: the built code, one bundled set of types, the schema, README, licence and package.json. |
 | Package format | Works as ESM and CommonJS and ships its types. The package checker finds no problems with the main entry (it complains about the JSON schema file entry only, because a JSON file has no types; Node and TypeScript can still import it). Sources, tests and docs are not in the download. |
 | Build on GitHub (CI) | The workflow file exists but has **never run**. |
 | Testing in a real browser | Only automated tests and screenshots with scripted clicks. **No person has used it with a real mouse, keyboard, touch screen or screen reader.** |
-| Release | Version is `0.0.0`. Nothing is published. The data-driven colour map is **not committed** to git yet (earlier work is). |
+| Release | Version is `0.0.0`. Nothing is published. The data-driven colour map and the selection limit and table work are **not committed** to git yet (earlier work is). |
 
 Where the code lives, and how it fits together: `docs/ARCHITECTURE.md`.
 
@@ -32,6 +32,8 @@ Where the code lives, and how it fits together: `docs/ARCHITECTURE.md`.
 2. **What to do with the region colour scheme (finding C8).** The nine regions come from the data source and look uneven. Options: (1) keep it; (2) keep it but remove its legend (about 10 minutes); (3) replace it with a standard list such as the UN or World Bank regions (about 3 to 4 hours, recommended if you keep the scheme).
 3. **Which version of `react-svg-worldmap` to use.** We use `2.0.2`. The newest is `2.1.0`. Decide after the check in step 5 of the release plan.
 4. **The first version number.** The release tool can set it, for example `npm run release -- --release-as 0.1.0`.
+
+5. **Should the table be reachable by default?** The default limit is 5 and the table starts at 6, so a visitor who changes nothing never sees it. It appears only when a site sets `maxSelected` above 5 (or passes a longer `selectedCountries` together with it). Options: (1) keep it, nothing changes for existing users (today); (2) set `tableFrom` to 4 or 5 so the table is the default view of a full selection; (3) raise the default limit. Option 1 is the safest for a first release.
 
 Already decided: while a country is selected it is drawn last, so keyboard Tab reaches it last. We keep this.
 
@@ -67,7 +69,7 @@ See section 5: outliers, text categories, the tooltip.
 
 ### D. Ideas for later
 
-A side-by-side comparison table for selected countries. Zoom and "focus on a region". A search box for countries. Translations. Extra country facts from your own data source. More colour-blind-friendly colours. Export the map as an image. A documentation site.
+Charts, export and per-column choice for the comparison table. Zoom and "focus on a region". A search box for countries. Translations. Extra country facts from your own data source. More colour-blind-friendly colours. Export the map as an image. A documentation site.
 
 ### What "done" means for version 1.0.0
 
@@ -104,6 +106,26 @@ The data is checked against a schema. Mistakes are reported and the valid parts 
 3. **A file picker for visitors** (read in their own browser, never sent anywhere). CSV or only JSON?
 4. **Colours that colour-blind people can tell apart.** One colour from light to dark is a good start, but the colour is chosen by the data author.
 
+## 5b. Many countries: what is done and what is left
+
+**Done.** The limit of 5 countries is no longer fixed.
+
+- `maxSelected` sets the limit: a whole number from 1, or `Infinity`. The default stays 5, so nothing changes for existing users. A bad value (0, negative, `NaN`, text) falls back to 5.
+- The message "You can select up to N countries" only appears when a finite limit blocks a click, or when a controlled `selectedCountries` is longer than the limit (it is cut to the limit). With `Infinity` there is no message and the counter reads "n selected".
+- Lowering the limit while countries are selected keeps them and only blocks new ones. A blocked click never reaches `onSelectionChange`.
+- `tableFrom` (default 6, minimum 2) decides when the details become a table instead of the list. The table has one row per country and one column per fact and per property of your own data, a sticky country column, row highlight both ways with the map, a remove button per row, and "Clear all" and "Hide" as in the list.
+- Comparison: click a header to sort (ascending, descending, back to the selection order). The highest and lowest value of a numeric column are marked with a symbol and hidden text. Missing values come last and show "—".
+- Shared parts: `lib/detailFormat.ts` (labels and text of the facts, used by the card and the table), `SelectionBar` (head of the list and the table), `lib/comparisonTable.ts` (all table rules as pure functions).
+- Checked with 26 new automatic tests (the limit, the switch to the table, sorting, marks, highlight, removal, and the pure table rules), plus lint, types and build.
+
+**What we decided on the way**
+
+- The table starts at `tableFrom`, not at "more than the default limit", so it works with any limit.
+- Sorting changes only what you see, never the selection order.
+- Marks only appear when they mean something: at least two values, all numbers, not all equal. `null` counts as empty, not zero.
+- Columns for a built-in fact and a property of your own data with the same name stay separate.
+- Not built: charts, export, choosing columns, remembering the sort, long-list tricks (virtual scrolling).
+
 ## 6. Open problems
 
 Severity means how much it matters: High, Medium or Low. "Info" means it is only worth knowing.
@@ -129,7 +151,7 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 | C16 | Visual mistakes are only found by a person. The black box around countries and the misplaced legend both reached you before any test noticed. We need automatic real-browser tests (step A3). | Medium |
 | C17 | Multi-select and the overlay position do not work well together. The first selection opens the card over the map, which blocks it, so you must close the card before adding the next country (this is in the README). | Low |
 | C18 | Multi-select was only tested with scripted clicks. Real Shift+click, the touch switch (read once when the page loads, and only shown on touch-first devices), the position of the message, quick repeated clicks with a slow-updating parent, and screen readers have not been tried by a person. | Medium |
-| C19 | The list choices have not been tried with real users. Adding a country opens it and closes the older ones (on purpose, to keep the list short, and you can still open several by hand). There is no side-by-side comparison, which is probably what people want. After clearing, the first click replaces instead of adds. | Low |
+| C19 | The list choices have not been tried with real users. Adding a country opens it and closes the older ones (on purpose, to keep the list short, and you can still open several by hand). A side-by-side table now exists, but only from `tableFrom` countries (6 by default), so with the default limit nobody sees it (see decision 5 and C41). After clearing, the first click replaces instead of adds. | Low |
 | C20 | Two things changed in a way that is not backwards compatible: `selectedCountry` became `selectedCountries` (a list, and `onSelectionChange` gets a list), and `countryData` went from an array of rows to an object `{ properties, countries }`. Fine at version `0.0.0`, but both must appear in the first release notes. | Info |
 | C21 | With two or more countries selected, clicking empty map no longer clears them. The only buttons for clearing ("Clear all" and the × on each entry) are in the details card. If the card is hidden or details are turned off, a mouse or touch user cannot clear the selection (they can only press Escape, Shift+click each selected country one by one, or click one other country to replace the whole selection). | Medium |
 | C22 | The "Select multiple" switch appears on touch-first devices only. Laptops with a touch screen and a mouse will not get it, and the only other way to add a country is Shift, Cmd or Ctrl plus click. | Low |
@@ -148,6 +170,16 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 | C36 | **Nothing warns about skewed data.** A linear scale on skewed numbers still gives a pale map, and the only help is the README. We did not add an automatic hint, because the problem list (`onDataIssues`) is for mistakes and valid data would start to print warnings. | Low |
 | C37 | **A number on the border of two quantile classes belongs to the higher class, but the legend writes both ends of a range** ("83.2 – 124.5", then "124.5 – 214.3"). It is written in the README only. Classes also have no names, and with few different numbers there are fewer classes than asked for. | Low |
 | C38 | **The scales were checked with automatic tests and Chrome screenshots on one sample file.** Real data with many countries, ties, negative numbers and very small classes has not been tried by a person. The log scale and the "≤ / ≥" legend marks have no screenshot. | Medium |
+| C39 | **The table was only checked with automatic tests (jsdom).** Nobody has seen it in a real browser: the sticky country column, the scroll area that takes keyboard focus, the sort buttons with a real keyboard, the marks read by a screen reader, and the row highlight with a real mouse. jsdom has no layout, so sticky and scrolling are not tested at all (see C1, C16, C18). | Medium |
+| C40 | **The sticky country and remove cells have a solid background** (the card colour or the highlight colour). On the overlay card, which is slightly see-through, or on a card a site has restyled with its own background, the cell could show as a plain patch. Not seen yet, only reasoned from the code. | Medium |
+| C41 | **The table is hidden by default.** The limit is 5 and the table starts at 6, so a site that changes nothing never gets it, and it is not obvious it exists (decision 5). Two to five countries only get the list, which cannot compare side by side. | Medium |
+| C42 | **Highest and lowest are crude.** They ignore units and do not know whether high is good. A column that mixes numbers and text gets no marks. The dialling prefix is text, so it sorts as text ("+1, +44" before "+33"). Numbers are shown as written, with no thousands separators (as in C24). | Low |
+| C43 | **More texts that cannot be changed or translated** (add to C5): "Country", "Selected countries, compared", the table caption, "highest/lowest in this column", "Remove X from the selection", and the column names of the facts. | Medium |
+| C44 | **A very large selection** (`Infinity` and 100+ countries) gives a very long table and a busy map. It scrolls inside the card and renders fine, but there is no virtual scrolling and the only quick way back is "Clear all" (see C21). The rows are sorted again on every render, which is cheap for a few hundred rows but not free when hovering the map re-renders often. | Low |
+| C45 | **Two views to keep in step.** Every new fact or kind of data must be handled by the list and by the table. The shared text code lowers the risk, but the list shows data as groups and the table as columns, so they can still drift (for example how `infoLink` or boolean values show). | Low |
+| C46 | **The sort is forgotten** when the selection drops below `tableFrom` and the table disappears. Adding countries while sorted puts the new rows in sorted position, so the new country may not be where the eye expects it. The map click still scrolls to the row. | Low |
+| C47 | **The limit logic has many branches** (finite or not, controlled or not, lowered while selected, blocked clicks, several quick clicks). Each has a test, but only with scripted clicks and a parent that re-renders at once (C18). | Low |
+| C48 | **New public names**: `maxSelected`, `tableFrom` and the export `TABLE_FROM` are part of the API from the first release. Changing the table threshold rule or the meaning of `Infinity` later would break users. `CountryDetails` also got an optional `max`. Nothing existing changes by default. | Info |
 
 ## 7. Risks
 
@@ -158,5 +190,7 @@ Severity means how much it matters: High, Medium or Low. "Info" means it is only
 - **Two small outside packages are involved**, `react-svg-worldmap` and `i18n-iso-countries-extended-info`. If they stop being maintained, we may need to copy the few parts we use.
 - **One security warning in the build tools.** `npm audit` reports 1 high-severity issue in `brace-expansion`. It only comes in through the release tool, which is used on your machine and not shipped. The warning is 0 for the code that users install.
 - **One tooltip per country** was checked from the page's code and the library's source, not by hovering in a real browser.
+- **The new table and limit are unverified in a real browser.** The risky parts are layout (sticky column, scroll area, overlay background) and keyboard and screen reader use of the sort buttons (C39, C40). Check them by hand, with a narrow card and 10 or more countries, before release.
+- **Unlimited selection removes a safety rail.** `maxSelected={Infinity}` was a hard stop before. A site can now let visitors fill the card with hundreds of rows; the default (5) keeps the old behaviour.
 - **Too many features, too few users.** Features keep being added without outside feedback. Release early, then decide from what people ask for.
 - **If the library ever rebuilds its country shapes** (not seen so far), the selected country's outline could be partly covered until the next click.

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## 1.0.0 (2026-10-15)
+
+### ⚠ BREAKING CHANGES
+
+* Package renamed to `@amittksharma/react-world-map-extended`. No code changes. Import it, and the `/country-data.schema.json` subpath, from the scoped name. (The unscoped name was never published to npm.)
+
+### Features
+
+* Publish with npm provenance (`provenance=true` in `.npmrc`).
+* Add `publishConfig.access: public` to `package.json`.
+
 ## [0.1.1](https://github.com/amittkSharma/react-world-map-extended/compare/v0.1.0...v0.1.1) (2026-10-09)
 
 

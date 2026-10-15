@@ -1,4 +1,9 @@
-# 🌍 react-world-map-extended
+# 🌍 @amittksharma/react-world-map-extended
+
+[![npm version](https://img.shields.io/npm/v/@amittksharma/react-world-map-extended)](https://www.npmjs.com/package/@amittksharma/react-world-map-extended)
+[![npm downloads](https://img.shields.io/npm/dm/@amittksharma/react-world-map-extended)](https://www.npmjs.com/package/@amittksharma/react-world-map-extended)
+[![license](https://img.shields.io/npm/l/@amittksharma/react-world-map-extended)](./LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@amittksharma/react-world-map-extended)](https://bundlephobia.com/package/@amittksharma/react-world-map-extended)
 
 A world map for React that people actually want to click.
 
@@ -7,7 +12,7 @@ Bring your own numbers (a simple JSON file of country codes and values) and the 
 
 ![A colourful world map with a legend](https://raw.githubusercontent.com/amittkSharma/react-world-map-extended/main/docs/images/hero.png)
 
-> **Status:** pre-release (`0.0.0`), not on npm yet. The API may still change before `0.1.0`.
+> **Status:** version 1.0.0. Published as the scoped package `@amittksharma/react-world-map-extended`.
 
 Built on [`react-svg-worldmap`](https://github.com/ianwilliams/react-svg-worldmap).
 
@@ -24,7 +29,7 @@ Built on [`react-svg-worldmap`](https://github.com/ianwilliams/react-svg-worldma
 ## Install
 
 ```sh
-npm install react-world-map-extended
+npm install @amittksharma/react-world-map-extended
 ```
 
 You need `react` and `react-dom` (version 18 or 19). TypeScript types are included.
@@ -32,7 +37,7 @@ You need `react` and `react-dom` (version 18 or 19). TypeScript types are includ
 ## Your first map
 
 ```tsx
-import { ExtendedWorldMap } from 'react-world-map-extended'
+import { ExtendedWorldMap } from '@amittksharma/react-world-map-extended'
 
 export const App = () => <ExtendedWorldMap showDetails />
 ```
@@ -279,7 +284,7 @@ Things to know:
 - When only your data is shown, the "Information on click" radio buttons are hidden, because they describe the
   built-in facts.
 - `onCountryClick` gets your values (merged over the built-in facts for `'both'`).
-- Editors can check your JSON file with the published schema: `react-world-map-extended/country-data.schema.json`.
+- Editors can check your JSON file with the published schema: `@amittksharma/react-world-map-extended/country-data.schema.json`.
 
 ### Controls anywhere
 
@@ -287,7 +292,7 @@ The two radio-button groups are also a component of their own, so you can put th
 anywhere else.
 
 ```tsx
-import { ExtendedWorldMap, WorldMapControls, useWorldMapModes } from 'react-world-map-extended'
+import { ExtendedWorldMap, WorldMapControls, useWorldMapModes } from '@amittksharma/react-world-map-extended'
 
 const modes = useWorldMapModes({ defaultColorMode: 'Colorful' })
 
